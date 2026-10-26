@@ -241,27 +241,34 @@
 
   .eq {
     display: none;
-    align-items: flex-end;
-    gap: 2px;
-    width: 15px;
-    height: 15px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
+    color: var(--accent);
+    overflow: visible;
   }
-  .row.playing .eq { display: flex; }
+  .row.playing .eq { display: block; }
   .row.playing .row-fav { display: none; }
-  .eq span {
-    width: 3px;
-    border-radius: 1.5px;
-    background: var(--accent);
-    animation: eq 900ms var(--ease-in-out) infinite alternate;
+
+  .eq svg { display: block; width: 100%; height: 100%; }
+
+  .eq line {
+    stroke: currentColor;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: eq 820ms var(--ease-in-out) infinite alternate;
   }
-  .eq span:nth-child(1) { height: 40%; animation-delay: 0ms; }
-  .eq span:nth-child(2) { height: 90%; animation-delay: 180ms; }
-  .eq span:nth-child(3) { height: 60%; animation-delay: 90ms; }
-  body.paused .eq span { animation-play-state: paused; }
+  .eq line:nth-child(1) { animation-delay: 0ms; }
+  .eq line:nth-child(2) { animation-delay: 210ms; }
+  .eq line:nth-child(3) { animation-delay: 90ms; }
+  .eq line:nth-child(4) { animation-delay: 300ms; }
+
+  body.paused .eq line { animation-play-state: paused; }
 
   @keyframes eq {
-    from { transform: scaleY(0.35); }
+    from { transform: scaleY(0.25); }
     to { transform: scaleY(1); }
   }
 
@@ -1154,7 +1161,13 @@ function makeRow(index, delay) {
 
   const eq = document.createElement('div');
   eq.className = 'eq';
-  eq.innerHTML = '<span></span><span></span><span></span>';
+  eq.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<line x1="3.5"  y1="10" x2="3.5"  y2="19"/>' +
+    '<line x1="9.2"  y1="5"  x2="9.2"  y2="19"/>' +
+    '<line x1="14.8" y1="2"  x2="14.8" y2="19"/>' +
+    '<line x1="20.5" y1="8"  x2="20.5" y2="19"/>' +
+    '</svg>';
 
   const fav = document.createElement('button');
   fav.className = 'row-fav';
