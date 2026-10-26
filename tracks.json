@@ -7,7 +7,19 @@
     "lyrics": "",
     "src": "https://pomf2.lain.la/f/tppfwrz0.flac",
     "cover": "https://images.genius.com/eaf1162509e8a8aad157ff8576daa9fc.1000x1000x1.png",
-    "duration": 107
+    "duration": 107,
+    "featuring": [],
+    "producer": [
+      "DooMee",
+      "Александр Рудич (Alexandr Rudich)",
+      "Даниил Александров (Daniil Alexandrov)"
+    ],
+    "writers": [
+      "DooMee",
+      "MAYOT"
+    ],
+    "label": "MELON MUSIC, CPLUS",
+    "release": "2020-09-04"
   },
   {
     "title": "Минус текст (Minus Lyrics)",
@@ -39,7 +51,20 @@
     "lyrics": "",
     "src": "https://pomf2.lain.la/f/3y00w0wi.flac",
     "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
-    "duration": 123
+    "duration": 123,
+    "featuring": [
+      "163ONMYNECK"
+    ],
+    "producer": [
+      "DooMee"
+    ],
+    "writers": [
+      "DooMee",
+      "163ONMYNECK",
+      "SEEMEE"
+    ],
+    "label": "MELON MUSIC, CPLUS",
+    "release": "2021-06-25"
   },
   {
     "title": "JAX",
@@ -49,7 +74,21 @@
     "lyrics": "",
     "src": "https://pomf2.lain.la/f/osol1zwz.flac",
     "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
-    "duration": 163
+    "duration": 163,
+    "featuring": [
+      "BUSHIDO ZHO"
+    ],
+    "producer": [
+      "TonySouljah",
+      "DooMee"
+    ],
+    "writers": [
+      "TonySouljah",
+      "SEEMEE",
+      "BUSHIDO ZHO"
+    ],
+    "label": "MELON MUSIC, CPLUS",
+    "release": "2021-06-25"
   },
   {
     "title": "Большие Бабки (Big Money)",
@@ -59,7 +98,20 @@
     "lyrics": "",
     "src": "https://pomf2.lain.la/f/2mitj3cy.flac",
     "cover": "https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png",
-    "duration": 140
+    "duration": 140,
+    "featuring": [],
+    "producer": [
+      "saintracks",
+      "wygo01"
+    ],
+    "writers": [
+      "Scally Milano",
+      "OG Buda",
+      "saintracks",
+      "wygo01"
+    ],
+    "label": "",
+    "release": "2022-04-15"
   },
   {
     "title": "КОГДА Я (WHEN I)",
@@ -70,6 +122,17 @@
     "src": "https://pomf2.lain.la/f/ro7n4qs2.flac",
     "cover": "https://pomf2.lain.la/f/atp9kp5k.jpg",
     "duration": 119,
-    "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png"
+    "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png",
+    "featuring": [],
+    "producer": [
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH",
+      "МУККА (MUKKA)",
+      "spbwaves"
+    ],
+    "label": "KOALA MUSIC",
+    "release": "2025-01-24"
   }
 ]
