@@ -897,14 +897,6 @@ const TRACKS_URLS = [
   'https://raw.githubusercontent.com/Justik54/JT-music-app/main/tracks.json'
 ];
 
-// ── Куда писать статистику прослушиваний ──
-// Вариант 1 (рекомендую): Firebase Realtime Database.
-//   Вставь URL вида https://xxxx-default-rtdb.europe-west1.firebasedatabase.app
-const FIREBASE_DB = '';
-
-// Вариант 2: Google Apps Script (см. apps_script.gs). Оставь пустым, если используешь Firebase.
-const STATS_URL = '';
-
 const FAV_KEY = 'jt_favs_v1';
 const VOL_KEY = 'jt_volume_v1';
 
@@ -983,7 +975,6 @@ let repeatMode = 0;
 let favorites = new Set();
 let activeTab = 'all';
 let albumOpenName = null;
-const pinged = new Set();
 
 /* ══════════════════════════════════════════════════════════
    Хранилище
@@ -1517,44 +1508,6 @@ function updateMediaSession(t) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Статистика прослушиваний
-   ══════════════════════════════════════════════════════════ */
-function pingPlay(t) {
-  if (!FIREBASE_DB && !STATS_URL) return;
-  const key = keyOf(t);
-  if (pinged.has(key)) return;
-  pinged.add(key);
-
-  const payload = {
-    userId: tgUser ? tgUser.id : 0,
-    username: tgUser ? (tgUser.username || '') : 'web',
-    name: tgUser ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') : 'Браузер',
-    title: t.title,
-    artist: t.artist,
-    ts: Date.now()
-  };
-
-  if (FIREBASE_DB) {
-    // Firebase сам выдаёт ключи и нормально отвечает на CORS
-    fetch(FIREBASE_DB.replace(/\/+$/, '') + '/plays.json', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).catch(() => {});
-    return;
-  }
-
-  try {
-    fetch(STATS_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    }).catch(() => {});
-  } catch (e) {}
-}
-
-/* ══════════════════════════════════════════════════════════
    Слайдеры
    ══════════════════════════════════════════════════════════ */
 function makeSlider(el, onChange, onCommit) {
@@ -1772,11 +1725,7 @@ repeatBtn.addEventListener('click', () => {
 
 audio.addEventListener('play', () => {
   setPlayingUI(true);
-  if (currentIndex >= 0) {
-    const t = tracks[currentIndex];
-    artistEl.textContent = t.artist;
-    pingPlay(t);
-  }
+  if (currentIndex >= 0) artistEl.textContent = tracks[currentIndex].artist;
 });
 
 audio.addEventListener('pause', () => setPlayingUI(false));
