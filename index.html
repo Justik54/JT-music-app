@@ -314,18 +314,22 @@
     left: 12px;
     right: 12px;
     bottom: calc(12px + env(safe-area-inset-bottom));
-    height: 62px;
-    border-radius: 17px;
-    background: rgba(34, 38, 45, 0.86);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    height: 64px;
+    border-radius: 18px;
+    background: rgba(18, 21, 26, 0.72);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      0 16px 40px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
     display: flex;
     align-items: center;
-    gap: 11px;
-    padding: 0 10px;
+    gap: 12px;
+    padding: 0 12px 0 10px;
     z-index: 20;
     cursor: pointer;
+    overflow: hidden;
     transform: translateY(calc(100% + 24px));
     transition: transform 420ms var(--ease-out), opacity 260ms ease;
   }
@@ -333,12 +337,13 @@
   .mini.hide { opacity: 0; pointer-events: none; transform: translateY(calc(100% + 24px)); }
 
   .mini-cover {
-    width: 42px;
-    height: 42px;
-    border-radius: 9px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     object-fit: cover;
     background: var(--surface-hi);
     flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
   }
   .mini-info { flex: 1; min-width: 0; }
   .mini-title {
@@ -358,8 +363,8 @@
     margin-top: 1px;
   }
   .mini-btn {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
     border: none;
     background: none;
     color: var(--text);
@@ -367,26 +372,24 @@
     place-items: center;
     cursor: pointer;
     flex-shrink: 0;
-    transition: transform 150ms var(--ease-out);
+    border-radius: 50%;
+    transition: transform 150ms var(--ease-out), background 200ms ease;
   }
-  .mini-btn:active { transform: scale(0.88); }
+  .mini-btn:active { transform: scale(0.88); background: rgba(255, 255, 255, 0.06); }
 
   .mini-progress {
     position: absolute;
-    left: 14px;
-    right: 14px;
-    bottom: 5px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     height: 2px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.1);
-    overflow: hidden;
+    background: rgba(255, 255, 255, 0.07);
   }
   .mini-progress i {
     display: block;
     height: 100%;
     width: 0%;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.55);
     transition: width 120ms linear;
   }
 
@@ -815,7 +818,7 @@
       <div class="mini-sub" id="miniSub"></div>
     </div>
     <button class="mini-btn" id="miniPlay" aria-label="Играть">
-      <span class="icon-swap" id="miniIcon">
+      <span class="icon-swap">
         <svg class="i-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8.2 4.6a1 1 0 0 1 1.02.05l10 6.9a1 1 0 0 1 0 1.65l-10 6.9A1 1 0 0 1 7.7 19.3V5.7a1 1 0 0 1 .5-.1Z"/></svg>
         <svg class="i-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="4.5" width="4" height="15" rx="1.4"/><rect x="13.5" y="4.5" width="4" height="15" rx="1.4"/></svg>
       </span>
@@ -958,7 +961,6 @@ const miniCover = $('miniCover');
 const miniTitle = $('miniTitle');
 const miniSub = $('miniSub');
 const miniPlay = $('miniPlay');
-const miniIcon = $('miniIcon');
 const miniFill = $('miniFill');
 
 const panels = { all: $('panelAll'), fav: $('panelFav'), albums: $('panelAlbums') };
@@ -1513,7 +1515,7 @@ function prevTrack() {
 
 function setPlayingUI(isPlaying) {
   playBtn.classList.toggle('playing', isPlaying);
-  miniIcon.classList.toggle('playing', isPlaying);
+  miniPlay.classList.toggle('playing', isPlaying);
   document.body.classList.toggle('paused', !isPlaying);
 }
 
