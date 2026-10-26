@@ -1811,6 +1811,7 @@ function setupVolume() {
       if (Math.abs(dy) < THRESHOLD) return;
       dragging = true;
       scrPlayer.classList.add('dragging');
+      stage.classList.remove('shrink');   // фон возвращается, пока тянем вниз
       try { top.setPointerCapture(e.pointerId); } catch (err) {}
     }
 
@@ -1837,6 +1838,7 @@ function setupVolume() {
       closePlayer();
     } else {
       scrPlayer.style.transform = '';
+      stage.classList.add('shrink');   // не закрыли — фон обратно
     }
     dy = 0;
   };
@@ -1851,10 +1853,14 @@ function setupVolume() {
 function infoRows(t) {
   const rows = [];
 
+  rows.push(['Исполнитель', t.artist]);
+  if (t.featuring.length) rows.push(['При участии', t.featuring.join(', ')]);
+  rows.push(['Альбом', t.album + (t.year ? ' · ' + t.year : '')]);
+
   const rel = t.release ? formatDate(t.release) : (t.year || '');
   if (rel) rows.push(['Релиз', rel]);
-  rows.push(['Альбом', t.album]);
-  if (t.featuring.length) rows.push(['При участии', t.featuring.join(', ')]);
+  if (t.duration) rows.push(['Длительность', fmt(t.duration)]);
+
   if (t.producer.length) rows.push(['Продюсер', t.producer.join(', ')]);
   if (t.writers.length) rows.push(['Авторы', t.writers.join(', ')]);
   if (t.label) rows.push(['Лейбл', t.label]);
