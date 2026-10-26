@@ -1,5 +1,0 @@
-aiogram==3.31.0
-lyricsgenius>=3.0.1
-requests>=2.31.0
-gradio>=4.44.0
-# spaces  # нужен только на Hugging Face Spaces (там уже предустановлен)
