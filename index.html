@@ -622,25 +622,25 @@
   /* прогресс — M3 slider: толстый трек + вертикальный «нотч» */
   .scrub {
     position: relative;
-    height: 36px;
+    height: 30px;
     display: flex;
     align-items: center;
     cursor: pointer;
     touch-action: none;
-    margin-bottom: 0;
+    margin-bottom: 6px;
   }
   .scrub-track {
     position: absolute;
     left: 0; right: 0;
-    height: 16px;
-    border-radius: 8px;
+    height: 12px;
+    border-radius: 6px;
     background: rgba(255, 255, 255, 0.1);
     overflow: hidden;
   }
   .scrub-fill {
     height: 100%;
     width: 0%;
-    border-radius: 8px;
+    border-radius: 6px;
     background: var(--text);
     transition: width 120ms linear;
   }
@@ -650,7 +650,7 @@
     top: 50%;
     left: 0;
     width: 4px;
-    height: 30px;
+    height: 22px;
     margin-left: -2px;
     border-radius: 2px;
     background: var(--text);
