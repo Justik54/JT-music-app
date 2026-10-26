@@ -518,7 +518,9 @@
     flex-shrink: 0;
     touch-action: none;
     cursor: grab;
+    position: relative;
   }
+  .top-right { display: flex; gap: 2px; }
   .player-top::before {
     content: "";
     position: absolute;
@@ -531,11 +533,15 @@
     background: rgba(255, 255, 255, 0.16);
   }
   .player-label {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--faint);
+    pointer-events: none;
   }
 
   .icon-btn {
@@ -613,27 +619,28 @@
     white-space: nowrap;
   }
 
+  /* прогресс — M3 slider: толстый трек + вертикальный «нотч» */
   .scrub {
     position: relative;
-    height: 26px;
+    height: 36px;
     display: flex;
     align-items: center;
     cursor: pointer;
     touch-action: none;
-    margin-bottom: 2px;
+    margin-bottom: 0;
   }
   .scrub-track {
     position: absolute;
     left: 0; right: 0;
-    height: 4px;
-    border-radius: 99px;
+    height: 16px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.1);
     overflow: hidden;
   }
   .scrub-fill {
     height: 100%;
     width: 0%;
-    border-radius: 99px;
+    border-radius: 8px;
     background: var(--text);
     transition: width 120ms linear;
   }
@@ -642,17 +649,17 @@
     position: absolute;
     top: 50%;
     left: 0;
-    width: 12px;
-    height: 12px;
-    margin-left: -6px;
-    border-radius: 50%;
-    background: #fff;
-    transform: translateY(-50%) scale(0);
-    transition: transform 180ms var(--ease-spring);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    width: 4px;
+    height: 26px;
+    margin-left: -2px;
+    border-radius: 2px;
+    background: var(--text);
+    transform: translateY(-50%) scaleY(0.72);
+    transition: transform 200ms var(--ease-spring);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     pointer-events: none;
   }
-  .scrub.dragging .scrub-knob { transform: translateY(-50%) scale(1); }
+  .scrub.dragging .scrub-knob { transform: translateY(-50%) scaleY(1); }
 
   .times {
     display: flex;
@@ -660,7 +667,7 @@
     font-size: 11px;
     color: var(--faint);
     font-variant-numeric: tabular-nums;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .controls {
@@ -731,7 +738,7 @@
   .vslider {
     position: relative;
     flex: 1;
-    height: 22px;
+    height: 26px;
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -740,8 +747,8 @@
   .vslider-track {
     position: absolute;
     left: 0; right: 0;
-    height: 3px;
-    border-radius: 99px;
+    height: 10px;
+    border-radius: 5px;
     background: rgba(255, 255, 255, 0.1);
     overflow: hidden;
   }
@@ -749,9 +756,95 @@
     height: 100%;
     width: 100%;
     background: rgba(244, 247, 250, 0.55);
-    border-radius: 99px;
+    border-radius: 5px;
+  }
+  .vslider-knob {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    width: 3px;
+    height: 18px;
+    margin-left: -1.5px;
+    border-radius: 1.5px;
+    background: rgba(244, 247, 250, 0.9);
+    transform: translateY(-50%);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
   }
   .volume-hint { flex: 1; font-size: 11px; color: var(--faint); }
+
+  /* ══ лист «О треке» ════════════════════════════════════ */
+  .sheet-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 320ms var(--ease-out);
+  }
+  .sheet-scrim.open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 61;
+    background: #14171c;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    padding: 8px 22px calc(24px + env(safe-area-inset-bottom));
+    max-height: 78vh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 380ms var(--ease-drawer);
+    will-change: transform;
+  }
+  .sheet.open { transform: translateY(0); }
+
+  .sheet-grab {
+    width: 36px;
+    height: 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.16);
+    margin: 0 auto 14px;
+  }
+  .sheet-head {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .sheet-sub {
+    font-size: 13px;
+    color: var(--sub);
+    margin-bottom: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .info-row {
+    display: flex;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-k {
+    width: 92px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--sub);
+    padding-top: 1px;
+  }
+  .info-v {
+    flex: 1;
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--text);
+  }
 
   /* ══ появление списков ═════════════════════════════════ */
   .row, .album-card { animation: rise 380ms var(--ease-out) both; }
@@ -842,9 +935,14 @@
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
     </button>
     <span class="player-label">Сейчас играет</span>
-    <button class="icon-btn" id="favBtn" aria-label="В избранное">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-    </button>
+    <div class="top-right">
+      <button class="icon-btn" id="infoBtn" aria-label="О треке">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      </button>
+      <button class="icon-btn" id="favBtn" aria-label="В избранное">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+      </button>
+    </div>
   </div>
 
   <div class="player-body">
@@ -889,14 +987,22 @@
       <button class="btn" id="muteBtn" aria-label="Звук">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" id="volIcon"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
       </button>
-      <div class="vslider" id="volSlider">
-        <div class="vslider-track"><div class="vslider-fill" id="volFill"></div></div>
-      </div>
+    <div class="vslider" id="volSlider">
+      <div class="vslider-track"><div class="vslider-fill" id="volFill"></div></div>
+      <div class="vslider-knob" id="volKnob"></div>
+    </div>
     </div>
   </div>
 </section>
 
 <audio id="audio" preload="metadata"></audio>
+
+<div class="sheet-scrim" id="infoScrim"></div>
+<div class="sheet" id="infoSheet">
+  <div class="sheet-grab"></div>
+  <div class="sheet-head">О треке</div>
+  <div class="sheet-body" id="infoBody"></div>
+</div>
 
 <script>
 /* ══════════════════════════════════════════════════════════
@@ -959,6 +1065,7 @@ const repeatBtn = $('repeatBtn');
 const volumeRow = $('volumeRow');
 const volSlider = $('volSlider');
 const volFill = $('volFill');
+const volKnob = $('volKnob');
 const muteBtn = $('muteBtn');
 const volIcon = $('volIcon');
 const tabInd = $('tabInd');
@@ -969,6 +1076,11 @@ const miniTitle = $('miniTitle');
 const miniSub = $('miniSub');
 const miniPlay = $('miniPlay');
 const miniFill = $('miniFill');
+
+const infoBtn = $('infoBtn');
+const infoSheet = $('infoSheet');
+const infoScrim = $('infoScrim');
+const infoBody = $('infoBody');
 
 const panels = { all: $('panelAll'), fav: $('panelFav'), albums: $('panelAlbums') };
 
@@ -1034,10 +1146,30 @@ function normalize(t) {
     artist: (t.artist || 'Неизвестный').trim(),
     album: (t.album || 'Сингл').trim() || 'Сингл',
     year: String(t.year || '').slice(0, 4),
+    release: String(t.release || ''),
+    featuring: Array.isArray(t.featuring) ? t.featuring.filter(Boolean) : [],
+    producer: Array.isArray(t.producer) ? t.producer.filter(Boolean) : [],
+    writers: Array.isArray(t.writers) ? t.writers.filter(Boolean) : [],
+    label: String(t.label || ''),
     src: src,
     cover: t.cover || '',
     duration: Number(t.duration) || 0
   };
+}
+
+/* артист + featuring одной строкой */
+function artistLine(t) {
+  const f = (t && t.featuring) || [];
+  return f.length ? t.artist + ' feat. ' + f.join(', ') : (t ? t.artist : '');
+}
+
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+function formatDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+  if (!m) return iso || '';
+  return Number(m[3]) + ' ' + MONTHS[Number(m[2]) - 1] + ' ' + m[1];
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1091,6 +1223,7 @@ function openPlayer() {
 
 function closePlayer() {
   if (!playerOpen) return;
+  closeInfo();
   playerOpen = false;
   scrPlayer.style.transform = '';
   scrPlayer.classList.remove('open');
@@ -1155,7 +1288,7 @@ function makeRow(index, delay) {
 
   const ss = document.createElement('div');
   ss.className = 'row-sub';
-  ss.textContent = t.artist + ' · ' + t.album;
+  ss.textContent = artistLine(t) + ' · ' + t.album;
 
   info.append(tt, ss);
 
@@ -1439,7 +1572,7 @@ function loadTrack(index) {
   const t = tracks[index];
 
   titleEl.textContent = t.title;
-  artistEl.textContent = t.artist;
+  artistEl.textContent = artistLine(t);
   albumEl.textContent = t.album + (t.year ? ' · ' + t.year : '');
 
   setCover(coverOf(t));
@@ -1447,7 +1580,7 @@ function loadTrack(index) {
 
   miniCover.src = coverOf(t);
   miniTitle.textContent = t.title;
-  miniSub.textContent = t.artist;
+  miniSub.textContent = artistLine(t);
 
   scrubFill.style.width = '0%';
   scrubKnob.style.left = '0%';
@@ -1597,6 +1730,7 @@ let lastVolume = 1;
 
 function paintVolume() {
   volFill.style.width = (volume * 100) + '%';
+  volKnob.style.left = (volume * 100) + '%';
   const muted = volume <= 0.001;
   muteBtn.style.color = muted ? 'var(--faint)' : '';
   volIcon.innerHTML = muted
@@ -1712,6 +1846,59 @@ function setupVolume() {
 })();
 
 /* ══════════════════════════════════════════════════════════
+   Лист «О треке»
+   ══════════════════════════════════════════════════════════ */
+function infoRows(t) {
+  const rows = [];
+
+  const rel = t.release ? formatDate(t.release) : (t.year || '');
+  if (rel) rows.push(['Релиз', rel]);
+  rows.push(['Альбом', t.album]);
+  if (t.featuring.length) rows.push(['При участии', t.featuring.join(', ')]);
+  if (t.producer.length) rows.push(['Продюсер', t.producer.join(', ')]);
+  if (t.writers.length) rows.push(['Авторы', t.writers.join(', ')]);
+  if (t.label) rows.push(['Лейбл', t.label]);
+
+  return rows;
+}
+
+function openInfo() {
+  if (currentIndex < 0) return;
+  const t = tracks[currentIndex];
+
+  infoBody.innerHTML = '';
+
+  const sub = document.createElement('div');
+  sub.className = 'sheet-sub';
+  sub.textContent = artistLine(t) + ' — ' + t.title;
+  infoBody.appendChild(sub);
+
+  infoRows(t).forEach(([k, v]) => {
+    const row = document.createElement('div');
+    row.className = 'info-row';
+
+    const kk = document.createElement('div');
+    kk.className = 'info-k';
+    kk.textContent = k;
+
+    const vv = document.createElement('div');
+    vv.className = 'info-v';
+    vv.textContent = v;
+
+    row.append(kk, vv);
+    infoBody.appendChild(row);
+  });
+
+  infoScrim.classList.add('open');
+  infoSheet.classList.add('open');
+}
+
+function closeInfo() {
+  infoScrim.classList.remove('open');
+  infoSheet.classList.remove('open');
+}
+
+/* ══════════════════════════════════════════════════════════
    Форматирование
    ══════════════════════════════════════════════════════════ */
 function fmt(sec) {
@@ -1725,6 +1912,9 @@ function fmt(sec) {
    События
    ══════════════════════════════════════════════════════════ */
 $('closePlayer').addEventListener('click', closePlayer);
+
+infoBtn.addEventListener('click', openInfo);
+infoScrim.addEventListener('click', closeInfo);
 
 mini.addEventListener('click', (e) => {
   if (e.target.closest('#miniPlay')) return;
@@ -1772,7 +1962,7 @@ repeatBtn.addEventListener('click', () => {
 
 audio.addEventListener('play', () => {
   setPlayingUI(true);
-  if (currentIndex >= 0) artistEl.textContent = tracks[currentIndex].artist;
+  if (currentIndex >= 0) artistEl.textContent = artistLine(tracks[currentIndex]);
 });
 
 audio.addEventListener('pause', () => setPlayingUI(false));
@@ -1802,7 +1992,7 @@ audio.addEventListener('waiting', () => {
 });
 
 audio.addEventListener('playing', () => {
-  if (currentIndex >= 0) artistEl.textContent = tracks[currentIndex].artist;
+  if (currentIndex >= 0) artistEl.textContent = artistLine(tracks[currentIndex]);
 });
 
 makeSlider(scrub, (ratio) => {
@@ -1820,6 +2010,7 @@ makeSlider(scrub, (ratio) => {
 (async function init() {
   loadFavs();
   setupVolume();
+  setPlayingUI(false);          // сразу помечаем: ничего не играет
 
   const raw = await fetchTracks();
 
@@ -1832,12 +2023,12 @@ makeSlider(scrub, (ratio) => {
   buildAlbumCovers();
   renderAllPanels();
 
-  if (tracks.length) {
-    loadTrack(0);
-    buildQueue(0);
-  } else {
-    panels.all.innerHTML = '<div class="empty"><b>Пока пусто</b>Добавь трек через бота</div>';
-  }
+  // трек по умолчанию не выбираем — играет только то, что нажал пользователь
+  titleEl.textContent = 'Ничего не играет';
+  artistEl.textContent = 'Выбери трек из списка';
+  albumEl.innerHTML = '&nbsp;';
+  coverEl.src = PLACEHOLDER;
+  setAmbient(PLACEHOLDER);
 })();
 </script>
 </body>
