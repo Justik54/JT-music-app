@@ -1032,6 +1032,38 @@ function normalize(t) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   Одна обложка на весь альбом
+   ══════════════════════════════════════════════════════════ */
+let albumCovers = new Map();
+
+function isPlaceholder(url) {
+  return !url || url.startsWith('data:') || url.indexOf('placehold.co') !== -1;
+}
+
+function albumKeyOf(t) {
+  const a = (t.album || '').trim();
+  return a && a.toLowerCase() !== 'сингл' ? a : '';
+}
+
+function buildAlbumCovers() {
+  albumCovers = new Map();
+  tracks.forEach((t) => {
+    const key = albumKeyOf(t);
+    if (!key) return;
+    const cur = albumCovers.get(key);
+    if (!cur || isPlaceholder(cur)) {
+      if (!isPlaceholder(t.cover) || !cur) albumCovers.set(key, t.cover || '');
+    }
+  });
+}
+
+function coverOf(t) {
+  const key = albumKeyOf(t);
+  if (key && albumCovers.has(key)) return albumCovers.get(key) || PLACEHOLDER;
+  return t.cover || PLACEHOLDER;
+}
+
+/* ══════════════════════════════════════════════════════════
    Навигация между экранами
    ══════════════════════════════════════════════════════════ */
 let playerOpen = false;
@@ -1102,7 +1134,7 @@ function makeRow(index, delay) {
   img.className = 'row-cover';
   img.alt = '';
   img.loading = 'lazy';
-  img.src = t.cover || PLACEHOLDER;
+  img.src = coverOf(t);
   img.onerror = () => { img.src = PLACEHOLDER; };
 
   const info = document.createElement('div');
@@ -1201,7 +1233,7 @@ function renderAlbums() {
     img.className = 'album-card-img';
     img.alt = '';
     img.loading = 'lazy';
-    img.src = tracks[idxs[0]].cover || PLACEHOLDER;
+    img.src = coverOf(tracks[idxs[0]]);
     img.onerror = () => { img.src = PLACEHOLDER; };
 
     const nm = document.createElement('div');
@@ -1252,7 +1284,7 @@ function renderAlbumPage(name) {
 
   const cov = $('albumCover');
   cov.onerror = () => { cov.src = PLACEHOLDER; };
-  const coverSrc = idxs.length ? (tracks[idxs[0]].cover || PLACEHOLDER) : PLACEHOLDER;
+  const coverSrc = idxs.length ? coverOf(tracks[idxs[0]]) : PLACEHOLDER;
   cov.src = coverSrc;
   scrAlbum.style.setProperty('--album-cover', 'url("' + coverSrc.replace(/"/g, '%22') + '")');
 
@@ -1395,10 +1427,10 @@ function loadTrack(index) {
   artistEl.textContent = t.artist;
   albumEl.textContent = t.album + (t.year ? ' · ' + t.year : '');
 
-  setCover(t.cover || PLACEHOLDER);
-  setAmbient(t.cover || PLACEHOLDER);
+  setCover(coverOf(t));
+  setAmbient(coverOf(t));
 
-  miniCover.src = t.cover || PLACEHOLDER;
+  miniCover.src = coverOf(t);
   miniTitle.textContent = t.title;
   miniSub.textContent = t.artist;
 
@@ -1498,7 +1530,7 @@ function updateMediaSession(t) {
       title: t.title,
       artist: t.artist,
       album: t.album,
-      artwork: [{ src: t.cover || PLACEHOLDER, sizes: '512x512' }]
+      artwork: [{ src: coverOf(t), sizes: '512x512' }]
     });
     navigator.mediaSession.setActionHandler('play', () => play());
     navigator.mediaSession.setActionHandler('pause', () => audio.pause());
@@ -1782,6 +1814,7 @@ makeSlider(scrub, (ratio) => {
   }
 
   tracks = raw.map(normalize).filter(Boolean);
+  buildAlbumCovers();
   renderAllPanels();
 
   if (tracks.length) {
