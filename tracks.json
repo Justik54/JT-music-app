@@ -122,7 +122,7 @@
     "src": "https://pomf2.lain.la/f/ro7n4qs2.flac",
     "cover": "https://pomf2.lain.la/f/atp9kp5k.jpg",
     "duration": 119,
-    "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png",
+    "coverOriginal": "https://pomf2.lain.la/f/atp9kp5k.jpg",
     "featuring": [],
     "producer": [
       "spbwaves"
@@ -154,7 +154,7 @@
     "src": "https://pomf2.lain.la/f/aogrw5sz.flac",
     "cover": "https://pomf2.lain.la/f/atp9kp5k.jpg",
     "duration": 90,
-    "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png"
+    "coverOriginal": "https://pomf2.lain.la/f/atp9kp5k.jpg"
   },
   {
     "title": "На кассе (At the Checkout)",
@@ -201,7 +201,7 @@
     "src": "https://pomf2.lain.la/f/37vqfebo.flac",
     "cover": "https://pomf2.lain.la/f/atp9kp5k.jpg",
     "duration": 118,
-    "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png"
+    "coverOriginal": "https://pomf2.lain.la/f/atp9kp5k.jpg"
   },
   {
     "title": "АУТБРЭЙК (OUTBRAKE)",
@@ -223,7 +223,7 @@
     "src": "https://pomf2.lain.la/f/bsy2rf5k.flac",
     "cover": "https://pomf2.lain.la/f/atp9kp5k.jpg",
     "duration": 158,
-    "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png"
+    "coverOriginal": "https://pomf2.lain.la/f/atp9kp5k.jpg"
   },
   {
     "title": "ADRENALINE",
@@ -247,7 +247,7 @@
     "src": "https://pomf2.lain.la/f/osbtyeer.flac",
     "cover": "https://pomf2.lain.la/f/atp9kp5k.jpg",
     "duration": 141,
-    "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png"
+    "coverOriginal": "https://pomf2.lain.la/f/atp9kp5k.jpg"
   },
   {
     "title": "Битбокс (Beatbox)",
@@ -288,7 +288,8 @@
     "label": "KOALA MUSIC",
     "lyrics": "",
     "src": "https://pomf2.lain.la/f/myb98tpj.flac",
-    "cover": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png",
-    "duration": 135
+    "cover": "https://pomf2.lain.la/f/atp9kp5k.jpg",
+    "duration": 135,
+    "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png"
   }
 ]
