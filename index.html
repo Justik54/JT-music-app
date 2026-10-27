@@ -941,6 +941,14 @@
     position: relative;
   }
 
+  .list-actions, .sheet-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .list-actions { margin-bottom: 10px; }
+  .sheet-actions { margin-top: 16px; }
+
   /* статистика */
   .stat-grid {
     display: grid;
@@ -1460,6 +1468,12 @@
 
     <div class="set-group" id="setGroup4">
       <div class="set-group-title">Данные</div>
+      <div class="set-row">
+        <div class="set-label">Кэшировать треки офлайн</div>
+        <button class="switch" data-key="offline" aria-label="Офлайн-кэш">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
       <div class="set-row action" id="openStats">
         <div class="set-label">Моя статистика</div>
         <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -1478,7 +1492,7 @@
       <div class="set-group-title">О приложении</div>
       <div class="set-row">
         <div class="set-label">Версия</div>
-        <div class="set-value" id="setVersion">1.1.4</div>
+        <div class="set-value" id="setVersion">1.2.0</div>
       </div>
     </div>
 
@@ -1604,7 +1618,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.1.4';
+const APP_VERSION = '1.2.0';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -2029,6 +2043,16 @@ function renderFav() {
     return;
   }
   const frag = document.createDocumentFragment();
+
+  const bar = document.createElement('div');
+  bar.className = 'list-actions';
+  const playAll = document.createElement('button');
+  playAll.className = 'chip';
+  playAll.textContent = '▶ Играть всё';
+  playAll.addEventListener('click', () => playList(idx.slice()));
+  bar.appendChild(playAll);
+  frag.appendChild(bar);
+
   idx.forEach((i, n) => frag.appendChild(makeRow(i, n * 24)));
   panels.fav.appendChild(frag);
   syncPlayingRow();
@@ -2317,6 +2341,9 @@ function loadTrack(index) {
 
   if (!queue.length || queue.indexOf(index) === -1) buildQueue(index);
   queuePos = queue.indexOf(index);
+
+  setHashFor(t);
+  saveQueue();
 }
 
 function playIndex(index) {
@@ -2625,6 +2652,22 @@ function openInfo() {
     infoBody.appendChild(row);
   });
 
+  const actions = document.createElement('div');
+  actions.className = 'sheet-actions';
+
+  const dl = document.createElement('button');
+  dl.className = 'chip';
+  dl.textContent = '⬇️ Скачать';
+  dl.addEventListener('click', () => downloadTrack(t));
+
+  const sh = document.createElement('button');
+  sh.className = 'chip';
+  sh.textContent = '📤 Поделиться';
+  sh.addEventListener('click', () => shareTrack(t));
+
+  actions.append(dl, sh);
+  infoBody.appendChild(actions);
+
   infoScrim.classList.add('open');
   infoSheet.classList.add('open');
 }
@@ -2784,7 +2827,7 @@ const SETTINGS_KEY = 'jt_settings_v1';
 let pendingSeek = null;
 let lastStateSave = 0;
 
-let settings = { remember: true, next: true, motion: false, engine: false };
+let settings = { remember: true, next: true, motion: false, engine: false, offline: true };
 
 function loadSettings() {
   try {
@@ -3082,6 +3125,10 @@ document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
       if (settings.engine) startEngine();
       else stopEngine();
     }
+    if (key === 'offline') {
+      if (settings.offline) cacheUpcoming();
+      else clearAudioCache();
+    }
   });
 });
 
@@ -3276,6 +3323,171 @@ makeSlider(scrub, (ratio) => {
   tCur.textContent = fmt(t);
   audio.currentTime = t;
 });
+
+/* ══════════════════════════════════════════════════════════
+   Играть списком, ссылки, скачивание
+   ══════════════════════════════════════════════════════════ */
+function playList(indices) {
+  const list = indices.filter((i) => i >= 0 && i < tracks.length);
+  if (!list.length) return;
+
+  queue = list.slice();
+  if (shuffle) shuffleQueue(queue[0]);
+  queuePos = 0;
+
+  loadTrack(queue[0]);
+  play();
+  hapticTap();
+}
+
+const slugOf = (t) => encodeURIComponent((t.artist || '') + ' — ' + (t.title || ''));
+
+function extOf(url) {
+  const m = /\.(mp3|flac|m4a|ogg|wav|aac|opus)(\?|$)/i.exec(url || '');
+  return m ? '.' + m[1].toLowerCase() : '.mp3';
+}
+
+function openInBrowser(url) {
+  if (tg && tg.openLink) {
+    try { tg.openLink(url); return; } catch (e) {}
+  }
+  window.open(url, '_blank');
+}
+
+function downloadTrack(t) {
+  const name = ((t.artist || '') + ' — ' + (t.title || ''))
+    .replace(/[\\/:*?"<>|]/g, '')
+    .trim() + extOf(t.src);
+
+  if (tg && tg.downloadFile) {
+    try {
+      tg.downloadFile({ url: t.src, file_name: name }, (ok) => {
+        if (!ok) openInBrowser(t.src);
+      });
+      return;
+    } catch (e) {}
+  }
+  openInBrowser(t.src);
+}
+
+function shareTrack(t) {
+  const url = location.origin + location.pathname + '#track=' + slugOf(t);
+  const text = (t.artist || '') + ' — ' + (t.title || '');
+
+  if (tg && tg.shareURL) {
+    try { tg.shareURL(url, text); return; } catch (e) {}
+  }
+  openInBrowser(
+    'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text)
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Ссылка на трек (#track=...)
+   ══════════════════════════════════════════════════════════ */
+function indexFromHash() {
+  const m = /#track=(.+)$/.exec(location.hash || '');
+  if (!m) return -1;
+
+  let raw = '';
+  try { raw = decodeURIComponent(m[1]); } catch (e) { return -1; }
+
+  const cut = raw.lastIndexOf(' — ');
+  if (cut < 0) return -1;
+  const artist = raw.slice(0, cut);
+  const title = raw.slice(cut + 3);
+
+  return tracks.findIndex((t) => (t.artist || '') === artist && (t.title || '') === title);
+}
+
+function setHashFor(t) {
+  try {
+    history.replaceState(null, '', '#track=' + slugOf(t));
+  } catch (e) {}
+}
+
+window.addEventListener('hashchange', () => {
+  const i = indexFromHash();
+  if (i < 0) return;
+  loadTrack(i);
+  openPlayer();
+});
+
+/* ══════════════════════════════════════════════════════════
+   Очередь переживает перезагрузку
+   ══════════════════════════════════════════════════════════ */
+const QUEUE_KEY = 'jt_queue_v1';
+
+function saveQueue() {
+  if (!queue.length || !tracks.length) return;
+  try {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify({
+      list: queue.map((i) => (tracks[i] ? tracks[i].src : '')),
+      shuffle: shuffle
+    }));
+  } catch (e) {}
+}
+
+function restoreQueue() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(QUEUE_KEY) || 'null'); } catch (e) {}
+  if (!saved || !Array.isArray(saved.list)) return false;
+
+  const list = saved.list
+    .map((src) => (src ? tracks.findIndex((t) => t.src === src) : -1))
+    .filter((i) => i >= 0);
+
+  if (!list.length) return false;
+
+  queue = list;
+  if (typeof saved.shuffle === 'boolean') shuffle = saved.shuffle;
+  return true;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Офлайн-кэш треков (через Service Worker)
+   ══════════════════════════════════════════════════════════ */
+const AUDIO_CACHE = 'jt-audio-v1';
+const AUDIO_MAX = 6;
+let caching = false;
+
+/* качаем текущий трек и пару следующих в Cache Storage — SW потом отдаст их офлайн */
+async function cacheUpcoming() {
+  if (!settings.offline || caching) return;
+  if (currentIndex < 0 || !('caches' in window)) return;
+
+  caching = true;
+  try {
+    const cache = await caches.open(AUDIO_CACHE);
+    const urls = [];
+
+    for (let k = 0; k < 3; k++) {
+      const idx = queue[queuePos + k];
+      if (idx != null && tracks[idx] && tracks[idx].src) urls.push(tracks[idx].src);
+    }
+
+    for (const url of urls) {
+      if (await cache.match(url)) continue;
+      try {
+        const res = await fetch(url, { mode: 'no-cors' });
+        if (res) await cache.put(url, res);
+      } catch (e) {}
+    }
+
+    const keys = await cache.keys();
+    const extra = keys.length - AUDIO_MAX;
+    for (let i = 0; i < extra; i++) await cache.delete(keys[i]);
+  } catch (e) {
+    console.warn('[cache]', e.message);
+  } finally {
+    caching = false;
+  }
+}
+
+async function clearAudioCache() {
+  if (!('caches' in window)) return;
+  try { await caches.delete(AUDIO_CACHE); } catch (e) {}
+}
 
 /* ══════════════════════════════════════════════════════════
    Скорость воспроизведения
@@ -3583,6 +3795,7 @@ let lastStatsSave = 0;
 audio.addEventListener('playing', () => {
   countPlay();
   lastAudioTime = audio.currentTime;
+  cacheUpcoming();
 });
 
 audio.addEventListener('timeupdate', () => {
@@ -3647,6 +3860,15 @@ if ('serviceWorker' in navigator &&
   }
 
   renderAllPanels();
+  restoreQueue();               // порядок очереди с прошлой сессии
+
+  // ссылка вида #track=... важнее «где остановился»
+  const deepIndex = indexFromHash();
+  if (deepIndex >= 0) {
+    loadTrack(deepIndex);
+    openPlayer();
+    return;
+  }
 
   // продолжаем с того места, где остановился
   const resumeIndex = saved && saved.src
