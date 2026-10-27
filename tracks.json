@@ -224,5 +224,28 @@
     "cover": "https://pomf2.lain.la/f/atp9kp5k.jpg",
     "duration": 158,
     "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png"
+  },
+  {
+    "title": "ADRENALINE",
+    "artist": "CMH",
+    "album": "KILL THIS ALBUM",
+    "year": "2025",
+    "release": "2025-01-24",
+    "featuring": [],
+    "producer": [
+      "BEATCASTER",
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH",
+      "Антон Лиссов (Anton Lissov)",
+      "BEATCASTER",
+      "spbwaves"
+    ],
+    "label": "KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/osbtyeer.flac",
+    "cover": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png",
+    "duration": 141
   }
 ]
