@@ -4,7 +4,7 @@
    - обложки — кэш в приоритете
    - аудио — кэшируется по запросу плеера (последние несколько треков)
 */
-const VERSION = 'jt-v1.2.0';
+const VERSION = 'jt-v1.3.0';
 const SHELL = './index.html';
 const AUDIO_CACHE = 'jt-audio-v1';
 const AUDIO_MAX = 6;   // сколько треков держим офлайн
@@ -76,19 +76,33 @@ function isAudio(url) {
   return /\.(mp3|flac|m4a|ogg|wav|aac|opus)(\?|$)/i.test(url);
 }
 
+
+/* офлайн: отдаём трек из кэша (перемотка в этом режиме ограничена) */
+async function serveAudio(req) {
+  try {
+    const cache = await caches.open(AUDIO_CACHE);
+    const hit = await cache.match(req.url);
+    if (hit) return hit;
+  } catch (e) {}
+
+  try {
+    return await fetch(req);
+  } catch (e) {
+    return new Response('', { status: 504, statusText: 'Offline' });
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
 
-  // аудио — сначала офлайн-кэш (работает и для чужих доменов)
+  // аудио: пока есть сеть — вообще не вмешиваемся,
+  // иначе браузер не может перематывать (перемотка через SW ломается)
   if (isAudio(url.pathname) || req.destination === 'audio') {
-    event.respondWith(
-      caches.open(AUDIO_CACHE).then((c) =>
-        c.match(req).then((hit) => hit || fetch(req))
-      )
-    );
+    if (navigator.onLine) return;
+    event.respondWith(serveAudio(req));
     return;
   }
 
