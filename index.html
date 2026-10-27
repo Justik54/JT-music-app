@@ -116,12 +116,24 @@
     flex-shrink: 0;
   }
 
+  .brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 6px 0 16px;
+  }
+  .brand-row .icon-btn {
+    position: absolute;
+    right: -6px;
+    top: 0;
+    color: rgba(244, 247, 250, 0.28);
+  }
   .brand {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 9px;
-    padding: 6px 0 16px;
     font-size: 9.5px;
     font-weight: 600;
     letter-spacing: 0.42em;
@@ -921,6 +933,55 @@
   }
   .cover-full.open img { transform: scale(1); }
 
+  /* настройки */
+  .set-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .set-row:last-child { border-bottom: none; }
+  .set-label { font-size: 13.5px; color: var(--text); }
+  .set-row.action { cursor: pointer; transition: opacity 150ms ease; }
+  .set-row.action:active { opacity: 0.55; }
+  .set-row.action .set-label { color: var(--sub); }
+  .set-row.danger .set-label { color: #ff6b6b; }
+
+  .switch {
+    width: 42px;
+    height: 24px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background 220ms ease;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 220ms var(--ease-spring);
+  }
+  .switch.on { background: var(--accent); }
+  .switch.on::after { transform: translateX(18px); }
+
+  .set-version {
+    text-align: center;
+    font-size: 11px;
+    color: var(--faint);
+    padding: 18px 0 4px;
+  }
+
   /* очередь */
   .q-row {
     display: flex;
@@ -983,7 +1044,12 @@
   <!-- ── экран 1: библиотека ── -->
   <section class="screen" id="scrLibrary">
     <div class="lib-head">
-      <header class="brand"><b>JT</b><i>·</i><span>без мата</span></header>
+      <div class="brand-row">
+        <header class="brand"><b>JT</b><i>·</i><span>без мата</span></header>
+        <button class="icon-btn" id="settingsBtn" aria-label="Настройки">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
       <nav class="tabs">
         <div class="tab-indicator" id="tabInd"></div>
         <button class="tab active" data-tab="all">Все</button>
@@ -1211,6 +1277,7 @@ const searchInput = $('searchInput');
 const sortBtn = $('sortBtn');
 const coverFull = $('coverFull');
 const coverFullImg = $('coverFullImg');
+const settingsBtn = $('settingsBtn');
 
 const panels = { all: $('panelAll'), fav: $('panelFav'), albums: $('panelAlbums') };
 
@@ -2150,11 +2217,29 @@ function openQueue() {
    Память: где остановился
    ══════════════════════════════════════════════════════════ */
 const STATE_KEY = 'jt_state_v1';
+const SETTINGS_KEY = 'jt_settings_v1';
 let pendingSeek = null;
 let lastStateSave = 0;
 
+let settings = { remember: true, next: true };
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+    if (s && typeof s === 'object') settings = Object.assign(settings, s);
+  } catch (e) {}
+}
+
+function saveSettings() {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+}
+
+function clearState() {
+  try { localStorage.removeItem(STATE_KEY); } catch (e) {}
+}
+
 function saveState(force) {
-  if (currentIndex < 0) return;
+  if (!settings.remember || currentIndex < 0) return;
   const now = Date.now();
   if (!force && now - lastStateSave < 5000) return;
   lastStateSave = now;
@@ -2174,6 +2259,70 @@ function loadState() {
   } catch (e) {
     return null;
   }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Настройки
+   ══════════════════════════════════════════════════════════ */
+function settingsToggle(label, key) {
+  const row = document.createElement('div');
+  row.className = 'set-row';
+
+  const l = document.createElement('div');
+  l.className = 'set-label';
+  l.textContent = label;
+
+  const sw = document.createElement('button');
+  sw.className = 'switch' + (settings[key] ? ' on' : '');
+  sw.addEventListener('click', () => {
+    settings[key] = !settings[key];
+    sw.classList.toggle('on', settings[key]);
+    saveSettings();
+    if (key === 'remember' && !settings[key]) clearState();
+  });
+
+  row.append(l, sw);
+  return row;
+}
+
+function settingsAction(label, fn, danger) {
+  const row = document.createElement('div');
+  row.className = 'set-row action' + (danger ? ' danger' : '');
+
+  const l = document.createElement('div');
+  l.className = 'set-label';
+  l.textContent = label;
+
+  row.append(l);
+  row.addEventListener('click', fn);
+  return row;
+}
+
+function openSettings() {
+  sheetHead.textContent = 'Настройки';
+  infoBody.innerHTML = '';
+
+  infoBody.appendChild(settingsToggle('Запоминать, где остановился', 'remember'));
+  infoBody.appendChild(settingsToggle('Переходить к следующему треку', 'next'));
+
+  infoBody.appendChild(settingsAction('Сбросить память позиции', () => {
+    clearState();
+    pendingSeek = null;
+  }));
+
+  infoBody.appendChild(settingsAction('Очистить избранное', () => {
+    favorites.clear();
+    saveFavs();
+    renderAllPanels();
+  }, true));
+
+  const ver = document.createElement('div');
+  ver.className = 'set-version';
+  ver.textContent = 'JT Music · ' + tracks.length + ' треков';
+  infoBody.appendChild(ver);
+
+  infoScrim.classList.add('open');
+  infoSheet.classList.add('open');
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -2202,6 +2351,7 @@ coverWrap.addEventListener('click', () => {
   coverFull.classList.add('open');
 });
 coverFull.addEventListener('click', () => coverFull.classList.remove('open'));
+settingsBtn.addEventListener('click', openSettings);
 
 /* поиск */
 let searchTimer = null;
@@ -2305,7 +2455,10 @@ audio.addEventListener('timeupdate', () => {
   saveState(false);
 });
 
-audio.addEventListener('ended', () => nextTrack(true));
+audio.addEventListener('ended', () => {
+  if (settings.next) nextTrack(true);
+  else setPlayingUI(false);
+});
 
 audio.addEventListener('error', () => {
   setPlayingUI(false);
@@ -2334,6 +2487,7 @@ makeSlider(scrub, (ratio) => {
    ══════════════════════════════════════════════════════════ */
 (async function init() {
   loadFavs();
+  loadSettings();
   setupVolume();
   setPlayingUI(false);          // сразу помечаем: ничего не играет
 
