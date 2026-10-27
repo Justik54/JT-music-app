@@ -533,7 +533,7 @@
   #scrSettings.open { transform: translateX(0); }
 
   .set-group {
-    margin: 18px 0 0;
+    margin: 12px 0 0;
     background: var(--surface);
     border-radius: 16px;
     padding: 4px 16px;
@@ -903,6 +903,9 @@
   }
 
   .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     height: 30px;
     padding: 0 13px;
     border-radius: 15px;
@@ -915,6 +918,7 @@
     cursor: pointer;
     transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out);
   }
+  .chip svg { width: 15px; height: 15px; flex-shrink: 0; }
   .chip:active { transform: scale(0.95); }
   .chip.on {
     background: rgba(59, 157, 255, 0.16);
@@ -947,7 +951,7 @@
     flex-wrap: wrap;
   }
   .list-actions { margin-bottom: 10px; }
-  .sheet-actions { margin-top: 16px; }
+  .sheet-actions { margin: 10px 0 6px; }
 
   /* статистика */
   .stat-grid {
@@ -1206,7 +1210,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    padding: 13px 0;
+    padding: 11px 0;
     border-bottom: 1px solid var(--line);
   }
   .set-row:last-child { border-bottom: none; }
@@ -1444,17 +1448,13 @@
     </div>
 
     <div class="set-group" id="setGroup2">
-      <div class="set-group-title">Анимации</div>
+      <div class="set-group-title">Интерфейс</div>
       <div class="set-row">
         <div class="set-label">Плавная фильтрация списка</div>
         <button class="switch" data-key="motion" aria-label="Плавная фильтрация">
           <span class="switch-knob"></span>
         </button>
       </div>
-    </div>
-
-    <div class="set-group" id="setGroup3">
-      <div class="set-group-title">Движок</div>
       <div class="set-row">
         <div class="set-label">
           Продвинутый движок
@@ -1466,7 +1466,7 @@
       </div>
     </div>
 
-    <div class="set-group" id="setGroup4">
+    <div class="set-group" id="setGroup3">
       <div class="set-group-title">Данные</div>
       <div class="set-row">
         <div class="set-label">Кэшировать треки офлайн</div>
@@ -1478,6 +1478,10 @@
         <div class="set-label">Моя статистика</div>
         <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </div>
+      <div class="set-row action" id="clearCache">
+        <div class="set-label">Очистить кэш</div>
+        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
       <div class="set-row action" id="resetState">
         <div class="set-label">Сбросить память позиции</div>
         <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -1485,14 +1489,6 @@
       <div class="set-row action danger" id="clearFavs">
         <div class="set-label">Очистить избранное</div>
         <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </div>
-    </div>
-
-    <div class="set-group" id="setGroup5">
-      <div class="set-group-title">О приложении</div>
-      <div class="set-row">
-        <div class="set-label">Версия</div>
-        <div class="set-value" id="setVersion">1.2.0</div>
       </div>
     </div>
 
@@ -1618,7 +1614,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.1';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -1632,6 +1628,13 @@ const LUCIDE_PATHS = {
   volume1:
     '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/>' +
     '<path d="M16 9a5 5 0 0 1 0 6"/>',
+  download:
+    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+    '<polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+  share:
+    '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>' +
+    '<line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/>' +
+    '<line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
   volumeX:
     '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/>' +
     '<line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>'
@@ -1676,7 +1679,6 @@ const scrLibrary = $('scrLibrary');
 const scrAlbum = $('scrAlbum');
 const scrPlayer = $('scrPlayer');
 const scrSettings = $('scrSettings');
-const setVersion = $('setVersion');
 const setFoot = $('setFoot');
 const tabPill = $('tabPill');
 
@@ -2655,18 +2657,25 @@ function openInfo() {
   const actions = document.createElement('div');
   actions.className = 'sheet-actions';
 
-  const dl = document.createElement('button');
-  dl.className = 'chip';
-  dl.textContent = '⬇️ Скачать';
-  dl.addEventListener('click', () => downloadTrack(t));
+  const mkAction = (label, iconName, handler) => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      LUCIDE_PATHS[iconName] + '</svg>';
+    b.appendChild(document.createTextNode(label));
+    b.addEventListener('click', handler);
+    return b;
+  };
 
-  const sh = document.createElement('button');
-  sh.className = 'chip';
-  sh.textContent = '📤 Поделиться';
-  sh.addEventListener('click', () => shareTrack(t));
+  actions.append(
+    mkAction('Скачать', 'download', () => downloadTrack(t)),
+    mkAction('Поделиться', 'share', () => shareTrack(t))
+  );
 
-  actions.append(dl, sh);
-  infoBody.appendChild(actions);
+  // кнопки держим сверху — в длинной карточке до них не доскроллить
+  infoBody.insertBefore(actions, infoBody.children[1] || null);
 
   infoScrim.classList.add('open');
   infoSheet.classList.add('open');
@@ -3070,8 +3079,9 @@ function paintSettings() {
   document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
     sw.classList.toggle('on', !!settings[sw.dataset.key]);
   });
-  setVersion.textContent = APP_VERSION;
-  setFoot.textContent = 'JT Music · ' + tracks.length + ' ' + plural(tracks.length, 'трек', 'трека', 'треков');
+  setFoot.textContent =
+    'JT Music · ' + tracks.length + ' ' + plural(tracks.length, 'трек', 'трека', 'треков') +
+    ' · v' + APP_VERSION;
 }
 
 function hapticTap() {
@@ -3140,6 +3150,31 @@ $('resetState').addEventListener('click', () => {
   if (tg && tg.HapticFeedback) {
     try { tg.HapticFeedback.notificationOccurred('success'); } catch (e) {}
   }
+});
+
+$('clearCache').addEventListener('click', async () => {
+  const ok = await askConfirm(
+    'Удалятся скачанные треки и обложки. При следующем запуске они загрузятся заново.',
+    'Очистить кэш?'
+  );
+  if (!ok) return;
+
+  await clearAudioCache();
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((k) => caches.delete(k)));
+  } catch (e) {}
+
+  hapticTap();
+
+  const label = $('clearCache').querySelector('.set-label');
+  const original = label.textContent;
+  label.textContent = 'Кэш очищен';
+  label.style.color = 'var(--accent)';
+  setTimeout(() => {
+    label.textContent = original;
+    label.style.color = '';
+  }, 1600);
 });
 
 $('clearFavs').addEventListener('click', async () => {
