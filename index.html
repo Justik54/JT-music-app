@@ -1614,7 +1614,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.2.2';
+const APP_VERSION = '1.2.3';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -3325,10 +3325,14 @@ audio.addEventListener('loadedmetadata', () => {
 audio.addEventListener('timeupdate', () => {
   if (!audio.duration || !isFinite(audio.duration)) return;
   const p = (audio.currentTime / audio.duration) * 100;
-  scrubFill.style.width = p + '%';
-  scrubKnob.style.left = p + '%';
   miniFill.style.width = p + '%';
-  tCur.textContent = fmt(audio.currentTime);
+
+  // пока тянем ползунок — не перебиваем его позицию
+  if (!scrub.classList.contains('dragging')) {
+    scrubFill.style.width = p + '%';
+    scrubKnob.style.left = p + '%';
+    tCur.textContent = fmt(audio.currentTime);
+  }
   saveState(false);
 });
 
@@ -3350,13 +3354,20 @@ audio.addEventListener('playing', () => {
   if (currentIndex >= 0) artistEl.textContent = artistLine(tracks[currentIndex]);
 });
 
+/* во время перетаскивания только двигаем ползунок,
+   реальная перемотка — один раз на отпускании.
+   Иначе десятки seek подряд вешают загрузку буфера */
+let scrubRatio = 0;
+
 makeSlider(scrub, (ratio) => {
   if (!audio.duration || !isFinite(audio.duration)) return;
-  const t = ratio * audio.duration;
+  scrubRatio = ratio;
   scrubFill.style.width = (ratio * 100) + '%';
   scrubKnob.style.left = (ratio * 100) + '%';
-  tCur.textContent = fmt(t);
-  audio.currentTime = t;
+  tCur.textContent = fmt(ratio * audio.duration);
+}, () => {
+  if (!audio.duration || !isFinite(audio.duration)) return;
+  audio.currentTime = scrubRatio * audio.duration;
 });
 
 /* ══════════════════════════════════════════════════════════
