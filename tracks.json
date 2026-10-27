@@ -179,5 +179,27 @@
     "src": "https://pomf2.lain.la/f/0fa9n018.flac",
     "cover": "https://pomf2.lain.la/f/861vwt9s.jpg",
     "duration": 143
+  },
+  {
+    "title": "А МОЖЕТ ДА (OR MAYBE YES)",
+    "artist": "CMH",
+    "album": "KILL THIS ALBUM",
+    "year": "2025",
+    "release": "2025-01-24",
+    "featuring": [],
+    "producer": [
+      "BEATCASTER",
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH",
+      "BEATCASTER",
+      "spbwaves"
+    ],
+    "label": "KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/37vqfebo.flac",
+    "cover": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png",
+    "duration": 118
   }
 ]
