@@ -1614,7 +1614,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.2.4';
+const APP_VERSION = '1.2.5';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -3372,8 +3372,8 @@ makeSlider(scrub, (ratio) => {
   recoverStuckSeek(t);
 });
 
-/* если после перемотки буфер завис (сеть не отдала нужный кусок) —
-   один раз перезагружаем трек и прыгаем на то же место */
+/* если после перемотки буфер завис — один раз легонько «толкаем» его
+   повторной установкой позиции (без перезагрузки трека) */
 let lastRecovery = 0;
 
 function recoverStuckSeek(target) {
@@ -3384,12 +3384,7 @@ function recoverStuckSeek(target) {
     if (Date.now() - lastRecovery < 8000) return;
 
     lastRecovery = Date.now();
-    const pos = audio.currentTime;
-    audio.load();
-    audio.addEventListener('loadedmetadata', () => {
-      audio.currentTime = pos;
-      play();
-    }, { once: true });
+    audio.currentTime = target + 0.05;
   }, 2500);
 }
 
