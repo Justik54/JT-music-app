@@ -1614,7 +1614,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.2.6';
+const APP_VERSION = '1.2.7';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -3367,8 +3367,15 @@ makeSlider(scrub, (ratio) => {
   tCur.textContent = fmt(ratio * audio.duration);
 }, () => {
   if (!audio.duration || !isFinite(audio.duration)) return;
+
+  // пауза → seek → play: так браузер не гоняет seek и загрузку одновременно
+  const wasPlaying = !audio.paused;
+  if (wasPlaying) audio.pause();
+
   const t = scrubRatio * audio.duration;
   audio.currentTime = t;
+
+  if (wasPlaying) play();
   recoverStuckSeek(t);
 });
 
