@@ -356,7 +356,12 @@
   .eq path:nth-child(5) { animation-delay: 120ms; }
   .eq path:nth-child(6) { animation-delay: 320ms; }
 
-  body.paused .eq line { animation-play-state: paused; }
+  /* на паузе индикатор замирает ровными столбиками, а не дёргается */
+  body.paused .eq line,
+  body.paused .eq path {
+    animation: none;
+    transform: none;
+  }
 
   @keyframes eq {
     from { transform: scaleY(0.25); }
@@ -790,13 +795,13 @@
   }
   .cover-wrap.dim img { opacity: 0; }
 
-  .meta { text-align: center; margin-bottom: 20px; }
+  .meta { text-align: center; margin-bottom: 22px; }
   .title {
     font-size: 21px;
     font-weight: 700;
     letter-spacing: -0.022em;
     line-height: 1.2;
-    margin-bottom: 5px;
+    margin-bottom: 7px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -804,7 +809,7 @@
   .artist {
     font-size: 14px;
     color: var(--sub);
-    margin-bottom: 3px;
+    margin-bottom: 9px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -819,28 +824,28 @@
     white-space: nowrap;
   }
 
-  /* прогресс — M3 slider: толстый трек + вертикальный «нотч» */
+  /* прогресс — тонкий слайдер */
   .scrub {
     position: relative;
-    height: 30px;
+    height: 24px;
     display: flex;
     align-items: center;
     cursor: pointer;
     touch-action: none;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .scrub-track {
     position: absolute;
     left: 0; right: 0;
-    height: 12px;
-    border-radius: 6px;
+    height: 5px;
+    border-radius: 3px;
     background: rgba(255, 255, 255, 0.1);
     overflow: hidden;
   }
   .scrub-fill {
     height: 100%;
     width: 0%;
-    border-radius: 6px;
+    border-radius: 3px;
     background: var(--text);
     transition: width 120ms linear;
   }
@@ -850,7 +855,7 @@
     top: 50%;
     left: 0;
     width: 3px;
-    height: 18px;
+    height: 11px;
     margin-left: -1.5px;
     border-radius: 1.5px;
     background: var(--text);
@@ -1085,8 +1090,8 @@
   .vslider-track {
     position: absolute;
     left: 0; right: 0;
-    height: 10px;
-    border-radius: 5px;
+    height: 5px;
+    border-radius: 3px;
     background: rgba(255, 255, 255, 0.1);
     overflow: hidden;
   }
@@ -1094,14 +1099,14 @@
     height: 100%;
     width: 100%;
     background: rgba(244, 247, 250, 0.55);
-    border-radius: 5px;
+    border-radius: 3px;
   }
   .vslider-knob {
     position: absolute;
     top: 50%;
     left: 100%;
     width: 3px;
-    height: 18px;
+    height: 11px;
     margin-left: -1.5px;
     border-radius: 1.5px;
     background: rgba(244, 247, 250, 0.9);
@@ -1495,7 +1500,7 @@
       <div class="set-group-title">О приложении</div>
       <div class="set-row">
         <div class="set-label">Версия</div>
-        <div class="set-value" id="setVersion">1.1.0</div>
+        <div class="set-value" id="setVersion">1.1.1</div>
       </div>
     </div>
 
@@ -1623,7 +1628,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
