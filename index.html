@@ -566,6 +566,7 @@
   #scrSettings.open .set-group:nth-child(2) { animation-delay: 90ms; }
   #scrSettings.open .set-group:nth-child(3) { animation-delay: 140ms; }
   #scrSettings.open .set-group:nth-child(4) { animation-delay: 190ms; }
+  #scrSettings.open .set-group:nth-child(5) { animation-delay: 240ms; }
 
   @keyframes groupIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -1065,56 +1066,60 @@
   .set-row.action .set-label { color: var(--sub); }
   .set-row.danger .set-label { color: #ff6b6b; }
 
-  /* переключатель в стиле Material 3 */
+  /* переключатель — один размер кружка в обоих состояниях, рост только на нажатие */
   .switch {
     width: 52px;
     height: 32px;
-    border: 2px solid rgba(255, 255, 255, 0.28);
+    border: 2px solid rgba(255, 255, 255, 0.22);
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.06);
     position: relative;
     cursor: pointer;
     flex-shrink: 0;
     padding: 0;
-    transition: background 220ms var(--ease-out), border-color 220ms var(--ease-out);
+    transition: background-color 200ms ease, border-color 200ms ease;
   }
   .switch-knob {
     position: absolute;
     top: 50%;
-    left: 6px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
-    transform: translateY(-50%);
-    display: grid;
-    place-items: center;
-    transition: left 260ms var(--ease-drawer), width 260ms var(--ease-drawer),
-                height 260ms var(--ease-drawer), background 200ms ease;
+    left: 0;
+    width: 22px;
+    height: 22px;
+    margin-top: -11px;
+    transform: translateX(5px);
+    transition: transform 240ms var(--ease-drawer);
+    will-change: transform;
   }
-  .switch-check {
-    width: 15px;
-    height: 15px;
-    fill: none;
-    stroke: var(--accent);
-    stroke-width: 3.4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    opacity: 0;
-    transform: scale(0.6);
-    transition: opacity 150ms ease, transform 200ms var(--ease-out);
+  .switch-knob::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.62);
+    transition: transform 130ms var(--ease-out), background-color 200ms ease;
   }
   .switch.on {
     background: var(--accent);
     border-color: var(--accent);
   }
-  .switch.on .switch-knob {
-    left: 18px;
-    width: 24px;
-    height: 24px;
-    background: #fff;
-  }
-  .switch.on .switch-check { opacity: 1; transform: scale(1); }
+  .switch.on .switch-knob { transform: translateX(21px); }
+  .switch.on .switch-knob::before { background: #fff; }
+
+  /* нажатие: выключенный — кружок растёт, включённый — сжимается */
+  .switch:active .switch-knob::before,
+  .switch.pressing .switch-knob::before { transform: scale(1.16); }
+  .switch.on:active .switch-knob::before,
+  .switch.on.pressing .switch-knob::before { transform: scale(0.84); }
+
+  .switch:disabled { opacity: 0.5; cursor: default; }
+
+  /* иконки, которые рисует React-движок */
+  .tab-icon { display: none; width: 21px; height: 21px; }
+  body.engine-on .tab-icon { display: block; }
+  body.engine-on .tabbar-btn > svg { display: none; }
+  /* при включённом движке появление строк и пилюлю ведёт motion, а не CSS */
+  body.engine-on .row, body.engine-on .album-card { animation: none; }
+  body.engine-on .tabbar-pill { transition: none; }
 
   /* очередь */
   .q-row {
@@ -1243,18 +1248,22 @@
       <div class="tabbar-pill" id="tabPill"></div>
       <button class="tabbar-btn active" data-tab="all">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+        <span class="tab-icon" data-icon="all"></span>
         <span>Все</span>
       </button>
       <button class="tabbar-btn" data-tab="fav">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <span class="tab-icon" data-icon="fav"></span>
         <span>Избранное</span>
       </button>
       <button class="tabbar-btn" data-tab="albums">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <span class="tab-icon" data-icon="albums"></span>
         <span>Альбомы</span>
       </button>
       <button class="tabbar-btn" id="settingsBtn">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="tab-icon" data-icon="settings"></span>
         <span>Настройки</span>
       </button>
     </nav>
@@ -1277,28 +1286,38 @@
       <div class="set-group-title">Воспроизведение</div>
       <div class="set-row">
         <div class="set-label">Запоминать, где остановился</div>
-        <button class="switch" data-key="remember" aria-label="Запоминать позицию"><span class="switch-knob"><svg class="switch-check" viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></span></button>
+        <button class="switch" data-key="remember" aria-label="Запоминать позицию"><span class="switch-knob"></span></button>
       </div>
       <div class="set-row">
         <div class="set-label">Переходить к следующему треку</div>
-        <button class="switch" data-key="next" aria-label="Автопереход"><span class="switch-knob"><svg class="switch-check" viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></span></button>
+        <button class="switch" data-key="next" aria-label="Автопереход"><span class="switch-knob"></span></button>
       </div>
     </div>
 
     <div class="set-group" id="setGroup2">
       <div class="set-group-title">Анимации</div>
       <div class="set-row">
-        <div class="set-label">
-          Плавная фильтрация списка
-          <span class="set-hint">подгрузит 4 КБ с CDN</span>
-        </div>
+        <div class="set-label">Плавная фильтрация списка</div>
         <button class="switch" data-key="motion" aria-label="Плавная фильтрация">
-          <span class="switch-knob"><svg class="switch-check" viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></span>
+          <span class="switch-knob"></span>
         </button>
       </div>
     </div>
 
     <div class="set-group" id="setGroup3">
+      <div class="set-group-title">Движок</div>
+      <div class="set-row">
+        <div class="set-label">
+          Продвинутый движок
+          <span class="set-hint" id="engineHint"></span>
+        </div>
+        <button class="switch" data-key="engine" aria-label="Продвинутый движок">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="set-group" id="setGroup4">
       <div class="set-group-title">Данные</div>
       <div class="set-row action" id="resetState">
         <div class="set-label">Сбросить память позиции</div>
@@ -1310,11 +1329,11 @@
       </div>
     </div>
 
-    <div class="set-group" id="setGroup4">
+    <div class="set-group" id="setGroup5">
       <div class="set-group-title">О приложении</div>
       <div class="set-row">
         <div class="set-label">Версия</div>
-        <div class="set-value" id="setVersion">v2</div>
+        <div class="set-value" id="setVersion">v3</div>
       </div>
     </div>
 
@@ -1875,6 +1894,11 @@ function renderAllPanels() {
   renderAll();
   renderFav();
   renderAlbums();
+  if (engine) {
+    engine.rows(panels.all);
+    engine.rows(panels.fav);
+    engine.rows(panels.albums);
+  }
 }
 
 function renderActive() {
@@ -1934,12 +1958,17 @@ tabBtns.forEach((btn) => {
     if (name === activeTab) return;
     activeTab = name;
 
+    const idx = tabBtns.indexOf(btn);
     tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
-    tabPill.style.transform = 'translateX(' + (tabBtns.indexOf(btn) * 100) + '%)';
+    if (engine) engine.pill(idx);
+    else tabPill.style.transform = 'translateX(' + idx * 100 + '%)';
     Object.keys(panels).forEach((k) => panels[k].classList.toggle('active', k === name));
+
+    if (engine) engine.refresh();
 
     if (name === 'fav') renderFav();
     if (name === 'albums') renderAlbums();
+    if (engine) engine.rows(panels[name]);
 
     if (tg && tg.HapticFeedback) {
       try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
@@ -2438,7 +2467,7 @@ const SETTINGS_KEY = 'jt_settings_v1';
 let pendingSeek = null;
 let lastStateSave = 0;
 
-let settings = { remember: true, next: true, motion: false };
+let settings = { remember: true, next: true, motion: false, engine: false };
 
 function loadSettings() {
   try {
@@ -2533,12 +2562,240 @@ async function applyListMotion(on) {
   }
 }
 
+/* ══════════════════════════════════════════════════════════
+   Продвинутый движок: React + Motion + анимированные иконки
+   ══════════════════════════════════════════════════════════ */
+const ENGINE_LIBS = {
+  react: 'https://esm.sh/react@18.3.1',
+  dom: 'https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1',
+  motion: 'https://esm.sh/motion@11.15.0/react?deps=react@18.3.1'
+};
+
+const REDUCE_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let engine = null;
+let engineBusy = false;
+const engineHint = $('engineHint');
+
+function engineSay(text) {
+  if (engineHint) engineHint.textContent = text || '';
+}
+
+/* иконки рисуются React-ом, анимация — spring из motion */
+function buildIcons(React, motion) {
+  const h = React.createElement;
+  const SVG = motion.svg;
+  const P = motion.path;
+  const C = motion.circle;
+
+  const base = {
+    width: 21,
+    height: 21,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.9,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': 'true'
+  };
+
+  const spring = { type: 'spring', duration: 0.36, bounce: 0.24 };
+  const quick = { duration: 0.26, ease: [0.23, 1, 0.32, 1] };
+  const center = { transformOrigin: '12px 12px' };
+
+  function ListIcon({ play }) {
+    const rows = [0, 1, 2];
+    return h(
+      SVG,
+      Object.assign({ key: play ? 'a' : 'i' }, base),
+      rows.map((i) =>
+        h(P, {
+          key: 'l' + i,
+          d: 'M8 ' + (6 + i * 6) + 'h13',
+          initial: play ? { pathLength: 0, opacity: 0.3 } : false,
+          animate: { pathLength: 1, opacity: 1 },
+          transition: { duration: 0.3, ease: [0.23, 1, 0.32, 1], delay: play ? i * 0.05 : 0 }
+        })
+      ),
+      rows.map((i) =>
+        h(P, {
+          key: 'd' + i,
+          d: 'M3 ' + (6 + i * 6) + 'h.01',
+          initial: play ? { opacity: 0 } : false,
+          animate: { opacity: 1 },
+          transition: { duration: 0.2, delay: play ? 0.05 + i * 0.05 : 0 }
+        })
+      )
+    );
+  }
+
+  function HeartIcon({ play }) {
+    return h(
+      SVG,
+      Object.assign({ key: play ? 'a' : 'i' }, base),
+      h(P, {
+        d: 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z',
+        initial: play ? { scale: 0.86, opacity: 0.6 } : false,
+        animate: { scale: 1, opacity: 1 },
+        transition: play ? { type: 'spring', duration: 0.4, bounce: 0.42 } : { duration: 0 },
+        style: center
+      })
+    );
+  }
+
+  function DiscIcon({ play }) {
+    return h(
+      SVG,
+      Object.assign(
+        {
+          key: play ? 'a' : 'i',
+          initial: play ? { rotate: -38, scale: 0.9 } : false,
+          animate: { rotate: 0, scale: 1 },
+          transition: play ? spring : { duration: 0 },
+          style: center
+        },
+        base
+      ),
+      h(C, { cx: 12, cy: 12, r: 10 }),
+      h(C, { cx: 12, cy: 12, r: 2.5 })
+    );
+  }
+
+  function GearIcon({ play }) {
+    return h(
+      SVG,
+      Object.assign(
+        {
+          key: play ? 'a' : 'i',
+          initial: play ? { rotate: -55, scale: 0.92 } : false,
+          animate: { rotate: 0, scale: 1 },
+          transition: play ? spring : { duration: 0 },
+          style: center
+        },
+        base
+      ),
+      h(P, {
+        d: 'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z'
+      }),
+      h(C, { cx: 12, cy: 12, r: 3 })
+    );
+  }
+
+  return { all: ListIcon, fav: HeartIcon, albums: DiscIcon, settings: GearIcon };
+}
+
+async function startEngine() {
+  if (engine || engineBusy) return;
+  engineBusy = true;
+
+  const sw = document.querySelector('#scrSettings .switch[data-key="engine"]');
+  if (sw) sw.disabled = true;
+  engineSay('загружаю библиотеки…');
+
+  try {
+    const [reactMod, domMod, motionMod] = await Promise.all([
+      import(ENGINE_LIBS.react),
+      import(ENGINE_LIBS.dom),
+      import(ENGINE_LIBS.motion)
+    ]);
+
+    const React = reactMod.default || reactMod;
+    const M = motionMod;                       // motion/react: motion, animate, stagger, MotionConfig
+    const icons = buildIcons(React, M.motion || M.default);
+    const roots = [];
+
+    document.querySelectorAll('.tab-icon').forEach((slot) => {
+      const Icon = icons[slot.dataset.icon];
+      if (!Icon) return;
+
+      const btn = slot.closest('.tabbar-btn');
+      const root = domMod.createRoot(slot);
+      const render = (force) =>
+        root.render(
+          React.createElement(
+            M.MotionConfig,
+            { reducedMotion: 'user' },
+            React.createElement(Icon, {
+              play: force === undefined
+                ? btn.classList.contains('active') && !REDUCE_MOTION
+                : force && !REDUCE_MOTION
+            })
+          )
+        );
+
+      render();
+      roots.push({ name: slot.dataset.icon, root, render });
+    });
+
+    document.body.classList.add('engine-on');
+    engine = {
+      roots,
+      refresh: () => roots.forEach((r) => r.render()),
+      pulse: (name) => {
+        const r = roots.find((x) => x.name === name);
+        if (!r || REDUCE_MOTION) return;
+        r.render(true);
+        setTimeout(() => r.render(), 420);
+      },
+      // пилюля таббара — spring вместо CSS-перехода
+      pill: (index) => {
+        const target = 'translateX(' + index * 100 + '%)';
+        if (REDUCE_MOTION) {
+          tabPill.style.transform = target;
+          return;
+        }
+        M.animate(tabPill, { transform: target }, { type: 'spring', duration: 0.45, bounce: 0.12 });
+      },
+      // строки списка — каскад через stagger()
+      rows: (panel) => {
+        if (REDUCE_MOTION || !panel) return;
+        const items = [...panel.querySelectorAll('.row, .album-card')].slice(0, 14);
+        if (!items.length) return;
+        M.animate(
+          items,
+          { opacity: [0, 1], transform: ['translateY(7px)', 'translateY(0px)'] },
+          { duration: 0.34, ease: [0.23, 1, 0.32, 1], delay: M.stagger ? M.stagger(0.028) : 0 }
+        );
+      }
+    };
+    engineSay('React 18 · Motion 11 · Lucide');
+  } catch (e) {
+    console.warn('[engine]', e);
+    engineSay('не загрузилось — проверь сеть');
+    settings.engine = false;
+    saveSettings();
+    if (sw) sw.classList.remove('on');
+  } finally {
+    engineBusy = false;
+    if (sw) sw.disabled = false;
+  }
+}
+
+function stopEngine() {
+  if (!engine) {
+    engineSay('');
+    return;
+  }
+
+  engine.roots.forEach((r) => r.root.unmount());
+  engine = null;
+  document.body.classList.remove('engine-on');
+  document.querySelectorAll('.tab-icon').forEach((el) => el.replaceChildren());
+  engineSay('');
+}
+
 function paintSettings() {
   document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
     sw.classList.toggle('on', !!settings[sw.dataset.key]);
   });
-  setVersion.textContent = 'v2';
+  setVersion.textContent = 'v3';
   setFoot.textContent = 'JT Music · ' + tracks.length + ' ' + plural(tracks.length, 'трек', 'трека', 'треков');
+}
+
+function hapticTap() {
+  if (tg && tg.HapticFeedback) {
+    try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
+  }
 }
 
 function plural(n, one, few, many) {
@@ -2554,6 +2811,7 @@ function openSettings() {
   paintSettings();
   scrSettings.classList.add('open');
   showTgBack(true);
+  if (engine) engine.pulse('settings');
 
   if (tg && tg.HapticFeedback) {
     try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
@@ -2566,13 +2824,25 @@ function closeSettings() {
 }
 
 document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
+  // кружок растёт на нажатие (а не от состояния) — везде одинаково
+  sw.addEventListener('pointerdown', () => sw.classList.add('pressing'));
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) =>
+    sw.addEventListener(ev, () => sw.classList.remove('pressing'))
+  );
+
   sw.addEventListener('click', () => {
     const key = sw.dataset.key;
     settings[key] = !settings[key];
     sw.classList.toggle('on', settings[key]);
     saveSettings();
+    hapticTap();
+
     if (key === 'remember' && !settings[key]) clearState();
     if (key === 'motion') applyListMotion(settings[key]);
+    if (key === 'engine') {
+      if (settings.engine) startEngine();
+      else stopEngine();
+    }
   });
 });
 
@@ -2769,6 +3039,7 @@ makeSlider(scrub, (ratio) => {
   buildAlbumCovers();
 
   if (settings.motion) applyListMotion(true);
+  if (settings.engine) startEngine();
 
   const saved = loadState();
   if (saved && SORT_LABELS[saved.sort]) {
