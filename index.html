@@ -1614,7 +1614,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.2.7';
+const APP_VERSION = '1.2.8';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -3367,38 +3367,8 @@ makeSlider(scrub, (ratio) => {
   tCur.textContent = fmt(ratio * audio.duration);
 }, () => {
   if (!audio.duration || !isFinite(audio.duration)) return;
-
-  // пауза → seek → play: так браузер не гоняет seek и загрузку одновременно
-  const wasPlaying = !audio.paused;
-  if (wasPlaying) audio.pause();
-
-  const t = scrubRatio * audio.duration;
-  audio.currentTime = t;
-
-  if (wasPlaying) play();
-  recoverStuckSeek(t);
+  audio.currentTime = scrubRatio * audio.duration;
 });
-
-/* бывает, что после перемотки хостинг обрывает запрос и буфер зависает.
-   Тогда один раз перезагружаем поток и возвращаемся на то же место */
-let lastRecovery = 0;
-
-function recoverStuckSeek(target) {
-  setTimeout(() => {
-    if (audio.paused) return;
-    if (audio.readyState >= 2) return;              // данные уже идут
-    if (Math.abs(audio.currentTime - target) > 1.5) return;
-    if (Date.now() - lastRecovery < 10000) return;
-
-    lastRecovery = Date.now();
-    const pos = target;
-    audio.load();
-    audio.addEventListener('loadedmetadata', () => {
-      audio.currentTime = pos;
-      play();
-    }, { once: true });
-  }, 4000);
-}
 
 /* ══════════════════════════════════════════════════════════
    Играть списком, ссылки, скачивание
@@ -3802,7 +3772,6 @@ function seekBy(delta) {
   if (currentIndex < 0 || !isFinite(audio.duration)) return;
   const target = Math.max(0, Math.min(audio.duration, audio.currentTime + delta));
   audio.currentTime = target;
-  if (typeof recoverStuckSeek === 'function') recoverStuckSeek(target);
   if (tg && tg.HapticFeedback) {
     try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
   }
