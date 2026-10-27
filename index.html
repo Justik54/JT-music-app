@@ -1495,7 +1495,7 @@
       <div class="set-group-title">О приложении</div>
       <div class="set-row">
         <div class="set-label">Версия</div>
-        <div class="set-value" id="setVersion">1.0.1</div>
+        <div class="set-value" id="setVersion">1.1.0</div>
       </div>
     </div>
 
@@ -1623,7 +1623,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.1.0';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -2766,6 +2766,11 @@ function enableQueueDrag() {
       if (active !== row) return;
       active = null;
 
+      // центр считаем ДО сброса transform — иначе строка «прыгает» на старое место
+      const from = Number(row.dataset.qpos);
+      const box = row.getBoundingClientRect();
+      const center = box.top + box.height / 2;
+
       row.style.transform = '';
       row.classList.remove('dragging');
 
@@ -2774,10 +2779,6 @@ function enableQueueDrag() {
       row.dataset.dragged = '1';
       setTimeout(() => { delete row.dataset.dragged; }, 350);
 
-      const from = Number(row.dataset.qpos);
-      const box = row.getBoundingClientRect();
-      const center = box.top + box.height / 2;
-
       let to = 0;
       rows.forEach((other) => {
         if (other === row) return;
@@ -2785,6 +2786,7 @@ function enableQueueDrag() {
         if (ob.top + ob.height / 2 < center) to += 1;
       });
 
+      to = Math.max(0, Math.min(rows.length - 1, to));
       if (to !== from) reorderQueue(from, to);
     };
 
