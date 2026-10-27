@@ -1614,7 +1614,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.2.3';
+const APP_VERSION = '1.2.4';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -3367,8 +3367,31 @@ makeSlider(scrub, (ratio) => {
   tCur.textContent = fmt(ratio * audio.duration);
 }, () => {
   if (!audio.duration || !isFinite(audio.duration)) return;
-  audio.currentTime = scrubRatio * audio.duration;
+  const t = scrubRatio * audio.duration;
+  audio.currentTime = t;
+  recoverStuckSeek(t);
 });
+
+/* если после перемотки буфер завис (сеть не отдала нужный кусок) —
+   один раз перезагружаем трек и прыгаем на то же место */
+let lastRecovery = 0;
+
+function recoverStuckSeek(target) {
+  setTimeout(() => {
+    if (audio.paused) return;
+    if (audio.readyState >= 3) return;
+    if (Math.abs(audio.currentTime - target) > 1.5) return;
+    if (Date.now() - lastRecovery < 8000) return;
+
+    lastRecovery = Date.now();
+    const pos = audio.currentTime;
+    audio.load();
+    audio.addEventListener('loadedmetadata', () => {
+      audio.currentTime = pos;
+      play();
+    }, { once: true });
+  }, 2500);
+}
 
 /* ══════════════════════════════════════════════════════════
    Играть списком, ссылки, скачивание
@@ -3770,7 +3793,9 @@ searchInput.addEventListener('blur', () => {
    ══════════════════════════════════════════════════════════ */
 function seekBy(delta) {
   if (currentIndex < 0 || !isFinite(audio.duration)) return;
-  audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + delta));
+  const target = Math.max(0, Math.min(audio.duration, audio.currentTime + delta));
+  audio.currentTime = target;
+  if (typeof recoverStuckSeek === 'function') recoverStuckSeek(target);
   if (tg && tg.HapticFeedback) {
     try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
   }
