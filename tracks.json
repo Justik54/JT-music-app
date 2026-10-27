@@ -248,5 +248,28 @@
     "cover": "https://pomf2.lain.la/f/atp9kp5k.jpg",
     "duration": 141,
     "coverOriginal": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png"
+  },
+  {
+    "title": "Битбокс (Beatbox)",
+    "artist": "SEEMEE",
+    "album": "TXC",
+    "year": "2021",
+    "release": "2021-06-25",
+    "featuring": [
+      "OG Buda"
+    ],
+    "producer": [
+      "chronic"
+    ],
+    "writers": [
+      "chronic",
+      "OG Buda",
+      "SEEMEE"
+    ],
+    "label": "MELON MUSIC, CPLUS",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/kof07sog.flac",
+    "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
+    "duration": 124
   }
 ]
