@@ -279,6 +279,12 @@
     margin-bottom: 2px;
   }
   .row.playing .row-title { color: var(--accent); }
+  .row-title mark {
+    background: rgba(59, 157, 255, 0.22);
+    color: var(--accent);
+    border-radius: 3px;
+    padding: 0 1px;
+  }
   .row-sub {
     font-size: 12px;
     color: var(--sub);
@@ -864,6 +870,144 @@
     margin-bottom: 14px;
   }
 
+  /* чипы под прогрессом: скорость, эквалайзер */
+  .extras {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin: -2px 0 14px;
+  }
+  .chip {
+    height: 30px;
+    padding: 0 13px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--sub);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out);
+  }
+  .chip:active { transform: scale(0.95); }
+  .chip.on {
+    background: rgba(59, 157, 255, 0.16);
+    border-color: rgba(59, 157, 255, 0.38);
+    color: var(--accent);
+  }
+
+  /* эквалайзер в шторке */
+  .eq-band {
+    display: grid;
+    grid-template-columns: 46px 1fr 42px;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+  }
+  .eq-band span {
+    font-size: 11.5px;
+    color: var(--sub);
+    font-variant-numeric: tabular-nums;
+  }
+  .eq-band output {
+    text-align: right;
+    font-size: 11.5px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .eq-band input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.12);
+    outline: none;
+  }
+  .eq-band input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+  .eq-presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 6px 0 14px;
+  }
+
+  /* очередь: перетаскивание */
+  .q-grip {
+    width: 26px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    color: var(--faint);
+    flex-shrink: 0;
+    touch-action: none;
+    cursor: grab;
+  }
+  .q-row.dragging {
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    z-index: 2;
+    position: relative;
+  }
+
+  /* статистика */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .stat-card b {
+    display: block;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+  .stat-card span {
+    font-size: 11.5px;
+    color: var(--sub);
+  }
+  .stat-list-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 16px 0 8px;
+  }
+  .stat-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .stat-line:last-child { border-bottom: none; }
+  .stat-line i { font-style: normal; color: var(--sub); font-variant-numeric: tabular-nums; }
+
+  /* история поиска */
+  .search-history {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .search-history .chip { height: 26px; font-size: 11.5px; padding: 0 10px; }
+
   .controls {
     display: flex;
     align-items: center;
@@ -1209,6 +1353,7 @@
         </div>
         <button class="sort-btn" id="sortBtn">Порядок</button>
       </div>
+      <div class="search-history" id="searchHistory"></div>
     </div>
 
     <div class="scroll">
@@ -1332,6 +1477,10 @@
 
     <div class="set-group" id="setGroup4">
       <div class="set-group-title">Данные</div>
+      <div class="set-row action" id="openStats">
+        <div class="set-label">Моя статистика</div>
+        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
       <div class="set-row action" id="resetState">
         <div class="set-label">Сбросить память позиции</div>
         <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -1390,6 +1539,11 @@
       <div class="scrub-knob" id="scrubKnob"></div>
     </div>
     <div class="times"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
+
+    <div class="extras">
+      <button class="chip" id="speedBtn" aria-label="Скорость">1×</button>
+      <button class="chip" id="eqBtn" aria-label="Эквалайзер">Эквалайзер</button>
+    </div>
 
     <div class="controls">
       <button class="btn btn-sm" id="shuffleBtn" aria-label="Перемешать">
@@ -1759,6 +1913,33 @@ if (tg && tg.BackButton) {
 /* ══════════════════════════════════════════════════════════
    Строки треков
    ══════════════════════════════════════════════════════════ */
+/* заголовок строки с подсветкой совпадений из поиска */
+function highlightTitle(text) {
+  const el = document.createElement('div');
+  el.className = 'row-title';
+
+  const q = searchQuery;
+  if (!q) {
+    el.textContent = text;
+    return el;
+  }
+
+  const low = text.toLowerCase();
+  let i = 0;
+  let idx;
+
+  while ((idx = low.indexOf(q, i)) !== -1) {
+    if (idx > i) el.appendChild(document.createTextNode(text.slice(i, idx)));
+    const m = document.createElement('mark');
+    m.textContent = text.slice(idx, idx + q.length);
+    el.appendChild(m);
+    i = idx + q.length;
+  }
+  if (i < text.length) el.appendChild(document.createTextNode(text.slice(i)));
+
+  return el;
+}
+
 function makeRow(index, delay) {
   const t = tracks[index];
   const row = document.createElement('div');
@@ -1775,9 +1956,7 @@ function makeRow(index, delay) {
   const info = document.createElement('div');
   info.className = 'row-info';
 
-  const tt = document.createElement('div');
-  tt.className = 'row-title';
-  tt.textContent = t.title;
+  const tt = highlightTitle(t.title);
 
   const ss = document.createElement('div');
   ss.className = 'row-sub';
@@ -2126,6 +2305,8 @@ function buildQueue(startIndex) {
 function loadTrack(index) {
   if (index < 0 || index >= tracks.length) return;
   currentIndex = index;
+  playCounted = false;
+  lastAudioTime = 0;
   const t = tracks[index];
 
   titleEl.textContent = t.title;
@@ -2493,6 +2674,7 @@ function openQueue() {
 
       const row = document.createElement('div');
       row.className = 'q-row';
+      row.dataset.qpos = String(n);
 
       const num = document.createElement('div');
       num.className = 'q-num';
@@ -2509,10 +2691,20 @@ function openQueue() {
       su.className = 'q-sub';
       su.textContent = artistLine(t) + ' · ' + t.album;
 
+      const grip = document.createElement('div');
+      grip.className = 'q-grip';
+      grip.setAttribute('aria-label', 'Перетащить');
+      grip.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">' +
+        '<circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/>' +
+        '<circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/>' +
+        '<circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+
       info.append(ti, su);
-      row.append(num, info);
+      row.append(num, info, grip);
 
       row.addEventListener('click', () => {
+        if (row.dataset.dragged) return;   // это было перетаскивание, а не тап
         closeInfo();
         loadTrack(idx);
         play();
@@ -2520,10 +2712,85 @@ function openQueue() {
 
       infoBody.appendChild(row);
     });
+
+    enableQueueDrag(up.length);
   }
 
   infoScrim.classList.add('open');
   infoSheet.classList.add('open');
+}
+
+/* перетаскивание треков в очереди */
+function reorderQueue(from, to) {
+  const base = queuePos + 1;
+  const src = base + from;
+  if (src < 0 || src >= queue.length) return;
+
+  const [item] = queue.splice(src, 1);
+  queue.splice(base + to, 0, item);
+  openQueue();
+  hapticTap();
+}
+
+function enableQueueDrag() {
+  const rows = [...infoBody.querySelectorAll('.q-row')];
+  if (rows.length < 2) return;
+
+  let active = null;
+
+  rows.forEach((row) => {
+    const grip = row.querySelector('.q-grip');
+    if (!grip) return;
+
+    let startY = 0;
+    let moved = false;
+
+    grip.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      active = row;
+      moved = false;
+      startY = e.clientY;
+      row.classList.add('dragging');
+      try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+
+    grip.addEventListener('pointermove', (e) => {
+      if (active !== row) return;
+      const dy = e.clientY - startY;
+      if (Math.abs(dy) > 4) moved = true;
+      row.style.transform = 'translateY(' + dy + 'px)';
+    });
+
+    const finish = () => {
+      if (active !== row) return;
+      active = null;
+
+      row.style.transform = '';
+      row.classList.remove('dragging');
+
+      if (!moved) return;
+
+      row.dataset.dragged = '1';
+      setTimeout(() => { delete row.dataset.dragged; }, 350);
+
+      const from = Number(row.dataset.qpos);
+      const box = row.getBoundingClientRect();
+      const center = box.top + box.height / 2;
+
+      let to = 0;
+      rows.forEach((other) => {
+        if (other === row) return;
+        const ob = other.getBoundingClientRect();
+        if (ob.top + ob.height / 2 < center) to += 1;
+      });
+
+      if (to !== from) reorderQueue(from, to);
+    };
+
+    grip.addEventListener('pointerup', finish);
+    grip.addEventListener('pointercancel', finish);
+  });
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -2904,6 +3171,7 @@ searchInput.addEventListener('input', () => {
   searchTimer = setTimeout(() => {
     searchQuery = searchInput.value.trim().toLowerCase();
     renderActive();
+    if (searchQuery.length >= 2) pushSearch(searchInput.value);
   }, 120);
 });
 
@@ -3027,12 +3295,562 @@ makeSlider(scrub, (ratio) => {
 });
 
 /* ══════════════════════════════════════════════════════════
+   Скорость воспроизведения
+   ══════════════════════════════════════════════════════════ */
+const SPEED_KEY = 'jt_speed_v1';
+const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+let speed = 1;
+
+function loadSpeed() {
+  const v = parseFloat(localStorage.getItem(SPEED_KEY));
+  speed = SPEEDS.indexOf(v) !== -1 ? v : 1;
+}
+
+function paintSpeed() {
+  const btn = $('speedBtn');
+  btn.textContent = speed + '×';
+  btn.classList.toggle('on', speed !== 1);
+  audio.playbackRate = speed;
+}
+
+$('speedBtn').addEventListener('click', () => {
+  speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length];
+  try { localStorage.setItem(SPEED_KEY, String(speed)); } catch (e) {}
+  paintSpeed();
+  hapticTap();
+});
+
+/* ══════════════════════════════════════════════════════════
+   Эквалайзер (Web Audio)
+   ══════════════════════════════════════════════════════════ */
+const EQ_KEY = 'jt_eq_v1';
+const EQ_BANDS = [
+  { f: 60, label: '60' },
+  { f: 230, label: '230' },
+  { f: 910, label: '910' },
+  { f: 3600, label: '3.6k' },
+  { f: 14000, label: '14k' }
+];
+const EQ_PRESETS = {
+  'Плоский': [0, 0, 0, 0, 0],
+  'Бас': [8, 5, 0, -1, -2],
+  'Вокал': [-2, 0, 4, 5, 2],
+  'Рок': [6, 3, -2, 3, 6]
+};
+
+let eqOn = false;
+let eqCtx = null;
+let eqSource = null;
+let eqFilters = [];
+let eqGains = [0, 0, 0, 0, 0];
+
+function loadEq() {
+  try {
+    const v = JSON.parse(localStorage.getItem(EQ_KEY) || 'null');
+    if (v && Array.isArray(v.gains) && v.gains.length === EQ_BANDS.length) {
+      eqGains = v.gains.map((x) => Number(x) || 0);
+    }
+  } catch (e) {}
+}
+
+function saveEq() {
+  try { localStorage.setItem(EQ_KEY, JSON.stringify({ gains: eqGains })); } catch (e) {}
+}
+
+function buildEqGraph() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) throw new Error('Web Audio не поддерживается');
+
+  if (!eqCtx) {
+    eqCtx = new Ctx();
+    eqSource = eqCtx.createMediaElementSource(audio);
+    let node = eqSource;
+    eqFilters = EQ_BANDS.map((band, i) => {
+      const f = eqCtx.createBiquadFilter();
+      f.type = i === 0 ? 'lowshelf' : i === EQ_BANDS.length - 1 ? 'highshelf' : 'peaking';
+      f.frequency.value = band.f;
+      f.Q.value = 1.1;
+      f.gain.value = eqGains[i];
+      node.connect(f);
+      node = f;
+      return f;
+    });
+    node.connect(eqCtx.destination);
+  }
+
+  if (eqCtx.state === 'suspended') eqCtx.resume();
+  eqFilters.forEach((f, i) => { f.gain.value = eqOn ? eqGains[i] : 0; });
+}
+
+/* перезагрузка трека уже с crossOrigin — иначе Web Audio даст тишину */
+function reloadWithCors() {
+  return new Promise((resolve) => {
+    const finish = (ok) => {
+      clearTimeout(timer);
+      audio.removeEventListener('loadedmetadata', onOk);
+      audio.removeEventListener('error', onErr);
+      resolve(ok);
+    };
+    const onOk = () => finish(true);
+    const onErr = () => finish(false);
+    const timer = setTimeout(() => finish(false), 9000);
+
+    audio.addEventListener('loadedmetadata', onOk);
+    audio.addEventListener('error', onErr);
+    audio.load();
+  });
+}
+
+async function setEqOn(on, sheetMsg) {
+  const btn = $('eqBtn');
+
+  if (!on) {
+    eqOn = false;
+    if (eqFilters.length) eqFilters.forEach((f) => { f.gain.value = 0; });
+    btn.classList.remove('on');
+    return true;
+  }
+
+  const pos = audio.currentTime || 0;
+  const wasPlaying = !audio.paused;
+  audio.pause();
+  audio.crossOrigin = 'anonymous';
+
+  try {
+    buildEqGraph();
+  } catch (e) {
+    audio.crossOrigin = null;
+    if (sheetMsg) sheetMsg('Эквалайзер не поддерживается браузером');
+    return false;
+  }
+
+  const ok = currentIndex >= 0 ? await reloadWithCors() : true;
+
+  if (!ok) {
+    eqOn = false;
+    eqFilters.forEach((f) => { f.gain.value = 0; });
+    audio.crossOrigin = null;
+    if (currentIndex >= 0) {
+      audio.load();
+      audio.currentTime = 0;
+      if (wasPlaying) play();
+    }
+    btn.classList.remove('on');
+    if (sheetMsg) sheetMsg('Источник не отдаёт CORS — эквалайзер тут не работает');
+    return false;
+  }
+
+  eqOn = true;
+  eqFilters.forEach((f, i) => { f.gain.value = eqGains[i]; });
+  if (currentIndex >= 0) {
+    audio.currentTime = pos;
+    if (wasPlaying) play();
+  }
+  btn.classList.add('on');
+  return true;
+}
+
+function openEq() {
+  sheetHead.textContent = 'Эквалайзер';
+  infoBody.innerHTML = '';
+
+  const msg = document.createElement('div');
+  msg.className = 'set-hint';
+  msg.style.marginBottom = '10px';
+
+  const head = document.createElement('div');
+  head.className = 'set-row';
+  head.innerHTML = '<div class="set-label">Включить</div>';
+  const sw = document.createElement('button');
+  sw.className = 'switch' + (eqOn ? ' on' : '');
+  sw.innerHTML = '<span class="switch-knob"></span>';
+  sw.addEventListener('click', async () => {
+    const next = !eqOn;
+    sw.classList.toggle('on', next);
+    const ok = await setEqOn(next, (t) => { msg.textContent = t; });
+    sw.classList.toggle('on', ok && next);
+    if (ok) msg.textContent = next ? 'Готово — крути ползунки' : '';
+  });
+  head.appendChild(sw);
+  infoBody.append(head, msg);
+
+  const presets = document.createElement('div');
+  presets.className = 'eq-presets';
+  Object.keys(EQ_PRESETS).forEach((name) => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = name;
+    b.addEventListener('click', () => {
+      eqGains = EQ_PRESETS[name].slice();
+      saveEq();
+      eqFilters.forEach((f, i) => { f.gain.value = eqGains[i]; });
+      infoBody.querySelectorAll('input[type="range"]').forEach((inp, i) => {
+        inp.value = eqGains[i];
+        inp.nextElementSibling.textContent = (eqGains[i] > 0 ? '+' : '') + eqGains[i];
+      });
+      hapticTap();
+    });
+    presets.appendChild(b);
+  });
+  infoBody.appendChild(presets);
+
+  EQ_BANDS.forEach((band, i) => {
+    const row = document.createElement('div');
+    row.className = 'eq-band';
+
+    const name = document.createElement('span');
+    name.textContent = band.label;
+
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = '-12';
+    input.max = '12';
+    input.step = '1';
+    input.value = String(eqGains[i]);
+
+    const out = document.createElement('output');
+    out.textContent = (eqGains[i] > 0 ? '+' : '') + eqGains[i];
+
+    input.addEventListener('input', () => {
+      const v = Number(input.value);
+      eqGains[i] = v;
+      out.textContent = (v > 0 ? '+' : '') + v;
+      if (eqFilters[i]) eqFilters[i].gain.value = v;
+    });
+    input.addEventListener('change', saveEq);
+
+    row.append(name, input, out);
+    infoBody.appendChild(row);
+  });
+
+  infoScrim.classList.add('open');
+  infoSheet.classList.add('open');
+}
+
+$('eqBtn').addEventListener('click', openEq);
+
+/* ══════════════════════════════════════════════════════════
+   Личная статистика
+   ══════════════════════════════════════════════════════════ */
+const MYSTATS_KEY = 'jt_mystats_v1';
+let myStats = { plays: 0, seconds: 0, tracks: {}, artists: {}, days: {} };
+let playCounted = false;
+let lastTick = 0;
+
+function loadMyStats() {
+  try {
+    const s = JSON.parse(localStorage.getItem(MYSTATS_KEY) || 'null');
+    if (s && typeof s === 'object') {
+      myStats = Object.assign({ plays: 0, seconds: 0, tracks: {}, artists: {}, days: {} }, s);
+    }
+  } catch (e) {}
+}
+
+let statsDirty = false;
+function saveMyStats() {
+  try { localStorage.setItem(MYSTATS_KEY, JSON.stringify(myStats)); } catch (e) {}
+  statsDirty = false;
+}
+
+function countPlay() {
+  if (playCounted || currentIndex < 0) return;
+  const t = tracks[currentIndex];
+  if (!t) return;
+  playCounted = true;
+
+  const k = keyOf(t);
+  myStats.plays += 1;
+  const rec = myStats.tracks[k] || { title: t.title, artist: t.artist, plays: 0, seconds: 0 };
+  rec.plays += 1;
+  rec.title = t.title;
+  rec.artist = t.artist;
+  myStats.tracks[k] = rec;
+
+  const a = t.artist || '—';
+  myStats.artists[a] = (myStats.artists[a] || 0) + 1;
+
+  const day = new Date().toISOString().slice(0, 10);
+  myStats.days[day] = (myStats.days[day] || 0) + 1;
+
+  statsDirty = true;
+}
+
+function countSeconds(delta) {
+  if (currentIndex < 0) return;
+  const t = tracks[currentIndex];
+  if (!t) return;
+  myStats.seconds += delta;
+  const k = keyOf(t);
+  if (myStats.tracks[k]) myStats.tracks[k].seconds += delta;
+  statsDirty = true;
+}
+
+function fmtLong(sec) {
+  sec = Math.round(sec || 0);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h) return h + ' ч ' + m + ' мин';
+  return m + ' мин';
+}
+
+function openStats() {
+  sheetHead.textContent = 'Моя статистика';
+  infoBody.innerHTML = '';
+
+  const grid = document.createElement('div');
+  grid.className = 'stat-grid';
+
+  const cards = [
+    ['Прослушано', String(myStats.plays)],
+    ['Время в плеере', fmtLong(myStats.seconds)],
+    ['Треков в топе', String(Object.keys(myStats.tracks).length)],
+    ['Дней с музыкой', String(Object.keys(myStats.days).length)]
+  ];
+
+  cards.forEach(([label, value]) => {
+    const c = document.createElement('div');
+    c.className = 'stat-card';
+    const b = document.createElement('b');
+    b.textContent = value;
+    const s = document.createElement('span');
+    s.textContent = label;
+    c.append(b, s);
+    grid.appendChild(c);
+  });
+  infoBody.appendChild(grid);
+
+  const topTracks = Object.values(myStats.tracks)
+    .sort((a, b) => b.plays - a.plays || b.seconds - a.seconds)
+    .slice(0, 5);
+
+  const t1 = document.createElement('div');
+  t1.className = 'stat-list-title';
+  t1.textContent = 'Топ треков';
+  infoBody.appendChild(t1);
+
+  if (!topTracks.length) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = 'Пока ничего не слушал';
+    infoBody.appendChild(e);
+  } else {
+    topTracks.forEach((t) => {
+      const line = document.createElement('div');
+      line.className = 'stat-line';
+      const nm = document.createElement('span');
+      nm.textContent = t.artist + ' — ' + t.title;
+      const v = document.createElement('i');
+      v.textContent = t.plays + '× · ' + fmtLong(t.seconds);
+      line.append(nm, v);
+      infoBody.appendChild(line);
+    });
+  }
+
+  const artists = Object.entries(myStats.artists).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  if (artists.length) {
+    const t2 = document.createElement('div');
+    t2.className = 'stat-list-title';
+    t2.textContent = 'Топ исполнителей';
+    infoBody.appendChild(t2);
+
+    artists.forEach(([name, n]) => {
+      const line = document.createElement('div');
+      line.className = 'stat-line';
+      const nm = document.createElement('span');
+      nm.textContent = name;
+      const v = document.createElement('i');
+      v.textContent = n + '×';
+      line.append(nm, v);
+      infoBody.appendChild(line);
+    });
+  }
+
+  infoScrim.classList.add('open');
+  infoSheet.classList.add('open');
+}
+
+$('openStats').addEventListener('click', openStats);
+
+/* ══════════════════════════════════════════════════════════
+   История поиска
+   ══════════════════════════════════════════════════════════ */
+const SEARCH_KEY = 'jt_search_v1';
+let searchHistory = [];
+
+function loadSearchHistory() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(SEARCH_KEY) || '[]');
+    searchHistory = Array.isArray(arr) ? arr.slice(0, 6) : [];
+  } catch (e) { searchHistory = []; }
+  return searchHistory;
+}
+
+function pushSearch(q) {
+  q = (q || '').trim();
+  if (q.length < 2) return;
+  loadSearchHistory();
+  searchHistory = [q, ...searchHistory.filter((x) => x !== q)].slice(0, 6);
+  try { localStorage.setItem(SEARCH_KEY, JSON.stringify(searchHistory)); } catch (e) {}
+}
+
+function renderSearchHistory() {
+  const box = $('searchHistory');
+  box.innerHTML = '';
+
+  const focused = document.activeElement === searchInput;
+  const typed = searchInput.value.trim();
+
+  if (!focused || typed) {
+    box.style.display = 'none';
+    return;
+  }
+
+  const items = loadSearchHistory();
+  if (!items.length) {
+    box.style.display = 'none';
+    return;
+  }
+
+  box.style.display = 'flex';
+  items.forEach((q) => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = q;
+    b.addEventListener('click', () => {
+      searchInput.value = q;
+      searchQuery = q.toLowerCase();
+      renderActive();
+      searchInput.blur();
+      renderSearchHistory();
+    });
+    box.appendChild(b);
+  });
+}
+
+searchInput.addEventListener('focus', renderSearchHistory);
+searchInput.addEventListener('click', renderSearchHistory);
+searchInput.addEventListener('blur', () => {
+  setTimeout(renderSearchHistory, 120);
+});
+
+/* ══════════════════════════════════════════════════════════
+   Клавиатура
+   ══════════════════════════════════════════════════════════ */
+function seekBy(delta) {
+  if (currentIndex < 0 || !isFinite(audio.duration)) return;
+  audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + delta));
+  if (tg && tg.HapticFeedback) {
+    try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
+  }
+}
+
+function nudgeVolume(delta) {
+  volume = Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100));
+  saveVolume(volume);
+  applyVolume();
+}
+
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) {
+    if (e.key === 'Escape') e.target.blur();
+    return;
+  }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+  switch (e.key) {
+    case ' ':
+      e.preventDefault();
+      togglePlay();
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      seekBy(5);
+      break;
+    case 'ArrowLeft':
+      e.preventDefault();
+      seekBy(-5);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      nudgeVolume(0.05);
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      nudgeVolume(-0.05);
+      break;
+    case 'm':
+    case 'M':
+    case 'ь':
+      muteBtn.click();
+      break;
+    case '/':
+      e.preventDefault();
+      searchInput.focus();
+      break;
+    case 'Escape':
+      if (infoSheet.classList.contains('open')) closeInfo();
+      else if (coverFull.classList.contains('open')) coverFull.classList.remove('open');
+      else if (playerOpen) closePlayer();
+      else if (albumOpenName !== null) closeAlbum();
+      else if (scrSettings.classList.contains('open')) closeSettings();
+      break;
+    default:
+      break;
+  }
+});
+
+/* ══════════════════════════════════════════════════════════
+   Учёт прослушиваний
+   ══════════════════════════════════════════════════════════ */
+let lastAudioTime = 0;
+let lastStatsSave = 0;
+
+audio.addEventListener('playing', () => {
+  countPlay();
+  lastAudioTime = audio.currentTime;
+});
+
+audio.addEventListener('timeupdate', () => {
+  const t = audio.currentTime;
+  const delta = t - lastAudioTime;
+  lastAudioTime = t;
+
+  if (!audio.paused && delta > 0 && delta < 2) countSeconds(delta);
+
+  const now = Date.now();
+  if (statsDirty && now - lastStatsSave > 5000) {
+    lastStatsSave = now;
+    saveMyStats();
+  }
+});
+
+audio.addEventListener('pause', () => { if (statsDirty) saveMyStats(); });
+audio.addEventListener('seeked', () => { lastAudioTime = audio.currentTime; });
+window.addEventListener('pagehide', () => { if (statsDirty) saveMyStats(); });
+
+/* ══════════════════════════════════════════════════════════
+   Офлайн-кэш (Service Worker)
+   ══════════════════════════════════════════════════════════ */
+if ('serviceWorker' in navigator &&
+    (location.protocol === 'https:' || ['localhost', '127.0.0.1'].indexOf(location.hostname) !== -1)) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('[sw]', e.message));
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
    Старт
    ══════════════════════════════════════════════════════════ */
 (async function init() {
   loadFavs();
   loadSettings();
   setupVolume();
+  loadSpeed();
+  paintSpeed();
+  loadEq();
+  loadMyStats();
+  loadSearchHistory();
   setPlayingUI(false);          // сразу помечаем: ничего не играет
 
   const raw = await fetchTracks();
