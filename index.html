@@ -55,11 +55,11 @@
   }
   .ambient img {
     position: absolute;
-    inset: -25%;
-    width: 150%;
-    height: 150%;
+    inset: -45%;
+    width: 190%;
+    height: 190%;
     object-fit: cover;
-    filter: blur(72px) saturate(190%) brightness(0.7);
+    filter: blur(105px) saturate(200%) brightness(0.78);
     opacity: 0;
     transform: scale(1.15);
     transition: opacity 700ms var(--ease-out);
@@ -120,14 +120,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    padding: 6px 0 16px;
-  }
-  .brand-row .icon-btn {
-    position: absolute;
-    right: -6px;
-    top: 0;
-    color: rgba(244, 247, 250, 0.28);
+    padding: 6px 0 14px;
   }
   .brand {
     display: flex;
@@ -143,39 +136,40 @@
   .brand b { font-weight: 700; color: rgba(244, 247, 250, 0.3); letter-spacing: 0.5em; }
   .brand i { font-style: normal; color: rgba(59, 157, 255, 0.42); letter-spacing: 0; }
 
-  .tabs {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    background: var(--surface);
-    border-radius: 12px;
-    padding: 3px;
-    isolation: isolate;
-  }
-  .tab-indicator {
+  .tabbar {
     position: absolute;
-    top: 3px;
-    bottom: 3px;
-    left: 3px;
-    width: calc((100% - 6px) / 3);
-    border-radius: 9px;
-    background: var(--surface-hi);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
-    transition: transform 300ms var(--ease-out);
-    z-index: -1;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(58px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    display: flex;
+    align-items: stretch;
+    background: rgba(10, 12, 15, 0.92);
+    backdrop-filter: blur(26px) saturate(170%);
+    -webkit-backdrop-filter: blur(26px) saturate(170%);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: 12;
   }
-  .tab {
-    background: none;
+  .tabbar-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     border: none;
-    color: var(--sub);
-    font-size: 12.5px;
-    font-weight: 600;
-    padding: 9px 0;
-    cursor: pointer;
-    transition: color 220ms ease;
+    background: none;
+    color: rgba(244, 247, 250, 0.32);
     font-family: inherit;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: color 220ms ease, transform 150ms var(--ease-out);
   }
-  .tab.active { color: var(--text); }
+  .tabbar-btn:active { transform: scale(0.9); }
+  .tabbar-btn.active { color: var(--text); }
 
   .search-row {
     display: flex;
@@ -232,7 +226,7 @@
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    padding: 14px 14px calc(100px + env(safe-area-inset-bottom));
+    padding: 14px 14px calc(150px + env(safe-area-inset-bottom));
   }
   .scroll::-webkit-scrollbar { width: 0; }
 
@@ -381,7 +375,7 @@
     position: absolute;
     left: 12px;
     right: 12px;
-    bottom: calc(12px + env(safe-area-inset-bottom));
+    bottom: calc(66px + env(safe-area-inset-bottom));
     height: 64px;
     border-radius: 18px;
     background: rgba(18, 21, 26, 0.72);
@@ -398,11 +392,16 @@
     z-index: 20;
     cursor: pointer;
     overflow: hidden;
-    transform: translateY(calc(100% + 24px));
+    transform: translateY(calc(100% + 110px));
+    pointer-events: none;
     transition: transform 420ms var(--ease-out), opacity 260ms ease;
   }
-  .mini.show { transform: translateY(0); }
-  .mini.hide { opacity: 0; pointer-events: none; transform: translateY(calc(100% + 24px)); }
+  .mini.show { transform: translateY(0); pointer-events: auto; }
+  .mini.hide {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(calc(100% + 110px));
+  }
 
   .mini-cover {
     width: 44px;
@@ -562,7 +561,13 @@
   /* ══ экран: плеер ══════════════════════════════════════ */
   #scrPlayer {
     z-index: 5;
-    background: linear-gradient(180deg, rgba(8, 9, 11, 0.62) 0%, rgba(8, 9, 11, 0.95) 46%, #08090b 100%);
+    background: linear-gradient(
+      180deg,
+      rgba(8, 9, 11, 0.18) 0%,
+      rgba(8, 9, 11, 0.55) 32%,
+      rgba(8, 9, 11, 0.93) 62%,
+      #08090b 100%
+    );
     transform: translateY(100%);
     transition: transform 460ms var(--ease-drawer);
     will-change: transform;
@@ -1046,16 +1051,7 @@
     <div class="lib-head">
       <div class="brand-row">
         <header class="brand"><b>JT</b><i>·</i><span>без мата</span></header>
-        <button class="icon-btn" id="settingsBtn" aria-label="Настройки">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
       </div>
-      <nav class="tabs">
-        <div class="tab-indicator" id="tabInd"></div>
-        <button class="tab active" data-tab="all">Все</button>
-        <button class="tab" data-tab="fav">Избранное</button>
-        <button class="tab" data-tab="albums">Альбомы</button>
-      </nav>
 
       <div class="search-row">
         <div class="search-wrap">
@@ -1071,6 +1067,25 @@
       <div class="panel" id="panelFav"></div>
       <div class="panel" id="panelAlbums"></div>
     </div>
+
+    <nav class="tabbar">
+      <button class="tabbar-btn active" data-tab="all">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+        <span>Все</span>
+      </button>
+      <button class="tabbar-btn" data-tab="fav">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <span>Избранное</span>
+      </button>
+      <button class="tabbar-btn" data-tab="albums">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <span>Альбомы</span>
+      </button>
+      <button class="tabbar-btn" id="settingsBtn">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Настройки</span>
+      </button>
+    </nav>
   </section>
 
   <!-- ── экран 2: альбом ── -->
@@ -1258,7 +1273,6 @@ const volFill = $('volFill');
 const volKnob = $('volKnob');
 const muteBtn = $('muteBtn');
 const volIcon = $('volIcon');
-const tabInd = $('tabInd');
 
 const mini = $('mini');
 const miniCover = $('miniCover');
@@ -1711,14 +1725,13 @@ $('albumBack').addEventListener('click', closeAlbum);
 /* ══════════════════════════════════════════════════════════
    Табы
    ══════════════════════════════════════════════════════════ */
-document.querySelectorAll('.tab').forEach((btn, i) => {
+document.querySelectorAll('.tabbar-btn[data-tab]').forEach((btn) => {
   btn.addEventListener('click', () => {
     const name = btn.dataset.tab;
     if (name === activeTab) return;
     activeTab = name;
 
-    document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b === btn));
-    tabInd.style.transform = 'translateX(' + (i * 100) + '%)';
+    document.querySelectorAll('.tabbar-btn[data-tab]').forEach((b) => b.classList.toggle('active', b === btn));
     Object.keys(panels).forEach((k) => panels[k].classList.toggle('active', k === name));
 
     if (name === 'fav') renderFav();
