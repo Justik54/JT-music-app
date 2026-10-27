@@ -526,6 +526,12 @@
     color: var(--sub);
     font-variant-numeric: tabular-nums;
   }
+  .set-hint {
+    display: block;
+    font-size: 11px;
+    color: var(--faint);
+    margin-top: 3px;
+  }
   .set-chev { color: var(--faint); flex-shrink: 0; }
   .set-foot {
     text-align: center;
@@ -559,6 +565,7 @@
   #scrSettings.open .set-group:nth-child(1) { animation-delay: 40ms; }
   #scrSettings.open .set-group:nth-child(2) { animation-delay: 90ms; }
   #scrSettings.open .set-group:nth-child(3) { animation-delay: 140ms; }
+  #scrSettings.open .set-group:nth-child(4) { animation-delay: 190ms; }
 
   @keyframes groupIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -1279,6 +1286,19 @@
     </div>
 
     <div class="set-group" id="setGroup2">
+      <div class="set-group-title">Анимации</div>
+      <div class="set-row">
+        <div class="set-label">
+          Плавная фильтрация списка
+          <span class="set-hint">подгрузит 4 КБ с CDN</span>
+        </div>
+        <button class="switch" data-key="motion" aria-label="Плавная фильтрация">
+          <span class="switch-knob"><svg class="switch-check" viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="set-group" id="setGroup3">
       <div class="set-group-title">Данные</div>
       <div class="set-row action" id="resetState">
         <div class="set-label">Сбросить память позиции</div>
@@ -1290,7 +1310,7 @@
       </div>
     </div>
 
-    <div class="set-group" id="setGroup3">
+    <div class="set-group" id="setGroup4">
       <div class="set-group-title">О приложении</div>
       <div class="set-row">
         <div class="set-label">Версия</div>
@@ -2418,7 +2438,7 @@ const SETTINGS_KEY = 'jt_settings_v1';
 let pendingSeek = null;
 let lastStateSave = 0;
 
-let settings = { remember: true, next: true };
+let settings = { remember: true, next: true, motion: false };
 
 function loadSettings() {
   try {
@@ -2461,6 +2481,58 @@ function loadState() {
 /* ══════════════════════════════════════════════════════════
    Настройки
    ══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   Подгрузка библиотеки анимации списка (по требованию)
+   ══════════════════════════════════════════════════════════ */
+const AUTO_ANIMATE_SRC = 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate@0.8.2/index.min.js';
+let listMotion = null;
+
+function loadAutoAnimate() {
+  return new Promise((resolve, reject) => {
+    if (window.autoAnimate) return resolve(window.autoAnimate);
+
+    // пакет собирается только как ES-модуль — импортируем и кладём в window
+    const s = document.createElement('script');
+    s.type = 'module';
+    s.textContent =
+      "import aa from '" + AUTO_ANIMATE_SRC + "';" +
+      "window.autoAnimate = aa;" +
+      "window.dispatchEvent(new Event('aa-ready'));";
+    document.head.appendChild(s);
+
+    const timer = setTimeout(() => {
+      if (window.autoAnimate) resolve(window.autoAnimate);
+      else reject(new Error('таймаут загрузки'));
+    }, 8000);
+
+    window.addEventListener('aa-ready', () => {
+      clearTimeout(timer);
+      resolve(window.autoAnimate);
+    }, { once: true });
+  });
+}
+
+async function applyListMotion(on) {
+  if (!on) {
+    if (listMotion) listMotion.forEach((c) => c.disable());
+    return;
+  }
+
+  try {
+    const autoAnimate = await loadAutoAnimate();
+
+    if (!listMotion) {
+      listMotion = [panels.all, panels.fav, panels.albums].map((el) =>
+        autoAnimate(el, { duration: 220, easing: 'ease-out' })
+      );
+    } else {
+      listMotion.forEach((c) => c.enable());
+    }
+  } catch (e) {
+    console.warn('[motion]', e.message);
+  }
+}
+
 function paintSettings() {
   document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
     sw.classList.toggle('on', !!settings[sw.dataset.key]);
@@ -2500,6 +2572,7 @@ document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
     sw.classList.toggle('on', settings[key]);
     saveSettings();
     if (key === 'remember' && !settings[key]) clearState();
+    if (key === 'motion') applyListMotion(settings[key]);
   });
 });
 
@@ -2694,6 +2767,8 @@ makeSlider(scrub, (ratio) => {
 
   tracks = raw.map(normalize).filter(Boolean);
   buildAlbumCovers();
+
+  if (settings.motion) applyListMotion(true);
 
   const saved = loadState();
   if (saved && SORT_LABELS[saved.sort]) {
