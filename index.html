@@ -902,49 +902,6 @@
     color: var(--accent);
   }
 
-  /* эквалайзер в шторке */
-  .eq-band {
-    display: grid;
-    grid-template-columns: 46px 1fr 42px;
-    align-items: center;
-    gap: 12px;
-    padding: 9px 0;
-  }
-  .eq-band span {
-    font-size: 11.5px;
-    color: var(--sub);
-    font-variant-numeric: tabular-nums;
-  }
-  .eq-band output {
-    text-align: right;
-    font-size: 11.5px;
-    color: var(--faint);
-    font-variant-numeric: tabular-nums;
-  }
-  .eq-band input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 4px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.12);
-    outline: none;
-  }
-  .eq-band input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  }
-  .eq-presets {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 6px 0 14px;
-  }
-
   /* очередь: перетаскивание */
   .q-grip {
     width: 26px;
@@ -1500,7 +1457,7 @@
       <div class="set-group-title">О приложении</div>
       <div class="set-row">
         <div class="set-label">Версия</div>
-        <div class="set-value" id="setVersion">1.1.1</div>
+        <div class="set-value" id="setVersion">1.1.2</div>
       </div>
     </div>
 
@@ -1547,7 +1504,6 @@
 
     <div class="extras">
       <button class="chip" id="speedBtn" aria-label="Скорость">1×</button>
-      <button class="chip" id="eqBtn" aria-label="Эквалайзер">Эквалайзер</button>
     </div>
 
     <div class="controls">
@@ -1628,7 +1584,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.1.1';
+const APP_VERSION = '1.1.2';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -3328,215 +3284,6 @@ $('speedBtn').addEventListener('click', () => {
 });
 
 /* ══════════════════════════════════════════════════════════
-   Эквалайзер (Web Audio)
-   ══════════════════════════════════════════════════════════ */
-const EQ_KEY = 'jt_eq_v1';
-const EQ_BANDS = [
-  { f: 60, label: '60' },
-  { f: 230, label: '230' },
-  { f: 910, label: '910' },
-  { f: 3600, label: '3.6k' },
-  { f: 14000, label: '14k' }
-];
-const EQ_PRESETS = {
-  'Плоский': [0, 0, 0, 0, 0],
-  'Бас': [8, 5, 0, -1, -2],
-  'Вокал': [-2, 0, 4, 5, 2],
-  'Рок': [6, 3, -2, 3, 6]
-};
-
-let eqOn = false;
-let eqCtx = null;
-let eqSource = null;
-let eqFilters = [];
-let eqGains = [0, 0, 0, 0, 0];
-
-function loadEq() {
-  try {
-    const v = JSON.parse(localStorage.getItem(EQ_KEY) || 'null');
-    if (v && Array.isArray(v.gains) && v.gains.length === EQ_BANDS.length) {
-      eqGains = v.gains.map((x) => Number(x) || 0);
-    }
-  } catch (e) {}
-}
-
-function saveEq() {
-  try { localStorage.setItem(EQ_KEY, JSON.stringify({ gains: eqGains })); } catch (e) {}
-}
-
-function buildEqGraph() {
-  const Ctx = window.AudioContext || window.webkitAudioContext;
-  if (!Ctx) throw new Error('Web Audio не поддерживается');
-
-  if (!eqCtx) {
-    eqCtx = new Ctx();
-    eqSource = eqCtx.createMediaElementSource(audio);
-    let node = eqSource;
-    eqFilters = EQ_BANDS.map((band, i) => {
-      const f = eqCtx.createBiquadFilter();
-      f.type = i === 0 ? 'lowshelf' : i === EQ_BANDS.length - 1 ? 'highshelf' : 'peaking';
-      f.frequency.value = band.f;
-      f.Q.value = 1.1;
-      f.gain.value = eqGains[i];
-      node.connect(f);
-      node = f;
-      return f;
-    });
-    node.connect(eqCtx.destination);
-  }
-
-  if (eqCtx.state === 'suspended') eqCtx.resume();
-  eqFilters.forEach((f, i) => { f.gain.value = eqOn ? eqGains[i] : 0; });
-}
-
-/* перезагрузка трека уже с crossOrigin — иначе Web Audio даст тишину */
-function reloadWithCors() {
-  return new Promise((resolve) => {
-    const finish = (ok) => {
-      clearTimeout(timer);
-      audio.removeEventListener('loadedmetadata', onOk);
-      audio.removeEventListener('error', onErr);
-      resolve(ok);
-    };
-    const onOk = () => finish(true);
-    const onErr = () => finish(false);
-    const timer = setTimeout(() => finish(false), 9000);
-
-    audio.addEventListener('loadedmetadata', onOk);
-    audio.addEventListener('error', onErr);
-    audio.load();
-  });
-}
-
-async function setEqOn(on, sheetMsg) {
-  const btn = $('eqBtn');
-
-  if (!on) {
-    eqOn = false;
-    if (eqFilters.length) eqFilters.forEach((f) => { f.gain.value = 0; });
-    btn.classList.remove('on');
-    return true;
-  }
-
-  const pos = audio.currentTime || 0;
-  const wasPlaying = !audio.paused;
-  audio.pause();
-  audio.crossOrigin = 'anonymous';
-
-  try {
-    buildEqGraph();
-  } catch (e) {
-    audio.crossOrigin = null;
-    if (sheetMsg) sheetMsg('Эквалайзер не поддерживается браузером');
-    return false;
-  }
-
-  const ok = currentIndex >= 0 ? await reloadWithCors() : true;
-
-  if (!ok) {
-    eqOn = false;
-    eqFilters.forEach((f) => { f.gain.value = 0; });
-    audio.crossOrigin = null;
-    if (currentIndex >= 0) {
-      audio.load();
-      audio.currentTime = 0;
-      if (wasPlaying) play();
-    }
-    btn.classList.remove('on');
-    if (sheetMsg) sheetMsg('Источник не отдаёт CORS — эквалайзер тут не работает');
-    return false;
-  }
-
-  eqOn = true;
-  eqFilters.forEach((f, i) => { f.gain.value = eqGains[i]; });
-  if (currentIndex >= 0) {
-    audio.currentTime = pos;
-    if (wasPlaying) play();
-  }
-  btn.classList.add('on');
-  return true;
-}
-
-function openEq() {
-  sheetHead.textContent = 'Эквалайзер';
-  infoBody.innerHTML = '';
-
-  const msg = document.createElement('div');
-  msg.className = 'set-hint';
-  msg.style.marginBottom = '10px';
-
-  const head = document.createElement('div');
-  head.className = 'set-row';
-  head.innerHTML = '<div class="set-label">Включить</div>';
-  const sw = document.createElement('button');
-  sw.className = 'switch' + (eqOn ? ' on' : '');
-  sw.innerHTML = '<span class="switch-knob"></span>';
-  sw.addEventListener('click', async () => {
-    const next = !eqOn;
-    sw.classList.toggle('on', next);
-    const ok = await setEqOn(next, (t) => { msg.textContent = t; });
-    sw.classList.toggle('on', ok && next);
-    if (ok) msg.textContent = next ? 'Готово — крути ползунки' : '';
-  });
-  head.appendChild(sw);
-  infoBody.append(head, msg);
-
-  const presets = document.createElement('div');
-  presets.className = 'eq-presets';
-  Object.keys(EQ_PRESETS).forEach((name) => {
-    const b = document.createElement('button');
-    b.className = 'chip';
-    b.textContent = name;
-    b.addEventListener('click', () => {
-      eqGains = EQ_PRESETS[name].slice();
-      saveEq();
-      eqFilters.forEach((f, i) => { f.gain.value = eqGains[i]; });
-      infoBody.querySelectorAll('input[type="range"]').forEach((inp, i) => {
-        inp.value = eqGains[i];
-        inp.nextElementSibling.textContent = (eqGains[i] > 0 ? '+' : '') + eqGains[i];
-      });
-      hapticTap();
-    });
-    presets.appendChild(b);
-  });
-  infoBody.appendChild(presets);
-
-  EQ_BANDS.forEach((band, i) => {
-    const row = document.createElement('div');
-    row.className = 'eq-band';
-
-    const name = document.createElement('span');
-    name.textContent = band.label;
-
-    const input = document.createElement('input');
-    input.type = 'range';
-    input.min = '-12';
-    input.max = '12';
-    input.step = '1';
-    input.value = String(eqGains[i]);
-
-    const out = document.createElement('output');
-    out.textContent = (eqGains[i] > 0 ? '+' : '') + eqGains[i];
-
-    input.addEventListener('input', () => {
-      const v = Number(input.value);
-      eqGains[i] = v;
-      out.textContent = (v > 0 ? '+' : '') + v;
-      if (eqFilters[i]) eqFilters[i].gain.value = v;
-    });
-    input.addEventListener('change', saveEq);
-
-    row.append(name, input, out);
-    infoBody.appendChild(row);
-  });
-
-  infoScrim.classList.add('open');
-  infoSheet.classList.add('open');
-}
-
-$('eqBtn').addEventListener('click', openEq);
-
-/* ══════════════════════════════════════════════════════════
    Личная статистика
    ══════════════════════════════════════════════════════════ */
 const MYSTATS_KEY = 'jt_mystats_v1';
@@ -3855,7 +3602,6 @@ if ('serviceWorker' in navigator &&
   setupVolume();
   loadSpeed();
   paintSpeed();
-  loadEq();
   loadMyStats();
   loadSearchHistory();
   setPlayingUI(false);          // сразу помечаем: ничего не играет
