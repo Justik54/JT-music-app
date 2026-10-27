@@ -138,21 +138,41 @@
 
   .tabbar {
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: calc(58px + env(safe-area-inset-bottom));
-    padding-bottom: env(safe-area-inset-bottom);
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    height: 62px;
     display: flex;
     align-items: stretch;
-    background: rgba(10, 12, 15, 0.92);
-    backdrop-filter: blur(26px) saturate(170%);
-    -webkit-backdrop-filter: blur(26px) saturate(170%);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 21px;
+    background: rgba(18, 21, 26, 0.86);
+    backdrop-filter: blur(26px) saturate(180%);
+    -webkit-backdrop-filter: blur(26px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     z-index: 12;
+    overflow: hidden;
+  }
+  .tabbar-pill {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 0;
+    width: 25%;
+    transition: transform 340ms var(--ease-drawer);
+    pointer-events: none;
+  }
+  .tabbar-pill::after {
+    content: '';
+    position: absolute;
+    inset: 0 11px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.075);
   }
   .tabbar-btn {
     flex: 1;
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -166,9 +186,9 @@
     font-weight: 600;
     letter-spacing: 0.01em;
     cursor: pointer;
-    transition: color 220ms ease, transform 150ms var(--ease-out);
+    transition: color 220ms ease, transform 140ms var(--ease-out);
   }
-  .tabbar-btn:active { transform: scale(0.9); }
+  .tabbar-btn:active { transform: scale(0.94); }
   .tabbar-btn.active { color: var(--text); }
 
   .search-row {
@@ -226,7 +246,7 @@
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    padding: 14px 14px calc(150px + env(safe-area-inset-bottom));
+    padding: 14px 14px calc(172px + env(safe-area-inset-bottom));
   }
   .scroll::-webkit-scrollbar { width: 0; }
 
@@ -292,7 +312,13 @@
   }
   .row-fav:active { transform: scale(0.85); }
   .row-fav.on { color: #ff5c8a; }
-  .row-fav.on svg { fill: currentColor; }
+  .row-fav.on svg { fill: currentColor; animation: heartPop 300ms var(--ease-out); }
+
+  @keyframes heartPop {
+    0% { transform: scale(0.82); }
+    55% { transform: scale(1.14); }
+    100% { transform: scale(1); }
+  }
 
   .eq {
     display: none;
@@ -375,7 +401,7 @@
     position: absolute;
     left: 12px;
     right: 12px;
-    bottom: calc(66px + env(safe-area-inset-bottom));
+    bottom: calc(82px + env(safe-area-inset-bottom));
     height: 64px;
     border-radius: 18px;
     background: rgba(18, 21, 26, 0.72);
@@ -471,6 +497,75 @@
   }
   #scrAlbum.open { transform: translateX(0); }
 
+  #scrSettings {
+    z-index: 3;
+    background: #08090b;
+    overflow: hidden;
+    transform: translateX(100%);
+    transition: transform 380ms var(--ease-drawer);
+    will-change: transform;
+  }
+  #scrSettings.open { transform: translateX(0); }
+
+  .set-group {
+    margin: 18px 0 0;
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 4px 16px;
+    overflow: hidden;
+  }
+  .set-group-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding: 16px 2px 4px;
+  }
+  .set-value {
+    font-size: 13px;
+    color: var(--sub);
+    font-variant-numeric: tabular-nums;
+  }
+  .set-chev { color: var(--faint); flex-shrink: 0; }
+  .set-foot {
+    text-align: center;
+    font-size: 11px;
+    color: var(--faint);
+    padding: 26px 0 10px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ══ уменьшенное движение ══════════════════════════════ */
+  @media (prefers-reduced-motion: reduce) {
+    #scrSettings,
+    #scrAlbum,
+    #scrPlayer,
+    .mini,
+    .sheet,
+    .tabbar-pill,
+    .scrub-knob,
+    .tabbar-btn,
+    .icon-btn {
+      transition-duration: 1ms;
+    }
+    #scrSettings.open .set-group { animation: none; }
+    .eq line { animation: none; }
+  }
+
+  /* строки настроек проявляются лесенкой */
+  #scrSettings.open .set-group {
+    animation: groupIn 340ms var(--ease-out) both;
+  }
+  #scrSettings.open .set-group:nth-child(1) { animation-delay: 40ms; }
+  #scrSettings.open .set-group:nth-child(2) { animation-delay: 90ms; }
+  #scrSettings.open .set-group:nth-child(3) { animation-delay: 140ms; }
+
+  @keyframes groupIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   #scrAlbum::before {
     content: "";
     position: absolute;
@@ -495,6 +590,16 @@
     gap: 6px;
     padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
     flex-shrink: 0;
+    position: relative;
+  }
+  .nav-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    pointer-events: none;
   }
   .nav-btn {
     display: flex;
@@ -980,13 +1085,6 @@
   .switch.on { background: var(--accent); }
   .switch.on::after { transform: translateX(18px); }
 
-  .set-version {
-    text-align: center;
-    font-size: 11px;
-    color: var(--faint);
-    padding: 18px 0 4px;
-  }
-
   /* очередь */
   .q-row {
     display: flex;
@@ -1069,6 +1167,7 @@
     </div>
 
     <nav class="tabbar">
+      <div class="tabbar-pill" id="tabPill"></div>
       <button class="tabbar-btn active" data-tab="all">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
         <span>Все</span>
@@ -1127,6 +1226,53 @@
   </div>
 
 </div>
+
+<!-- ══════════ ЭКРАН 4: НАСТРОЙКИ ══════════ -->
+<section class="screen" id="scrSettings">
+  <div class="navbar">
+    <button class="nav-btn" id="settingsBack">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      Назад
+    </button>
+    <span class="nav-title">Настройки</span>
+  </div>
+
+  <div class="scroll" style="padding-top:0">
+    <div class="set-group" id="setGroup1">
+      <div class="set-group-title">Воспроизведение</div>
+      <div class="set-row">
+        <div class="set-label">Запоминать, где остановился</div>
+        <button class="switch" data-key="remember" aria-label="Запоминать позицию"></button>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Переходить к следующему треку</div>
+        <button class="switch" data-key="next" aria-label="Автопереход"></button>
+      </div>
+    </div>
+
+    <div class="set-group" id="setGroup2">
+      <div class="set-group-title">Данные</div>
+      <div class="set-row action" id="resetState">
+        <div class="set-label">Сбросить память позиции</div>
+        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      <div class="set-row action danger" id="clearFavs">
+        <div class="set-label">Очистить избранное</div>
+        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+    </div>
+
+    <div class="set-group" id="setGroup3">
+      <div class="set-group-title">О приложении</div>
+      <div class="set-row">
+        <div class="set-label">Версия</div>
+        <div class="set-value" id="setVersion">v2</div>
+      </div>
+    </div>
+
+    <div class="set-foot" id="setFoot">JT Music</div>
+  </div>
+</section>
 
 <!-- ══════════ ЭКРАН 3: ПЛЕЕР ══════════ -->
 <section class="screen" id="scrPlayer">
@@ -1250,6 +1396,10 @@ const stage = $('stage');
 const scrLibrary = $('scrLibrary');
 const scrAlbum = $('scrAlbum');
 const scrPlayer = $('scrPlayer');
+const scrSettings = $('scrSettings');
+const setVersion = $('setVersion');
+const setFoot = $('setFoot');
+const tabPill = $('tabPill');
 
 const coverEl = $('cover');
 const coverWrap = $('coverWrap');
@@ -1469,6 +1619,7 @@ if (tg && tg.BackButton) {
   try {
     tg.BackButton.onClick(() => {
       if (playerOpen) closePlayer();
+      else if (scrSettings.classList.contains('open')) closeSettings();
       else if (albumOpenName !== null) closeAlbum();
     });
   } catch (e) {}
@@ -1725,13 +1876,16 @@ $('albumBack').addEventListener('click', closeAlbum);
 /* ══════════════════════════════════════════════════════════
    Табы
    ══════════════════════════════════════════════════════════ */
-document.querySelectorAll('.tabbar-btn[data-tab]').forEach((btn) => {
+const tabBtns = [...document.querySelectorAll('.tabbar-btn[data-tab]')];
+
+tabBtns.forEach((btn) => {
   btn.addEventListener('click', () => {
     const name = btn.dataset.tab;
     if (name === activeTab) return;
     activeTab = name;
 
-    document.querySelectorAll('.tabbar-btn[data-tab]').forEach((b) => b.classList.toggle('active', b === btn));
+    tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
+    tabPill.style.transform = 'translateX(' + (tabBtns.indexOf(btn) * 100) + '%)';
     Object.keys(panels).forEach((k) => panels[k].classList.toggle('active', k === name));
 
     if (name === 'fav') renderFav();
@@ -2277,66 +2431,63 @@ function loadState() {
 /* ══════════════════════════════════════════════════════════
    Настройки
    ══════════════════════════════════════════════════════════ */
-function settingsToggle(label, key) {
-  const row = document.createElement('div');
-  row.className = 'set-row';
+function paintSettings() {
+  document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
+    sw.classList.toggle('on', !!settings[sw.dataset.key]);
+  });
+  setVersion.textContent = 'v2';
+  setFoot.textContent = 'JT Music · ' + tracks.length + ' ' + plural(tracks.length, 'трек', 'трека', 'треков');
+}
 
-  const l = document.createElement('div');
-  l.className = 'set-label';
-  l.textContent = label;
+function plural(n, one, few, many) {
+  const a = Math.abs(n) % 100;
+  const b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b > 1 && b < 5) return few;
+  if (b === 1) return one;
+  return many;
+}
 
-  const sw = document.createElement('button');
-  sw.className = 'switch' + (settings[key] ? ' on' : '');
+function openSettings() {
+  paintSettings();
+  scrSettings.classList.add('open');
+  showTgBack(true);
+
+  if (tg && tg.HapticFeedback) {
+    try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
+  }
+}
+
+function closeSettings() {
+  scrSettings.classList.remove('open');
+  showTgBack(playerOpen);
+}
+
+document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
   sw.addEventListener('click', () => {
+    const key = sw.dataset.key;
     settings[key] = !settings[key];
     sw.classList.toggle('on', settings[key]);
     saveSettings();
     if (key === 'remember' && !settings[key]) clearState();
   });
+});
 
-  row.append(l, sw);
-  return row;
-}
+$('settingsBack').addEventListener('click', closeSettings);
 
-function settingsAction(label, fn, danger) {
-  const row = document.createElement('div');
-  row.className = 'set-row action' + (danger ? ' danger' : '');
+$('resetState').addEventListener('click', () => {
+  clearState();
+  pendingSeek = null;
+  if (tg && tg.HapticFeedback) {
+    try { tg.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+  }
+});
 
-  const l = document.createElement('div');
-  l.className = 'set-label';
-  l.textContent = label;
-
-  row.append(l);
-  row.addEventListener('click', fn);
-  return row;
-}
-
-function openSettings() {
-  sheetHead.textContent = 'Настройки';
-  infoBody.innerHTML = '';
-
-  infoBody.appendChild(settingsToggle('Запоминать, где остановился', 'remember'));
-  infoBody.appendChild(settingsToggle('Переходить к следующему треку', 'next'));
-
-  infoBody.appendChild(settingsAction('Сбросить память позиции', () => {
-    clearState();
-    pendingSeek = null;
-  }));
-
-  infoBody.appendChild(settingsAction('Очистить избранное', () => {
-    favorites.clear();
-    saveFavs();
-    renderAllPanels();
-  }, true));
-
-  const ver = document.createElement('div');
-  ver.className = 'set-version';
-  ver.textContent = 'JT Music · ' + tracks.length + ' треков';
-  infoBody.appendChild(ver);
-
-  infoScrim.classList.add('open');
-  infoSheet.classList.add('open');
-}
+$('clearFavs').addEventListener('click', () => {
+  favorites.clear();
+  saveFavs();
+  renderAllPanels();
+});
 
 /* ══════════════════════════════════════════════════════════
    Форматирование
