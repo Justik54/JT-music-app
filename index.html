@@ -345,10 +345,10 @@
   /* ══ сетка альбомов ════════════════════════════════════ */
   .album-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px 14px;
   }
-  .album-card { cursor: pointer; }
+  .album-card { cursor: pointer; min-width: 0; }
   .album-card:active .album-card-img { transform: scale(0.97); }
   .album-card-img {
     width: 100%;
@@ -1066,12 +1066,12 @@
   .set-row.action .set-label { color: var(--sub); }
   .set-row.danger .set-label { color: #ff6b6b; }
 
-  /* переключатель — один размер кружка в обоих состояниях, рост только на нажатие */
+  /* переключатель по Material 3: выключен — маленький кружок, включён — большой */
   .switch {
-    width: 52px;
-    height: 32px;
+    width: 46px;
+    height: 28px;
     border: 2px solid rgba(255, 255, 255, 0.22);
-    border-radius: 16px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.06);
     position: relative;
     cursor: pointer;
@@ -1083,11 +1083,11 @@
     position: absolute;
     top: 50%;
     left: 0;
-    width: 22px;
-    height: 22px;
-    margin-top: -11px;
-    transform: translateX(5px);
-    transition: transform 240ms var(--ease-drawer);
+    width: 21px;
+    height: 21px;
+    margin-top: -10.5px;
+    transform: translateX(1px);
+    transition: transform 260ms var(--ease-drawer);
     will-change: transform;
   }
   .switch-knob::before {
@@ -1096,20 +1096,21 @@
     inset: 0;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.62);
-    transition: transform 130ms var(--ease-out), background-color 200ms ease;
+    transform: scale(0.667);
+    transition: transform 220ms var(--ease-out), background-color 200ms ease;
   }
   .switch.on {
     background: var(--accent);
     border-color: var(--accent);
   }
-  .switch.on .switch-knob { transform: translateX(21px); }
-  .switch.on .switch-knob::before { background: #fff; }
+  .switch.on .switch-knob { transform: translateX(17px); }
+  .switch.on .switch-knob::before { transform: scale(1); background: #fff; }
 
-  /* нажатие: выключенный — кружок растёт, включённый — сжимается */
+  /* нажатие — кружок чуть больше своего размера в обоих состояниях */
   .switch:active .switch-knob::before,
-  .switch.pressing .switch-knob::before { transform: scale(1.16); }
+  .switch.pressing .switch-knob::before { transform: scale(0.78); }
   .switch.on:active .switch-knob::before,
-  .switch.on.pressing .switch-knob::before { transform: scale(0.84); }
+  .switch.on.pressing .switch-knob::before { transform: scale(1.06); }
 
   .switch:disabled { opacity: 0.5; cursor: default; }
 
@@ -1117,7 +1118,7 @@
   .tab-icon { display: none; width: 21px; height: 21px; }
   body.engine-on .tab-icon { display: block; }
   body.engine-on .tabbar-btn > svg { display: none; }
-  /* при включённом движке появление строк и пилюлю ведёт motion, а не CSS */
+  /* при включённом движке строки не «наползают» каскадом — они появляются сразу */
   body.engine-on .row, body.engine-on .album-card { animation: none; }
   body.engine-on .tabbar-pill { transition: none; }
 
@@ -1309,7 +1310,7 @@
       <div class="set-row">
         <div class="set-label">
           Продвинутый движок
-          <span class="set-hint" id="engineHint"></span>
+          <span class="set-hint" id="engineHint">Может дольше грузиться — тянет библиотеки из сети</span>
         </div>
         <button class="switch" data-key="engine" aria-label="Продвинутый движок">
           <span class="switch-knob"></span>
@@ -1333,7 +1334,7 @@
       <div class="set-group-title">О приложении</div>
       <div class="set-row">
         <div class="set-label">Версия</div>
-        <div class="set-value" id="setVersion">v3</div>
+        <div class="set-value" id="setVersion">1.0.0</div>
       </div>
     </div>
 
@@ -1456,7 +1457,24 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
+const APP_VERSION = '1.0.0';
 const $ = (id) => document.getElementById(id);
+
+/* подтверждение опасных действий: нативный диалог Telegram, иначе браузерный */
+function askConfirm(message, title) {
+  return new Promise((resolve) => {
+    const tgPopup = tg && typeof tg.showConfirm === 'function' &&
+      typeof tg.isVersionAtLeast === 'function' && tg.isVersionAtLeast('6.1');
+
+    if (tgPopup) {
+      try {
+        tg.showConfirm(message, (ok) => resolve(!!ok));
+        return;
+      } catch (e) {}
+    }
+    resolve(window.confirm((title ? title + '\n\n' : '') + message));
+  });
+}
 
 const audio = $('audio');
 const stage = $('stage');
@@ -1894,11 +1912,6 @@ function renderAllPanels() {
   renderAll();
   renderFav();
   renderAlbums();
-  if (engine) {
-    engine.rows(panels.all);
-    engine.rows(panels.fav);
-    engine.rows(panels.albums);
-  }
 }
 
 function renderActive() {
@@ -1968,7 +1981,6 @@ tabBtns.forEach((btn) => {
 
     if (name === 'fav') renderFav();
     if (name === 'albums') renderAlbums();
-    if (engine) engine.rows(panels[name]);
 
     if (tg && tg.HapticFeedback) {
       try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
@@ -2563,125 +2575,50 @@ async function applyListMotion(on) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Продвинутый движок: React + Motion + анимированные иконки
+   Продвинутый движок: React + Motion + Lucide
    ══════════════════════════════════════════════════════════ */
 const ENGINE_LIBS = {
   react: 'https://esm.sh/react@18.3.1',
   dom: 'https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1',
-  motion: 'https://esm.sh/motion@11.15.0/react?deps=react@18.3.1'
+  motion: 'https://esm.sh/motion@11.15.0/react?deps=react@18.3.1',
+  lucide: 'https://esm.sh/lucide-react@0.469.0?exports=ListMusic,Heart,Disc3,Settings&deps=react@18.3.1'
 };
 
 const REDUCE_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ENGINE_HINT = 'Может дольше грузиться — тянет библиотеки из сети';
 let engine = null;
 let engineBusy = false;
 const engineHint = $('engineHint');
 
 function engineSay(text) {
-  if (engineHint) engineHint.textContent = text || '';
+  if (engineHint) engineHint.textContent = text || ENGINE_HINT;
 }
 
-/* иконки рисуются React-ом, анимация — spring из motion */
-function buildIcons(React, motion) {
+/* иконки — из lucide, анимация — spring из motion */
+function buildIcons(React, motion, L) {
   const h = React.createElement;
-  const SVG = motion.svg;
-  const P = motion.path;
-  const C = motion.circle;
 
-  const base = {
-    width: 21,
-    height: 21,
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 1.9,
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    'aria-hidden': 'true'
+  const make = (Comp, from, to, extra) =>
+    function EngineIcon({ play }) {
+      return h(
+        motion.div,
+        {
+          key: play ? 'a' : 'i',
+          style: { display: 'flex', width: 21, height: 21, transformOrigin: '50% 50%' },
+          initial: play ? from : false,
+          animate: to,
+          transition: play ? { type: 'spring', duration: 0.42, bounce: 0.34 } : { duration: 0 }
+        },
+        h(Comp, Object.assign({ size: 21, strokeWidth: 1.9, 'aria-hidden': 'true' }, extra))
+      );
+    };
+
+  return {
+    all: make(L.ListMusic, { scale: 0.82, rotate: -16 }, { scale: 1, rotate: 0 }),
+    fav: make(L.Heart, { scale: 0.76 }, { scale: 1 }, { fill: 'currentColor' }),
+    albums: make(L.Disc3, { rotate: -45, scale: 0.88 }, { rotate: 0, scale: 1 }),
+    settings: make(L.Settings, { rotate: -60, scale: 0.88 }, { rotate: 0, scale: 1 })
   };
-
-  const spring = { type: 'spring', duration: 0.36, bounce: 0.24 };
-  const quick = { duration: 0.26, ease: [0.23, 1, 0.32, 1] };
-  const center = { transformOrigin: '12px 12px' };
-
-  function ListIcon({ play }) {
-    const rows = [0, 1, 2];
-    return h(
-      SVG,
-      Object.assign({ key: play ? 'a' : 'i' }, base),
-      rows.map((i) =>
-        h(P, {
-          key: 'l' + i,
-          d: 'M8 ' + (6 + i * 6) + 'h13',
-          initial: play ? { pathLength: 0, opacity: 0.3 } : false,
-          animate: { pathLength: 1, opacity: 1 },
-          transition: { duration: 0.3, ease: [0.23, 1, 0.32, 1], delay: play ? i * 0.05 : 0 }
-        })
-      ),
-      rows.map((i) =>
-        h(P, {
-          key: 'd' + i,
-          d: 'M3 ' + (6 + i * 6) + 'h.01',
-          initial: play ? { opacity: 0 } : false,
-          animate: { opacity: 1 },
-          transition: { duration: 0.2, delay: play ? 0.05 + i * 0.05 : 0 }
-        })
-      )
-    );
-  }
-
-  function HeartIcon({ play }) {
-    return h(
-      SVG,
-      Object.assign({ key: play ? 'a' : 'i' }, base),
-      h(P, {
-        d: 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z',
-        initial: play ? { scale: 0.86, opacity: 0.6 } : false,
-        animate: { scale: 1, opacity: 1 },
-        transition: play ? { type: 'spring', duration: 0.4, bounce: 0.42 } : { duration: 0 },
-        style: center
-      })
-    );
-  }
-
-  function DiscIcon({ play }) {
-    return h(
-      SVG,
-      Object.assign(
-        {
-          key: play ? 'a' : 'i',
-          initial: play ? { rotate: -38, scale: 0.9 } : false,
-          animate: { rotate: 0, scale: 1 },
-          transition: play ? spring : { duration: 0 },
-          style: center
-        },
-        base
-      ),
-      h(C, { cx: 12, cy: 12, r: 10 }),
-      h(C, { cx: 12, cy: 12, r: 2.5 })
-    );
-  }
-
-  function GearIcon({ play }) {
-    return h(
-      SVG,
-      Object.assign(
-        {
-          key: play ? 'a' : 'i',
-          initial: play ? { rotate: -55, scale: 0.92 } : false,
-          animate: { rotate: 0, scale: 1 },
-          transition: play ? spring : { duration: 0 },
-          style: center
-        },
-        base
-      ),
-      h(P, {
-        d: 'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z'
-      }),
-      h(C, { cx: 12, cy: 12, r: 3 })
-    );
-  }
-
-  return { all: ListIcon, fav: HeartIcon, albums: DiscIcon, settings: GearIcon };
 }
 
 async function startEngine() {
@@ -2693,15 +2630,16 @@ async function startEngine() {
   engineSay('загружаю библиотеки…');
 
   try {
-    const [reactMod, domMod, motionMod] = await Promise.all([
+    const [reactMod, domMod, motionMod, lucideMod] = await Promise.all([
       import(ENGINE_LIBS.react),
       import(ENGINE_LIBS.dom),
-      import(ENGINE_LIBS.motion)
+      import(ENGINE_LIBS.motion),
+      import(ENGINE_LIBS.lucide)
     ]);
 
     const React = reactMod.default || reactMod;
-    const M = motionMod;                       // motion/react: motion, animate, stagger, MotionConfig
-    const icons = buildIcons(React, M.motion || M.default);
+    const M = motionMod;                       // motion/react: motion, animate, MotionConfig
+    const icons = buildIcons(React, M.motion || M.default, lucideMod);
     const roots = [];
 
     document.querySelectorAll('.tab-icon').forEach((slot) => {
@@ -2745,20 +2683,9 @@ async function startEngine() {
           return;
         }
         M.animate(tabPill, { transform: target }, { type: 'spring', duration: 0.45, bounce: 0.12 });
-      },
-      // строки списка — каскад через stagger()
-      rows: (panel) => {
-        if (REDUCE_MOTION || !panel) return;
-        const items = [...panel.querySelectorAll('.row, .album-card')].slice(0, 14);
-        if (!items.length) return;
-        M.animate(
-          items,
-          { opacity: [0, 1], transform: ['translateY(7px)', 'translateY(0px)'] },
-          { duration: 0.34, ease: [0.23, 1, 0.32, 1], delay: M.stagger ? M.stagger(0.028) : 0 }
-        );
       }
     };
-    engineSay('React 18 · Motion 11 · Lucide');
+    engineSay('');
   } catch (e) {
     console.warn('[engine]', e);
     engineSay('не загрузилось — проверь сеть');
@@ -2788,7 +2715,7 @@ function paintSettings() {
   document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
     sw.classList.toggle('on', !!settings[sw.dataset.key]);
   });
-  setVersion.textContent = 'v3';
+  setVersion.textContent = APP_VERSION;
   setFoot.textContent = 'JT Music · ' + tracks.length + ' ' + plural(tracks.length, 'трек', 'трека', 'треков');
 }
 
@@ -2856,10 +2783,28 @@ $('resetState').addEventListener('click', () => {
   }
 });
 
-$('clearFavs').addEventListener('click', () => {
+$('clearFavs').addEventListener('click', async () => {
+  if (!favorites.size) {
+    if (tg && tg.HapticFeedback) {
+      try { tg.HapticFeedback.notificationOccurred('warning'); } catch (e) {}
+    }
+    return;
+  }
+
+  const ok = await askConfirm(
+    'Все отмеченные треки пропадут из «Избранного». Отменить это нельзя.',
+    'Очистить избранное?'
+  );
+  if (!ok) return;
+
   favorites.clear();
   saveFavs();
   renderAllPanels();
+  if (activeTab === 'fav') renderFav();
+
+  if (tg && tg.HapticFeedback) {
+    try { tg.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+  }
 });
 
 /* ══════════════════════════════════════════════════════════
