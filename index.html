@@ -86,14 +86,21 @@
     z-index: 2;
     display: none;
     transform: translateX(-50%) scale(1);
-    background-size: cover;
-    background-position: center 40%;
     filter: blur(55px) saturate(240%) brightness(var(--glow-bright, 1.36));
     opacity: var(--glow-opacity, 0.22);
     pointer-events: none;
     will-change: opacity, transform;
     -webkit-mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.65) 42%, transparent 74%);
     mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.65) 42%, transparent 74%);
+  }
+  /* два слоя: старый цвет плавно растворяется в новом */
+  .glow-img {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center 40%;
+    opacity: 0;
+    transition: opacity 3s ease-in-out;
   }
   body.glow-on .glow-top {
     display: block;
@@ -102,7 +109,7 @@
   /* дышит только размером — яркость задаётся ползунком */
   @keyframes glowBreath {
     0%, 100% { transform: translateX(-50%) scale(1); }
-    50%      { transform: translateX(-50%) scale(1.1); }
+    50%      { transform: translateX(-50%) scale(1.22); }
   }
   @media (prefers-reduced-motion: reduce) {
     body.glow-on .glow-top { animation: none; }
@@ -118,25 +125,31 @@
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 4px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.14);
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
     outline: none;
+    margin: 4px 0;
   }
   .set-range::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
+    width: 3px;
+    height: 11px;
+    border-radius: 2px;
     background: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   }
   .set-range::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
+    width: 3px;
+    height: 11px;
     border: none;
-    border-radius: 50%;
+    border-radius: 2px;
     background: #fff;
+  }
+  .set-value {
+    float: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--sub);
   }
 
   /* ══ stage (библиотека + альбом) ═══════════════════════ */
@@ -1423,7 +1436,7 @@
 </head>
 <body>
 
-<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""><div class="glow-top" id="glowTop"></div></div>
+<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""><div class="glow-top"><div class="glow-img" id="glowA"></div><div class="glow-img" id="glowB"></div></div></div>
 
 <!-- ══════════ STAGE ══════════ -->
 <div class="stage" id="stage">
@@ -1579,13 +1592,16 @@
         </button>
       </div>
       <div class="set-row">
-        <div class="set-label">Свечение от обложки</div>
-        <button class="switch" data-key="glow" aria-label="Свечение обложки">
+        <div class="set-label">Анимация свечения</div>
+        <button class="switch" data-key="glow" aria-label="Анимация свечения">
           <span class="switch-knob"></span>
         </button>
       </div>
       <div class="set-row column">
-        <div class="set-label">Яркость свечения</div>
+        <div class="set-label">
+          Яркость свечения
+          <span class="set-value" id="glowVal">35%</span>
+        </div>
         <input class="set-range" id="glowLevel" type="range" min="0" max="100" step="1">
       </div>
       <div class="set-row">
@@ -1735,7 +1751,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -2480,7 +2496,9 @@ function syncFavButtons() {
    ══════════════════════════════════════════════════════════ */
 let ambFront = 0;
 const ambEls = [$('ambA'), $('ambB')];
-const glowTop = $('glowTop');
+const glowA = $('glowA');
+const glowB = $('glowB');
+let glowFront = 0;
 
 function setAmbient(src) {
   const next = ambEls[1 - ambFront];
@@ -2491,7 +2509,15 @@ function setAmbient(src) {
   cur.style.opacity = '0';
   ambFront = 1 - ambFront;
 
-  glowTop.style.backgroundImage = 'url("' + String(src).replace(/"/g, '%22') + '")';
+  // свечение: новый слой проявляется за 3 сек, старый растворяется
+  const layers = [glowA, glowB];
+  const nextLayer = layers[1 - glowFront];
+  const curLayer = layers[glowFront];
+
+  nextLayer.style.backgroundImage = 'url("' + String(src).replace(/"/g, '%22') + '")';
+  nextLayer.style.opacity = '1';
+  curLayer.style.opacity = '0';
+  glowFront = 1 - glowFront;
 }
 
 function setCover(src) {
@@ -2564,10 +2590,10 @@ function fadeInNow() {
   fadeTo(volume, 900);
 }
 
-function loadTrack(index) {
+function loadTrack(index, noFade) {
   if (index < 0 || index >= tracks.length) return;
 
-  const fade = !!settings.crossfade;
+  const fade = !!settings.crossfade && !noFade;
   const wasPlaying = !audio.paused && currentIndex >= 0 && currentIndex !== index;
 
   // играет → сначала гасим текущий, потом включаем новый
@@ -2685,7 +2711,7 @@ function nextTrack(auto) {
   } else {
     queuePos = nextPos;
   }
-  loadTrack(queue[queuePos]);
+  loadTrack(queue[queuePos], !auto);   // кнопки next/prev — без плавности
   play();
 }
 
@@ -2694,7 +2720,7 @@ function prevTrack() {
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
   if (!queue.length) buildQueue(currentIndex);
   queuePos = (queuePos - 1 + queue.length) % queue.length;
-  loadTrack(queue[queuePos]);
+  loadTrack(queue[queuePos], true);    // кнопка prev — без плавности
   play();
 }
 
@@ -3394,6 +3420,9 @@ function paintSettings() {
   const level = $('glowLevel');
   if (level) level.value = String(settings.glowLevel);
 
+  const val = $('glowVal');
+  if (val) val.textContent = settings.glowLevel + '%';
+
   const hint = $('cfHint');
   if (hint) {
     hint.textContent = VOLUME_LOCKED
@@ -3470,6 +3499,9 @@ document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
 $('glowLevel').addEventListener('input', (e) => {
   settings.glowLevel = Number(e.target.value);
   applyGlowLevel(settings.glowLevel);
+
+  const val = $('glowVal');
+  if (val) val.textContent = settings.glowLevel + '%';
 });
 $('glowLevel').addEventListener('change', saveSettings);
 
