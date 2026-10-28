@@ -76,6 +76,37 @@
     background: radial-gradient(130% 85% at 50% 0%, rgba(8, 9, 11, 0.05) 0%, rgba(8, 9, 11, 0.7) 48%, var(--bg) 92%);
   }
 
+  /* ══ свечение сверху от цвета обложки (тестовая функция) ══ */
+  .glow-top {
+    position: absolute;
+    top: -30%;
+    left: 50%;
+    width: 140%;
+    height: 58%;
+    z-index: 2;
+    display: none;
+    transform: translateX(-50%) scale(1);
+    background-size: cover;
+    background-position: center 40%;
+    filter: blur(55px) saturate(260%) brightness(1.7);
+    opacity: 0.5;
+    pointer-events: none;
+    will-change: opacity, transform;
+    -webkit-mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.65) 42%, transparent 74%);
+    mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.65) 42%, transparent 74%);
+  }
+  body.glow-on .glow-top {
+    display: block;
+    animation: glowBreath 7s ease-in-out infinite;
+  }
+  @keyframes glowBreath {
+    0%, 100% { opacity: 0.34; transform: translateX(-50%) scale(1); }
+    50%      { opacity: 0.6;  transform: translateX(-50%) scale(1.09); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body.glow-on .glow-top { animation: none; opacity: 0.45; }
+  }
+
   /* ══ stage (библиотека + альбом) ═══════════════════════ */
   .stage {
     position: fixed;
@@ -1345,7 +1376,7 @@
 </head>
 <body>
 
-<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""></div>
+<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""><div class="glow-top" id="glowTop"></div></div>
 
 <!-- ══════════ STAGE ══════════ -->
 <div class="stage" id="stage">
@@ -1485,6 +1516,15 @@
 
     <div class="set-group" id="setGroup3">
       <div class="set-group-title">Данные</div>
+      <div class="set-row">
+        <div class="set-label">
+          Свечение от обложки
+          <span class="set-hint">Тест: цветное пятно сверху</span>
+        </div>
+        <button class="switch" data-key="glow" aria-label="Свечение обложки">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
       <div class="set-row">
         <div class="set-label">Кэшировать треки офлайн</div>
         <button class="switch" data-key="offline" aria-label="Офлайн-кэш">
@@ -1632,7 +1672,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.3.6';
+const APP_VERSION = '1.4.0';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -2349,6 +2389,7 @@ function syncFavButtons() {
    ══════════════════════════════════════════════════════════ */
 let ambFront = 0;
 const ambEls = [$('ambA'), $('ambB')];
+const glowTop = $('glowTop');
 
 function setAmbient(src) {
   const next = ambEls[1 - ambFront];
@@ -2358,6 +2399,8 @@ function setAmbient(src) {
   next.style.opacity = '0.55';
   cur.style.opacity = '0';
   ambFront = 1 - ambFront;
+
+  glowTop.style.backgroundImage = 'url("' + String(src).replace(/"/g, '%22') + '")';
 }
 
 function setCover(src) {
@@ -2918,7 +2961,7 @@ const SETTINGS_KEY = 'jt_settings_v1';
 let pendingSeek = null;
 let lastStateSave = 0;
 
-let settings = { remember: true, next: true, motion: false, engine: false, offline: true };
+let settings = { remember: true, next: true, motion: false, engine: false, offline: true, glow: false };
 
 function loadSettings() {
   try {
@@ -3157,7 +3200,12 @@ function stopEngine() {
   paintVolume();
 }
 
+function applyGlow(on) {
+  document.body.classList.toggle('glow-on', !!on);
+}
+
 function paintSettings() {
+  applyGlow(settings.glow);
   document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
     sw.classList.toggle('on', !!settings[sw.dataset.key]);
   });
@@ -3221,6 +3269,7 @@ document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
       if (settings.offline) cacheUpcoming();
       else clearAudioCache();
     }
+    if (key === 'glow') applyGlow(settings.glow);
   });
 });
 
