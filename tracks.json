@@ -1173,5 +1173,178 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/bf418506b7754a3bbfa0523f00b15f57.mp3",
     "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
     "duration": 146
+  },
+  {
+    "title": "Аутсайдэр (Outsider)",
+    "artist": "CMH",
+    "album": "ANTIWRLD",
+    "year": "2023",
+    "release": "2023-02-17",
+    "featuring": [],
+    "producer": [
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH",
+      "spbwaves"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/fdcd832a7de14cb593b324aa1e0b1df3.mp3",
+    "cover": "https://images.genius.com/cb0f3e324cce2453101c1309ec3ff901.1000x1000x1.png",
+    "duration": 129
+  },
+  {
+    "title": "реквием2000 (requiem2000)",
+    "artist": "CMH",
+    "album": "все группи попадают в рай (AGGTH)",
+    "year": "2026",
+    "release": "2026-02-13",
+    "featuring": [],
+    "producer": [
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH",
+      "spbwaves"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e65c71d94c7c4e33877d8704c24aab20.mp3",
+    "cover": "https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png",
+    "duration": 129
+  },
+  {
+    "title": "Спрайт (Sprite)",
+    "artist": "CMH",
+    "album": "ANTIWRLD",
+    "year": "2023",
+    "release": "2023-02-17",
+    "featuring": [],
+    "producer": [
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH",
+      "spbwaves"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/33b8b7e649ae491a9fc9286af720f9e6.mp3",
+    "cover": "https://images.genius.com/cb0f3e324cce2453101c1309ec3ff901.1000x1000x1.png",
+    "duration": 132
+  },
+  {
+    "title": "СТИКЕР (STICKER)",
+    "artist": "CMH & Lida",
+    "album": "PAYDAY",
+    "year": "2020",
+    "release": "2020-12-11",
+    "featuring": [],
+    "producer": [
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH",
+      "Lida",
+      "spbwaves"
+    ],
+    "label": "KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/69d203d71d4d45e2964c97acbb8b61e2.mp3",
+    "cover": "https://images.genius.com/7531446c8fc275a286d5819e36f4d1d5.1000x1000x1.png",
+    "duration": 132
+  },
+  {
+    "title": "чайка (gull)",
+    "artist": "CMH & Пошлая Молли (Poshlaya Molly)",
+    "album": "все группи попадают в рай (AGGTH)",
+    "year": "2026",
+    "release": "2026-02-13",
+    "featuring": [],
+    "producer": [
+      "Кирилл Бледный (Kirill Bledny)",
+      "Константин Пыжов (Konstantin Pyzhov)"
+    ],
+    "writers": [
+      "CMH",
+      "Кирилл Бледный (Kirill Bledny)",
+      "Константин Пыжов (Konstantin Pyzhov)",
+      "spbwaves"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/455720c81306430b916ef919a0c61f8a.mp3",
+    "cover": "https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png",
+    "duration": 169
+  },
+  {
+    "title": "Винрар (WinRAR)",
+    "artist": "OG Buda (Ft. 163ONMYNECK)",
+    "album": "FREERIO",
+    "year": "2021",
+    "release": "2021-04-30",
+    "featuring": [
+      "163ONMYNECK"
+    ],
+    "producer": [
+      "BeatsByKelly",
+      "Wex"
+    ],
+    "writers": [
+      "OG Buda",
+      "163ONMYNECK",
+      "BeatsByKelly",
+      "Wex"
+    ],
+    "label": "KOALA MUSIC, MELON MUSIC, RNDM CREW",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c650401aaf294b4db1173a3d800fc544.mp3",
+    "cover": "https://pomf2.lain.la/f/861vwt9s.jpg",
+    "duration": 146
+  },
+  {
+    "title": "Фагаю (Smoke)",
+    "artist": "MAYOT",
+    "album": "ЗАПРАВКА КИД (REFUELING KID)",
+    "year": "2020",
+    "release": "2020-12-25",
+    "featuring": [],
+    "producer": [
+      "Sqweezey",
+      "prod. ivy"
+    ],
+    "writers": [
+      "MAYOT",
+      "Sqweezey",
+      "prod. ivy"
+    ],
+    "label": "CPLUS, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/597a063428fa4fb9b3046c98860bf24b.mp3",
+    "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg",
+    "duration": 94
+  },
+  {
+    "title": "Следующий (Next)",
+    "artist": "OG Buda",
+    "album": "FREERIO 2",
+    "year": "2022",
+    "release": "2022-04-29",
+    "featuring": [],
+    "producer": [
+      "UraniumSeller",
+      "Rallex"
+    ],
+    "writers": [
+      "OG Buda",
+      "UraniumSeller",
+      "Rallex"
+    ],
+    "label": "RNDM CREW, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5a0239e6c7904e7db45d6023fce72a71.mp3",
+    "cover": "https://images.genius.com/b929bdd1ba79cdea4c4c30ed53877eb5.1000x1000x1.png",
+    "duration": 101
   }
 ]
