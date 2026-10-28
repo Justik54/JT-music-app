@@ -34,6 +34,9 @@
     background: var(--bg);
     height: 100%;
     overflow: hidden;
+    overflow: clip;              /* скрытые экраны не должны растягивать страницу вбок */
+    overscroll-behavior: none;
+    max-width: 100vw;
   }
 
   body {
@@ -107,6 +110,7 @@
     position: fixed;
     inset: 0;
     z-index: 1;
+    overflow: hidden;
     transform-origin: 50% 40%;
     transition: transform 460ms var(--ease-drawer), border-radius 460ms var(--ease-drawer);
   }
@@ -133,6 +137,17 @@
     flex-direction: column;
     background: transparent;
   }
+
+  /* обёртка, которая обрезает уехавшие за экран слои —
+     иначе страница растягивается вбок и WebView умеет её скроллить */
+  .layer {
+    position: fixed;
+    inset: 0;
+    z-index: 3;                 /* выше .stage (у него 1) */
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .layer > .screen { pointer-events: auto; }
 
   #scrLibrary { transition: opacity 340ms var(--ease-out); }
   .stage.shrink #scrLibrary,
@@ -1456,6 +1471,7 @@
 </div>
 
 <!-- ══════════ ЭКРАН 4: НАСТРОЙКИ ══════════ -->
+<div class="layer">
 <section class="screen" id="scrSettings">
   <div class="navbar">
     <button class="nav-btn" id="settingsBack" aria-label="Назад">
@@ -1597,6 +1613,8 @@
     </div>
   </div>
 </section>
+</div>
+
 
 <audio id="audio" preload="metadata"></audio>
 
@@ -1643,7 +1661,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.3.1';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
