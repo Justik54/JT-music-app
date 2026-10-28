@@ -333,5 +333,27 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e042474dab644b66bd757c072b279983.mp3",
     "cover": "https://images.genius.com/1b14cc4ef940f906ec94b713f785c8fb.1000x1000x1.png",
     "duration": 168
+  },
+  {
+    "title": "Дерьмо (Shit)",
+    "artist": "MAYOT",
+    "album": "ЗАПРАВКА КИД (REFUELING KID)",
+    "year": "2020",
+    "release": "2020-12-25",
+    "featuring": [],
+    "producer": [
+      "Sqweezey",
+      "manyice"
+    ],
+    "writers": [
+      "MAYOT",
+      "Sqweezey",
+      "manyice"
+    ],
+    "label": "CPLUS, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4ea5570202e848e6a9d07637c05cba11.mp3",
+    "cover": "https://images.genius.com/f449e65549c867145182662bdc67b6f6.1000x1000x1.png",
+    "duration": 73
   }
 ]
