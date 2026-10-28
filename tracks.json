@@ -312,5 +312,26 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a9165bb72ce648a1b1a3f1e67dc63d79.mp3",
     "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
     "duration": 168
+  },
+  {
+    "title": "PSP-FLOW",
+    "artist": "Слава КПСС (Slava KPSS)",
+    "album": "ЕДИНСТВЕННЫЙ РЭПЕР (THE ONLY RAPPER)",
+    "year": "2026",
+    "release": "2026-07-31",
+    "featuring": [],
+    "producer": [
+      "SLAJIDI"
+    ],
+    "writers": [
+      "Слава КПСС (Slava KPSS)",
+      "163ONMYNECK",
+      "SLAJIDI"
+    ],
+    "label": "Антихайп (Antihype), The Fence",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e042474dab644b66bd757c072b279983.mp3",
+    "cover": "https://images.genius.com/1b14cc4ef940f906ec94b713f785c8fb.1000x1000x1.png",
+    "duration": 168
   }
 ]
