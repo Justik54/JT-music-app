@@ -88,8 +88,8 @@
     transform: translateX(-50%) scale(1);
     background-size: cover;
     background-position: center 40%;
-    filter: blur(55px) saturate(260%) brightness(1.7);
-    opacity: 0.5;
+    filter: blur(55px) saturate(240%) brightness(var(--glow-bright, 1.36));
+    opacity: var(--glow-opacity, 0.22);
     pointer-events: none;
     will-change: opacity, transform;
     -webkit-mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.65) 42%, transparent 74%);
@@ -99,12 +99,44 @@
     display: block;
     animation: glowBreath 7s ease-in-out infinite;
   }
+  /* дышит только размером — яркость задаётся ползунком */
   @keyframes glowBreath {
-    0%, 100% { opacity: 0.34; transform: translateX(-50%) scale(1); }
-    50%      { opacity: 0.6;  transform: translateX(-50%) scale(1.09); }
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50%      { transform: translateX(-50%) scale(1.1); }
   }
   @media (prefers-reduced-motion: reduce) {
-    body.glow-on .glow-top { animation: none; opacity: 0.45; }
+    body.glow-on .glow-top { animation: none; }
+  }
+
+  /* ползунок в настройках */
+  .set-row.column {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+  }
+  .set-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.14);
+    outline: none;
+  }
+  .set-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+  .set-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
   }
 
   /* ══ stage (библиотека + альбом) ═══════════════════════ */
@@ -1540,20 +1572,21 @@
       <div class="set-row">
         <div class="set-label">
           Кроссфейд
-          <span class="set-hint">Плавный переход между треками</span>
+          <span class="set-hint" id="cfHint">Плавный переход между треками</span>
         </div>
         <button class="switch" data-key="crossfade" aria-label="Кроссфейд">
           <span class="switch-knob"></span>
         </button>
       </div>
       <div class="set-row">
-        <div class="set-label">
-          Свечение от обложки
-          <span class="set-hint">Тест: цветное пятно сверху</span>
-        </div>
+        <div class="set-label">Свечение от обложки</div>
         <button class="switch" data-key="glow" aria-label="Свечение обложки">
           <span class="switch-knob"></span>
         </button>
+      </div>
+      <div class="set-row column">
+        <div class="set-label">Яркость свечения</div>
+        <input class="set-range" id="glowLevel" type="range" min="0" max="100" step="1">
       </div>
       <div class="set-row">
         <div class="set-label">Кэшировать треки офлайн</div>
@@ -1702,7 +1735,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.5.1';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -2523,31 +2556,49 @@ function fadeTo(target, ms) {
 }
 
 /* переключение трека: если включён кроссфейд — гасим старый и поднимаем новый */
+let pendingFadeIn = false;
+
+function fadeInNow() {
+  if (!pendingFadeIn) return;
+  pendingFadeIn = false;
+  fadeTo(volume, 900);
+}
+
 function loadTrack(index) {
   if (index < 0 || index >= tracks.length) return;
 
-  const canFade = settings.crossfade && !audio.paused && currentIndex >= 0 && currentIndex !== index;
+  const fade = !!settings.crossfade;
+  const wasPlaying = !audio.paused && currentIndex >= 0 && currentIndex !== index;
 
-  if (canFade) {
+  // играет → сначала гасим текущий, потом включаем новый
+  if (fade && wasPlaying) {
     pendingSwitch = index;
     const token = ++switchToken;
 
-    fadeTo(0, 260).then(() => {
+    fadeTo(0, 380).then(() => {
       if (token !== switchToken) return;   // уже выбрали другой трек
       const target = pendingSwitch;
       pendingSwitch = 0;
       if (target < 0) return;
 
+      audio.volume = 0;
+      pendingFadeIn = true;
       applyTrack(target);
       play();
-      fadeTo(volume, 650);
     });
     return;
   }
 
   pendingSwitch = 0;
   applyTrack(index);
-  audio.volume = volume;
+
+  if (fade) {
+    audio.volume = 0;              // новый трек стартует с нуля и поднимается
+    pendingFadeIn = true;
+    if (!audio.paused) fadeInNow();
+  } else {
+    audio.volume = volume;
+  }
 }
 
 function applyTrack(index) {
@@ -3076,7 +3127,8 @@ const SETTINGS_KEY = 'jt_settings_v1';
 let pendingSeek = null;
 let lastStateSave = 0;
 
-let settings = { remember: true, next: true, motion: false, engine: false, offline: true, glow: false, crossfade: true };
+let settings = { remember: true, next: true, motion: false, engine: false, offline: true,
+                 glow: false, crossfade: true, glowLevel: 35 };
 
 function loadSettings() {
   try {
@@ -3315,12 +3367,39 @@ function stopEngine() {
   paintVolume();
 }
 
+function applyGlowLevel(level) {
+  const v = Math.max(0, Math.min(100, Number(level) || 0));
+  document.body.style.setProperty('--glow-opacity', String((0.04 + (v / 100) * 0.51).toFixed(3)));
+  document.body.style.setProperty('--glow-bright', String((1.15 + (v / 100) * 0.6).toFixed(3)));
+}
+
 function applyGlow(on) {
   document.body.classList.toggle('glow-on', !!on);
+  applyGlowLevel(settings.glowLevel);
 }
+
+const VOLUME_LOCKED = (() => {
+  try {
+    const probe = document.createElement('audio');
+    probe.volume = 0.5;
+    return Math.abs(probe.volume - 0.5) > 0.01;
+  } catch (e) {
+    return true;
+  }
+})();
 
 function paintSettings() {
   applyGlow(settings.glow);
+
+  const level = $('glowLevel');
+  if (level) level.value = String(settings.glowLevel);
+
+  const hint = $('cfHint');
+  if (hint) {
+    hint.textContent = VOLUME_LOCKED
+      ? 'На iOS браузер не даёт менять громкость — плавность не сработает'
+      : 'Плавный переход между треками';
+  }
   document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
     sw.classList.toggle('on', !!settings[sw.dataset.key]);
   });
@@ -3387,6 +3466,12 @@ document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
     if (key === 'glow') applyGlow(settings.glow);
   });
 });
+
+$('glowLevel').addEventListener('input', (e) => {
+  settings.glowLevel = Number(e.target.value);
+  applyGlowLevel(settings.glowLevel);
+});
+$('glowLevel').addEventListener('change', saveSettings);
 
 $('settingsBack').addEventListener('click', closeSettings);
 
@@ -3677,6 +3762,27 @@ function shareTrack(t) {
   openInBrowser(
     'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text)
   );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Короткий id трека — для ссылок вида ?startapp=track_xxx
+   (тот же самый хэш считается в боте)
+   ══════════════════════════════════════════════════════════ */
+function trackIdOf(t) {
+  let h = 0;
+  const str = String((t && t.src) || '');
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+function indexFromStartParam() {
+  const param = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
+  if (param.indexOf('track_') !== 0) return -1;
+
+  const id = param.slice(6);
+  if (!id) return -1;
+
+  return tracks.findIndex((t) => trackIdOf(t) === id);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -4093,6 +4199,7 @@ let lastStatsSave = 0;
 audio.addEventListener('playing', () => {
   countPlay();
   lastAudioTime = audio.currentTime;
+  fadeInNow();
   cacheUpcoming();
 });
 
@@ -4159,6 +4266,15 @@ if ('serviceWorker' in navigator &&
 
   renderAllPanels();
   restoreQueue();               // порядок очереди с прошлой сессии
+
+  // ссылка из бота (t.me/...?startapp=track_xxx) — сразу включаем трек
+  const startIndex = indexFromStartParam();
+  if (startIndex >= 0) {
+    loadTrack(startIndex);
+    openPlayer();
+    play();
+    return;
+  }
 
   // ссылка вида #track=... важнее «где остановился»
   const deepIndex = indexFromHash();
