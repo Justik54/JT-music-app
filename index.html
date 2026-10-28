@@ -1539,6 +1539,15 @@
       <div class="set-group-title">Данные</div>
       <div class="set-row">
         <div class="set-label">
+          Кроссфейд
+          <span class="set-hint">Плавный переход между треками</span>
+        </div>
+        <button class="switch" data-key="crossfade" aria-label="Кроссфейд">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+      <div class="set-row">
+        <div class="set-label">
           Свечение от обложки
           <span class="set-hint">Тест: цветное пятно сверху</span>
         </div>
@@ -1693,7 +1702,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.5.0';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -2484,8 +2493,64 @@ function buildQueue(startIndex) {
   queuePos = queue.indexOf(startIndex);
 }
 
+let pendingSwitch = 0;
+let switchToken = 0;
+
+/* плавно меняет громкость: from -> target за ms миллисекунд */
+function fadeTo(target, ms) {
+  return new Promise((resolve) => {
+    const from = audio.volume;
+    const t0 = performance.now();
+    let done = false;
+
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearInterval(timer);
+      clearTimeout(guard);
+      audio.volume = Math.max(0, Math.min(1, target));
+      resolve();
+    };
+
+    const timer = setInterval(() => {
+      const k = Math.min(1, (performance.now() - t0) / ms);
+      audio.volume = Math.max(0, Math.min(1, from + (target - from) * k));
+      if (k >= 1) finish();
+    }, 16);
+
+    const guard = setTimeout(finish, ms + 500);
+  });
+}
+
+/* переключение трека: если включён кроссфейд — гасим старый и поднимаем новый */
 function loadTrack(index) {
   if (index < 0 || index >= tracks.length) return;
+
+  const canFade = settings.crossfade && !audio.paused && currentIndex >= 0 && currentIndex !== index;
+
+  if (canFade) {
+    pendingSwitch = index;
+    const token = ++switchToken;
+
+    fadeTo(0, 260).then(() => {
+      if (token !== switchToken) return;   // уже выбрали другой трек
+      const target = pendingSwitch;
+      pendingSwitch = 0;
+      if (target < 0) return;
+
+      applyTrack(target);
+      play();
+      fadeTo(volume, 650);
+    });
+    return;
+  }
+
+  pendingSwitch = 0;
+  applyTrack(index);
+  audio.volume = volume;
+}
+
+function applyTrack(index) {
   currentIndex = index;
   playCounted = false;
   lastAudioTime = 0;
@@ -2532,6 +2597,7 @@ function playIndex(index) {
 }
 
 function play() {
+  if (pendingSwitch) return;   // сейчас идёт плавный переход
   if (currentIndex < 0) return;
   const p = audio.play();
   if (p && p.catch) {
@@ -3010,7 +3076,7 @@ const SETTINGS_KEY = 'jt_settings_v1';
 let pendingSeek = null;
 let lastStateSave = 0;
 
-let settings = { remember: true, next: true, motion: false, engine: false, offline: true, glow: false };
+let settings = { remember: true, next: true, motion: false, engine: false, offline: true, glow: false, crossfade: true };
 
 function loadSettings() {
   try {
