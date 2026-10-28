@@ -79,14 +79,14 @@
   /* ══ свечение сверху от цвета обложки (тестовая функция) ══ */
   .glow-top {
     position: absolute;
-    top: -30%;
+    top: -34%;
     left: 50%;
-    width: 140%;
-    height: 58%;
+    width: 150%;
+    height: 70%;
     z-index: 2;
     display: none;
     transform: translateX(-50%) scale(1);
-    filter: blur(55px) saturate(240%) brightness(var(--glow-bright, 1.36));
+    filter: blur(42px) saturate(300%) brightness(var(--glow-bright, 1.36));
     opacity: var(--glow-opacity, 0.22);
     pointer-events: none;
     will-change: opacity, transform;
@@ -104,15 +104,46 @@
   }
   body.glow-on .glow-top {
     display: block;
-    animation: glowBreath 7s ease-in-out infinite;
+    animation: glowBreath 5s ease-in-out infinite;
   }
   /* дышит только размером — яркость задаётся ползунком */
   @keyframes glowBreath {
-    0%, 100% { transform: translateX(-50%) scale(1); }
-    50%      { transform: translateX(-50%) scale(1.22); }
+    0%   { transform: translateX(-50%) scale(0.98) translateY(0);      opacity: calc(var(--glow-opacity, 0.22) * 0.75); }
+    50%  { transform: translateX(-52%) scale(1.32) translateY(8px);    opacity: calc(var(--glow-opacity, 0.22) * 1.3); }
+    100% { transform: translateX(-50%) scale(0.98) translateY(0);      opacity: calc(var(--glow-opacity, 0.22) * 0.75); }
   }
   @media (prefers-reduced-motion: reduce) {
     body.glow-on .glow-top { animation: none; }
+  }
+
+  /* серое переливание — отдельный слой поверх цветного */
+  .glow-top::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: radial-gradient(closest-side,
+      rgba(238, 243, 250, 0.9) 0%,
+      rgba(214, 222, 232, 0.4) 45%,
+      transparent 76%);
+    opacity: 0;
+    transition: opacity 2.5s ease;
+    pointer-events: none;
+  }
+
+  /* трек не играет — цвет уходит, остаётся серое переливание */
+  body.glow-on.paused .glow-top::before { opacity: 1; }
+  body.glow-on.paused .glow-img { opacity: 0 !important; }
+
+  body.glow-on.paused .glow-top {
+    animation: glowIdle 6s ease-in-out infinite;
+  }
+  @keyframes glowIdle {
+    0%, 100% { transform: translateX(-50%) scale(0.92); opacity: calc(var(--glow-opacity, 0.22) * 0.9); }
+    50%      { transform: translateX(-50%) scale(1.18); opacity: calc(var(--glow-opacity, 0.22) * 1.75); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body.glow-on.paused .glow-top { animation: none; }
   }
 
   /* ползунок в настройках */
@@ -125,26 +156,33 @@
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 5px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.1);
+    height: 4px;
+    border-radius: 2px;
     outline: none;
-    margin: 4px 0;
+    margin: 6px 0;
+    background: linear-gradient(
+      to right,
+      rgba(244, 247, 250, 0.9) 0%,
+      rgba(244, 247, 250, 0.9) var(--fill, 35%),
+      rgba(255, 255, 255, 0.12) var(--fill, 35%),
+      rgba(255, 255, 255, 0.12) 100%
+    );
   }
   .set-range::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 3px;
-    height: 11px;
-    border-radius: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
     background: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
   }
   .set-range::-moz-range-thumb {
-    width: 3px;
-    height: 11px;
+    width: 16px;
+    height: 16px;
     border: none;
-    border-radius: 2px;
+    border-radius: 50%;
     background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
   }
   .set-value {
     float: right;
@@ -1514,19 +1552,19 @@
     <nav class="tabbar">
       <div class="tabbar-pill" id="tabPill"></div>
       <button class="tabbar-btn active" data-tab="all">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
         <span class="tab-icon" data-icon="all"></span>
         <span>Все</span>
-      </button>
-      <button class="tabbar-btn" data-tab="fav">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-        <span class="tab-icon" data-icon="fav"></span>
-        <span>Избранное</span>
       </button>
       <button class="tabbar-btn" data-tab="albums">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2.5"/></svg>
         <span class="tab-icon" data-icon="albums"></span>
         <span>Альбомы</span>
+      </button>
+      <button class="tabbar-btn" data-tab="fav">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <span class="tab-icon" data-icon="fav"></span>
+        <span>Избранное</span>
       </button>
       <button class="tabbar-btn" id="settingsBtn">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1600,7 +1638,7 @@
       <div class="set-row column">
         <div class="set-label">
           Яркость свечения
-          <span class="set-value" id="glowVal">35%</span>
+          <span class="set-value" id="glowVal">55%</span>
         </div>
         <input class="set-range" id="glowLevel" type="range" min="0" max="100" step="1">
       </div>
@@ -1751,7 +1789,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.5.3';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -2587,7 +2625,7 @@ let pendingFadeIn = false;
 function fadeInNow() {
   if (!pendingFadeIn) return;
   pendingFadeIn = false;
-  fadeTo(volume, 900);
+  fadeTo(volume, 1200);
 }
 
 function loadTrack(index, noFade) {
@@ -2601,7 +2639,7 @@ function loadTrack(index, noFade) {
     pendingSwitch = index;
     const token = ++switchToken;
 
-    fadeTo(0, 380).then(() => {
+    fadeTo(0, 600).then(() => {
       if (token !== switchToken) return;   // уже выбрали другой трек
       const target = pendingSwitch;
       pendingSwitch = 0;
@@ -3154,7 +3192,7 @@ let pendingSeek = null;
 let lastStateSave = 0;
 
 let settings = { remember: true, next: true, motion: false, engine: false, offline: true,
-                 glow: false, crossfade: true, glowLevel: 35 };
+                 glow: false, crossfade: true, glowLevel: 55 };
 
 function loadSettings() {
   try {
@@ -3395,8 +3433,11 @@ function stopEngine() {
 
 function applyGlowLevel(level) {
   const v = Math.max(0, Math.min(100, Number(level) || 0));
-  document.body.style.setProperty('--glow-opacity', String((0.04 + (v / 100) * 0.51).toFixed(3)));
-  document.body.style.setProperty('--glow-bright', String((1.15 + (v / 100) * 0.6).toFixed(3)));
+  document.body.style.setProperty('--glow-opacity', String((0.1 + (v / 100) * 0.75).toFixed(3)));
+  document.body.style.setProperty('--glow-bright', String((1.2 + (v / 100) * 0.9).toFixed(3)));
+
+  const range = $('glowLevel');
+  if (range) range.style.setProperty('--fill', v + '%');
 }
 
 function applyGlow(on) {
