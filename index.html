@@ -65,8 +65,13 @@
     filter: blur(105px) saturate(200%) brightness(0.78);
     opacity: 0;
     transform: scale(1.15);
-    transition: opacity 700ms var(--ease-out);
+    transition: opacity 700ms var(--ease-out), filter 2s ease;
     will-change: opacity;
+  }
+
+  /* трек не играет — фон тоже уходит в серый */
+  body.paused .ambient img {
+    filter: blur(105px) saturate(0) brightness(0.72);
   }
   .ambient::after {
     content: "";
@@ -100,11 +105,11 @@
     background-size: cover;
     background-position: center 40%;
     opacity: 0;
-    transition: opacity 3s ease-in-out;
+    transition: opacity 6s ease-in-out;
   }
   body.glow-on .glow-top {
     display: block;
-    animation: glowBreath 5s ease-in-out infinite;
+    animation: glowBreath 8s ease-in-out infinite;
   }
   /* дышит только размером — яркость задаётся ползунком */
   @keyframes glowBreath {
@@ -1780,7 +1785,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.5.5';
+const APP_VERSION = '1.5.6';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
