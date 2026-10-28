@@ -1632,7 +1632,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.3.4';
+const APP_VERSION = '1.3.5';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -2158,21 +2158,20 @@ function renderAlbums() {
   panels.albums.innerHTML = '';
   const groups = groupByAlbum();
 
-  if (!groups.size) {
-    panels.albums.innerHTML = searchQuery
-      ? emptyState()
-      : '<div class="empty"><b>Альбомов нет</b>Все треки пока синглы — они в «Все»</div>';
-    return;
-  }
+  // «Сингл» и альбомы из одного трека в сетку не берём
+  let names = [...groups.keys()]
+    .filter((name) => (groups.get(name) || []).length > 1)
+    .sort((a, b) => a.localeCompare(b, 'ru'));
 
-  let names = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'ru'));
   if (searchQuery) {
     names = names.filter((name) => groups.get(name).some((i) => matches(tracks[i])));
   }
   if (sortMode === 'new') names = names.reverse();
 
   if (!names.length) {
-    panels.albums.innerHTML = emptyState();
+    panels.albums.innerHTML = searchQuery
+      ? emptyState()
+      : '<div class="empty"><b>Альбомов нет</b>Все треки пока синглы — они в «Все»</div>';
     return;
   }
 
