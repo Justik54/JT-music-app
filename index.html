@@ -1632,7 +1632,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.3.2';
+const APP_VERSION = '1.3.3';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -1849,14 +1849,44 @@ function splitArtists(raw) {
   return out;
 }
 
-/* артист + featuring одной строкой */
+const normName = (s) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+/* артист + featuring одной строкой, без дублей:
+   «OG Buda (Ft. Scally Milano)» + featuring [«Scally Milano»] → «OG Buda feat. Scally Milano» */
 function artistLine(t) {
   if (!t) return '';
-  const list = splitArtists(t.artist);
-  const extra = list.slice(1).concat((t.featuring || []).filter(Boolean));
 
-  if (!list.length) return t.artist || '';
-  return extra.length ? list[0] + ' feat. ' + extra.join(', ') : list[0];
+  const raw = (t.artist || '').trim();
+  const extra = [];
+
+  // вытаскиваем feat./ft. из скобок прямо в имени артиста
+  const cleaned = raw.replace(
+    /[\[\]]?\s*[\(\[]\s*(?:feat\.?|ft\.?|при\s+участии)\s*([^\)\]]+)[\)\]]/gi,
+    (m, names) => {
+      names.split(/\s*[,&]\s*|\s+and\s+/i).forEach((n) => {
+        if (n.trim()) extra.push(n.trim());
+      });
+      return ' ';
+    }
+  );
+
+  const list = splitArtists(cleaned);
+  const main = (list[0] || raw).trim();
+  if (!main) return raw;
+
+  const rest = list.slice(1).concat(extra, (t.featuring || []).filter(Boolean));
+
+  const seen = new Set([normName(main)]);
+  const uniq = [];
+
+  rest.forEach((name) => {
+    const key = normName(name);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    uniq.push(String(name).trim());
+  });
+
+  return uniq.length ? main + ' feat. ' + uniq.join(', ') : main;
 }
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
