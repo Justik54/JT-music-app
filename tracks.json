@@ -974,5 +974,204 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c2f49f91f1974c2689260abd453febd1.mp3",
     "cover": "https://images.genius.com/734359417981da30b8cdc7d7e10e2457.1000x1000x1.png",
     "duration": 104
+  },
+  {
+    "title": "МИКРО (MIC)",
+    "artist": "SEEMEE (Ft. MAYOT)",
+    "album": "TXC",
+    "year": "2021",
+    "release": "2021-06-25",
+    "featuring": [
+      "MAYOT"
+    ],
+    "producer": [
+      "DooMee"
+    ],
+    "writers": [
+      "DooMee",
+      "MAYOT",
+      "SEEMEE"
+    ],
+    "label": "MELON MUSIC, CPLUS",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5a759a944f8549a3b837b32bcb11edfc.mp3",
+    "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
+    "duration": 138
+  },
+  {
+    "title": "КОГДА Я УМРУ (WHEN I DIE)",
+    "artist": "CMH & МУККА (MUKKA)",
+    "album": "KILL THIS ALBUM",
+    "year": "2025",
+    "release": "2025-01-24",
+    "featuring": [],
+    "producer": [
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH",
+      "МУККА (MUKKA)",
+      "spbwaves"
+    ],
+    "label": "KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/79086c7dd6ce4e9b920d88061b357d41.mp3",
+    "cover": "https://images.genius.com/7d0f66559bba92c4fb710c6f997f93a2.1000x1000x1.png",
+    "duration": 119
+  },
+  {
+    "title": "Большие Бабки (Big Money)",
+    "artist": "Scally Milano & OG Buda",
+    "album": "Пропаганда денег (Money Propaganda)",
+    "year": "2022",
+    "release": "2022-04-15",
+    "featuring": [],
+    "producer": [
+      "saintracks",
+      "wygo01"
+    ],
+    "writers": [
+      "Scally Milano",
+      "OG Buda",
+      "saintracks",
+      "wygo01"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a6cfdc85e2ae4e419be94d6e3e21011b.mp3",
+    "cover": "https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png",
+    "duration": 140
+  },
+  {
+    "title": "ОРВИ (ARVI)",
+    "artist": "Baby Melo",
+    "album": "Who Realer?",
+    "year": "2024",
+    "release": "2024-05-31",
+    "featuring": [],
+    "producer": [
+      "YGCezar",
+      "Иван Комаров (Ivan Komarov)"
+    ],
+    "writers": [
+      "Baby Melo"
+    ],
+    "label": "A+ (A Plus), HOOD2HOOD",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5ee158cdacf645b4b04ea728a48a5083.mp3",
+    "cover": "https://images.genius.com/61e9eb92c06c7538f59adc523f2c039c.1000x1000x1.png",
+    "duration": 142
+  },
+  {
+    "title": "Дерьмо (Shit)",
+    "artist": "SEEMEE",
+    "album": "TXC",
+    "year": "2021",
+    "release": "2021-01-29",
+    "featuring": [],
+    "producer": [
+      "TonySouljah"
+    ],
+    "writers": [
+      "TonySouljah",
+      "SEEMEE"
+    ],
+    "label": "MELON MUSIC, CPLUS",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/15ac6e39700049c793da84e625031db6.mp3",
+    "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
+    "duration": 110
+  },
+  {
+    "title": "Ашан (Auchan)",
+    "artist": "SODA LUV",
+    "album": "Ничего личного (Nothing Personal)",
+    "year": "2019",
+    "release": "2019-12-20",
+    "featuring": [],
+    "producer": [
+      "Yung Dexn"
+    ],
+    "writers": [
+      "Yung Dexn",
+      "SODA LUV"
+    ],
+    "label": "Rhymes Music",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c9f793430c014bec86babe2754cff67a.mp3",
+    "cover": "https://images.genius.com/5327fad05f60d4192af895947c54b54e.1000x1000x1.png",
+    "duration": 103
+  },
+  {
+    "title": "Гоатс милк (Goat’s Milk)",
+    "artist": "163ONMYNECK",
+    "album": "GROW GUIDE 3",
+    "year": "2023",
+    "release": "2023-09-01",
+    "featuring": [],
+    "producer": [
+      "Kay Kay",
+      "SLAJIDI"
+    ],
+    "writers": [
+      "163ONMYNECK",
+      "Kay Kay",
+      "SLAJIDI"
+    ],
+    "label": "RNDM CREW, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c19784d1b6f24d1e88d463a3f09e1911.mp3",
+    "cover": "https://images.genius.com/df60ffed5e7cf7d05e3b43a244a4f0ff.1000x1000x1.png",
+    "duration": 112
+  },
+  {
+    "title": "Грачи (Rooks)",
+    "artist": "MAYOT (Ft. OG Buda)",
+    "album": "GHETTO GARDEN",
+    "year": "2020",
+    "release": "2020-09-04",
+    "featuring": [
+      "OG Buda"
+    ],
+    "producer": [
+      "Sqweezey"
+    ],
+    "writers": [
+      "Sqweezey",
+      "OG Buda",
+      "MAYOT"
+    ],
+    "label": "MELON MUSIC, RNDM CREW, CPLUS",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c0f40275d4bf4780a8cafb67d3449d1d.mp3",
+    "cover": "https://images.genius.com/eaf1162509e8a8aad157ff8576daa9fc.1000x1000x1.png",
+    "duration": 55
+  },
+  {
+    "title": "Hot Wheels",
+    "artist": "SEEMEE (Ft. 163ONMYNECK & Scally Milano)",
+    "album": "TXC",
+    "year": "2021",
+    "release": "2021-06-25",
+    "featuring": [
+      "Scally Milano",
+      "163ONMYNECK"
+    ],
+    "producer": [
+      "chronic",
+      "cardinparis"
+    ],
+    "writers": [
+      "SEEMEE",
+      "Scally Milano",
+      "163ONMYNECK",
+      "chronic",
+      "cardinparis"
+    ],
+    "label": "MELON MUSIC, CPLUS",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/bf418506b7754a3bbfa0523f00b15f57.mp3",
+    "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
+    "duration": 146
   }
 ]
