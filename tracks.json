@@ -285,5 +285,32 @@
     "src": "https://pomf2.lain.la/f/aqvzh7v5.mp3",
     "cover": "https://pomf2.lain.la/f/wce3guh9.jpg",
     "duration": 135
+  },
+  {
+    "title": "Кроссики (Sneakers)",
+    "artist": "SEEMEE",
+    "album": "TXC",
+    "year": "2021",
+    "release": "2021-06-25",
+    "featuring": [
+      "LOVV66"
+    ],
+    "producer": [
+      "DARK THE PRODUCER",
+      "DooMee",
+      "mirice"
+    ],
+    "writers": [
+      "mirice",
+      "DooMee",
+      "DARK THE PRODUCER",
+      "SEEMEE",
+      "LOVV66"
+    ],
+    "label": "MELON MUSIC, CPLUS",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a9165bb72ce648a1b1a3f1e67dc63d79.mp3",
+    "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
+    "duration": 168
   }
 ]
