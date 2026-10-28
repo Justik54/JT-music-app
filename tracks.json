@@ -355,5 +355,624 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4ea5570202e848e6a9d07637c05cba11.mp3",
     "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg",
     "duration": 73
+  },
+  {
+    "title": "Телеграм (Telegram)",
+    "artist": "Scally Milano",
+    "album": "Really Rich",
+    "year": "2022",
+    "release": "2022-12-16",
+    "featuring": [],
+    "producer": [
+      "lakes (prod)"
+    ],
+    "writers": [
+      "Scally Milano",
+      "lakes (prod)"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/768a850455b04b66a0ab988e8262bc13.mp3",
+    "cover": "https://images.genius.com/e51316fc932db27fc3e8541aa3548592.1000x1000x1.png",
+    "duration": 131
+  },
+  {
+    "title": "ЯЛРС (ILDB)",
+    "artist": "SODA LUV",
+    "album": "НИЧЕГО ЛИЧНОГО 2 (NOTHING PERSONAL 2)",
+    "year": "2022",
+    "release": "2022-11-25",
+    "featuring": [],
+    "producer": [
+      "YG Woods",
+      "8keey"
+    ],
+    "writers": [
+      "SODA LUV",
+      "YG Woods"
+    ],
+    "label": "CPLUS",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/9443e0d476ba4957a685b13b05c687d4.mp3",
+    "cover": "https://images.genius.com/9b81b1b4d5f358f1f407b79003ced039.1000x1000x1.png",
+    "duration": 130
+  },
+  {
+    "title": "Биполярный (Bipolar)",
+    "artist": "Scally Milano",
+    "album": "ONION",
+    "year": "2021",
+    "release": "2021-06-18",
+    "featuring": [],
+    "producer": [
+      "Heronwater Beats"
+    ],
+    "writers": [
+      "Scally Milano",
+      "Heronwater Beats"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/367a43010b6b4deabbe7b2a8e3ed22a5.mp3",
+    "cover": "https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png",
+    "duration": 130
+  },
+  {
+    "title": "Добро Пожаловать (Welcome)",
+    "artist": "OG Buda & MAYOT",
+    "album": "Сингл",
+    "year": "2021",
+    "release": "2021-04-28",
+    "featuring": [],
+    "producer": [
+      "Wex",
+      "TREEPSIDE"
+    ],
+    "writers": [
+      "OG Buda",
+      "MAYOT",
+      "Wex",
+      "TREEPSIDE"
+    ],
+    "label": "CPLUS, MELON MUSIC, RNDM CREW",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5f3d439b174a4f979425fe572f31e6c1.mp3",
+    "cover": "https://images.genius.com/b169151c05ced202a24ea4654c8d496c.1000x1000x1.png",
+    "duration": 109
+  },
+  {
+    "title": "Дабстэп (Dubstep)",
+    "artist": "OG Buda (Ft. Scally Milano)",
+    "album": "FREERIO",
+    "year": "2021",
+    "release": "2021-04-30",
+    "featuring": [
+      "Scally Milano"
+    ],
+    "producer": [
+      "Heronwater Beats"
+    ],
+    "writers": [
+      "OG Buda",
+      "Scally Milano",
+      "Heronwater Beats"
+    ],
+    "label": "KOALA MUSIC, MELON MUSIC, RNDM CREW",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e4eda2b4fc014839819215ecd9c5e5f5.mp3",
+    "cover": "https://pomf2.lain.la/f/861vwt9s.jpg",
+    "duration": 136
+  },
+  {
+    "title": "Бэньг Бэньг (Bang Bang)",
+    "artist": "Scally Milano",
+    "album": "ONION",
+    "year": "2021",
+    "release": "2021-06-18",
+    "featuring": [],
+    "producer": [
+      "Wex",
+      "oqumeh"
+    ],
+    "writers": [
+      "Scally Milano",
+      "Wex",
+      "oqumeh"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/d50a5ab9e6c24c13963047ec20366d8a.mp3",
+    "cover": "https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png",
+    "duration": 126
+  },
+  {
+    "title": "Дзагоев (Dzagoev)",
+    "artist": "OG Buda",
+    "album": "FREERIO",
+    "year": "2021",
+    "release": "2021-04-30",
+    "featuring": [],
+    "producer": [
+      "Nest",
+      "Gredy",
+      "Wex"
+    ],
+    "writers": [
+      "OG Buda",
+      "Nest",
+      "Gredy",
+      "Wex"
+    ],
+    "label": "KOALA MUSIC, MELON MUSIC, RNDM CREW",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7a854a26491c451e8fd180beef965483.mp3",
+    "cover": "https://pomf2.lain.la/f/861vwt9s.jpg",
+    "duration": 121
+  },
+  {
+    "title": "Подкован (Savvy)",
+    "artist": "Scally Milano",
+    "album": "Пропаганда денег (Money Propaganda)",
+    "year": "2022",
+    "release": "2022-04-12",
+    "featuring": [],
+    "producer": [
+      "Senk",
+      "thirdfen"
+    ],
+    "writers": [
+      "Scally Milano",
+      "Senk",
+      "thirdfen"
+    ],
+    "label": "amc music",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/53adcbf1873d4da783aef32bd1a13f1e.mp3",
+    "cover": "https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png",
+    "duration": 133
+  },
+  {
+    "title": "VIP",
+    "artist": "unki (Ft. BUSHIDO ZHO)",
+    "album": "JERK SHIT HAPPENS 2",
+    "year": "2024",
+    "release": "2024-06-07",
+    "featuring": [
+      "BUSHIDO ZHO"
+    ],
+    "producer": [
+      "blickyhomeboy",
+      "yuko (Producer)",
+      "Wex",
+      "DIsshhhh"
+    ],
+    "writers": [
+      "unki",
+      "BUSHIDO ZHO",
+      "blickyhomeboy",
+      "Wex"
+    ],
+    "label": "#neWWave (RUS)",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/dafd13497c8c433bba9583eb659deb27.mp3",
+    "cover": "https://images.genius.com/6d506d3c2e96922d2cab3a99f7be8974.1000x1000x1.png",
+    "duration": 97
+  },
+  {
+    "title": "hu3ta (VJLink)",
+    "artist": "OG Buda (Ft. SODA LUV)",
+    "album": "FREERIO",
+    "year": "2021",
+    "release": "2021-04-30",
+    "featuring": [
+      "SODA LUV"
+    ],
+    "producer": [
+      "Heronwater Beats"
+    ],
+    "writers": [
+      "OG Buda",
+      "SODA LUV",
+      "Heronwater Beats"
+    ],
+    "label": "KOALA MUSIC, MELON MUSIC, RNDM CREW",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/b3afedbc2b914513a086f53d64dd78e3.mp3",
+    "cover": "https://pomf2.lain.la/f/861vwt9s.jpg",
+    "duration": 121
+  },
+  {
+    "title": "Колян (Kolyan)",
+    "artist": "Scally Milano",
+    "album": "ONION",
+    "year": "2021",
+    "release": "2021-06-18",
+    "featuring": [],
+    "producer": [
+      "Wex",
+      "Matake"
+    ],
+    "writers": [
+      "Scally Milano",
+      "Wex",
+      "Matake"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/bf9245d04ce04739941d574e38d43835.mp3",
+    "cover": "https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png",
+    "duration": 139
+  },
+  {
+    "title": "FACE ID",
+    "artist": "MAYOT & SEEMEE (Ft. 163ONMYNECK)",
+    "album": "SCUM OFF THE POT 2",
+    "year": "2022",
+    "release": "2022-06-24",
+    "featuring": [
+      "163ONMYNECK"
+    ],
+    "producer": [
+      "CALYKO"
+    ],
+    "writers": [
+      "CALYKO",
+      "163ONMYNECK",
+      "MAYOT",
+      "SEEMEE"
+    ],
+    "label": "CPLUS",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/16b75103cd994b8f8056935c435ba444.mp3",
+    "cover": "https://images.genius.com/6baf7ba3c9643051a2fb8ae9ef8dea80.1000x1000x1.png",
+    "duration": 143
+  },
+  {
+    "title": "WINDOWS",
+    "artist": "SEEMEE (Ft. MAYOT)",
+    "album": "TXC",
+    "year": "2021",
+    "release": "2021-06-25",
+    "featuring": [
+      "MAYOT"
+    ],
+    "producer": [
+      "DooMee",
+      "TonySouljah",
+      "VisaGangBeatz"
+    ],
+    "writers": [
+      "SEEMEE",
+      "MAYOT",
+      "VisaGangBeatz",
+      "TonySouljah",
+      "DooMee"
+    ],
+    "label": "CPLUS",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/d819f91980e44cd5968cbf917c80f52d.mp3",
+    "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
+    "duration": 100
+  },
+  {
+    "title": "Скам (Scam)",
+    "artist": "Scally Milano",
+    "album": "ONION",
+    "year": "2021",
+    "release": "2021-06-18",
+    "featuring": [],
+    "producer": [
+      "Heronwater Beats"
+    ],
+    "writers": [
+      "Scally Milano",
+      "Heronwater Beats"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4ddcb9deaec44369afffccb089d2f946.mp3",
+    "cover": "https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png",
+    "duration": 153
+  },
+  {
+    "title": "DREDD JUDGE",
+    "artist": "SEEMEE",
+    "album": "TXC 2",
+    "year": "2024",
+    "release": "2024-09-13",
+    "featuring": [],
+    "producer": [
+      "180revs"
+    ],
+    "writers": [
+      "SEEMEE",
+      "180revs"
+    ],
+    "label": "KOALA MUSIC, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/03786a44ecd841b2a88597c3140e9cf0.mp3",
+    "cover": "https://images.genius.com/5f99590171d32af55c9795acccdc9612.1000x1000x1.png",
+    "duration": 132
+  },
+  {
+    "title": "Инвестор (Investor)",
+    "artist": "Scally Milano",
+    "album": "MONEY COUNTER MUSIC",
+    "year": "2021",
+    "release": "2021-12-17",
+    "featuring": [],
+    "producer": [
+      "Kreeshnah"
+    ],
+    "writers": [
+      "Scally Milano",
+      "Kreeshnah"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a244ea31b0d9434a8fe5041a2455acd7.mp3",
+    "cover": "https://images.genius.com/9b0d35180dcf55147dc4ff5bbced10a8.1000x1000x1.png",
+    "duration": 100
+  },
+  {
+    "title": "Не виноват (Not Guilty)",
+    "artist": "Scally Milano",
+    "album": "MONEY COUNTER MUSIC",
+    "year": "2021",
+    "release": "2021-12-17",
+    "featuring": [],
+    "producer": [
+      "Heronwater Beats"
+    ],
+    "writers": [
+      "Scally Milano",
+      "Heronwater Beats"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/2896eacc0a754e5291964fafedfcde01.mp3",
+    "cover": "https://images.genius.com/9b0d35180dcf55147dc4ff5bbced10a8.1000x1000x1.png",
+    "duration": 138
+  },
+  {
+    "title": "Тюрбан (Turban)",
+    "artist": "Scally Milano & uglystephan",
+    "album": "MONEY COUNTER MUSIC",
+    "year": "2021",
+    "release": "2021-12-17",
+    "featuring": [],
+    "producer": [
+      "spaceboyren"
+    ],
+    "writers": [
+      "Scally Milano",
+      "uglystephan",
+      "spaceboyren"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7c4ebb1a52594829a773697007e86ffa.mp3",
+    "cover": "https://images.genius.com/9b0d35180dcf55147dc4ff5bbced10a8.1000x1000x1.png",
+    "duration": 145
+  },
+  {
+    "title": "ЛЯ ЛЯ ЛЯ (LA LA LA)",
+    "artist": "СТИНТ (THE STINT)",
+    "album": "чел, тебе 30",
+    "year": "2026",
+    "release": "2026-08-14",
+    "featuring": [],
+    "producer": [
+      "Envtn"
+    ],
+    "writers": [
+      "СТИНТ (THE STINT)",
+      "Envtn",
+      "реприза (REPRIZZA)"
+    ],
+    "label": "The Fence",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/d48954fee2b244d291c14c6f5b3bdec6.mp3",
+    "cover": "https://images.genius.com/dc8bab816ca60d34c477eed5f31b2b16.1000x1000x1.png",
+    "duration": 126
+  },
+  {
+    "title": "ДИНАСТИЯ (DYNASTY)",
+    "artist": "VILLIAN & madk1d",
+    "album": "Красивое Зло (Beautiful Evil)",
+    "year": "2026",
+    "release": "2026-07-24",
+    "featuring": [],
+    "producer": [
+      "youngslashprod",
+      "nowaycvv",
+      "tainiykick",
+      "dexey!",
+      "Masha Zubkova",
+      "мамэтотолькодляфото (mijfp)"
+    ],
+    "writers": [
+      "VILLIAN",
+      "madk1d",
+      "youngslashprod",
+      "nowaycvv",
+      "tainiykick",
+      "dexey!"
+    ],
+    "label": "ALIVE, KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/42d4f68ff7b74838845b5664da4d6ea1.mp3",
+    "cover": "https://images.genius.com/7098c60877db6e98149fff7af8a7b47e.1000x1000x1.png",
+    "duration": 150
+  },
+  {
+    "title": "BIG PUN",
+    "artist": "MAYOT & SEEMEE",
+    "album": "SCUM OFF THE POT 2",
+    "year": "2022",
+    "release": "2022-06-24",
+    "featuring": [],
+    "producer": [
+      "sb220iq",
+      "morioh",
+      "CALYKO",
+      "Даниил Александров (Daniil Alexandrov)"
+    ],
+    "writers": [
+      "sb220iq",
+      "morioh",
+      "CALYKO",
+      "SEEMEE",
+      "MAYOT"
+    ],
+    "label": "CPLUS",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/242518ec1ffc4342b1f6e32ffd864643.mp3",
+    "cover": "https://images.genius.com/6baf7ba3c9643051a2fb8ae9ef8dea80.1000x1000x1.png",
+    "duration": 136
+  },
+  {
+    "title": "Колпак (Cap)",
+    "artist": "MAYOT",
+    "album": "ЗАПРАВКА КИД (REFUELING KID)",
+    "year": "2020",
+    "release": "2020-12-25",
+    "featuring": [],
+    "producer": [
+      "Sqweezey"
+    ],
+    "writers": [
+      "Sqweezey",
+      "MAYOT"
+    ],
+    "label": "CPLUS, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/030a098b13384d7dba9ad9b2960d359f.mp3",
+    "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg",
+    "duration": 119
+  },
+  {
+    "title": "Восап (Wassup)",
+    "artist": "163ONMYNECK",
+    "album": "GROW GUIDE 3",
+    "year": "2023",
+    "release": "2023-09-01",
+    "featuring": [],
+    "producer": [
+      "lakes (prod)"
+    ],
+    "writers": [
+      "163ONMYNECK",
+      "lakes (prod)"
+    ],
+    "label": "RNDM CREW, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/6f2fcc8ad0e947ebad0a44faed8c0698.mp3",
+    "cover": "https://images.genius.com/df60ffed5e7cf7d05e3b43a244a4f0ff.1000x1000x1.png",
+    "duration": 150
+  },
+  {
+    "title": "Спиттин (Spittin’)",
+    "artist": "OG Buda (Ft. MAYOT)",
+    "album": "FREERIO",
+    "year": "2021",
+    "release": "2021-04-30",
+    "featuring": [
+      "MAYOT"
+    ],
+    "producer": [
+      "blicky"
+    ],
+    "writers": [
+      "OG Buda",
+      "MAYOT",
+      "blicky"
+    ],
+    "label": "KOALA MUSIC, MELON MUSIC, RNDM CREW",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/2ef728bb814e4d94b3babee684323318.mp3",
+    "cover": "https://pomf2.lain.la/f/861vwt9s.jpg",
+    "duration": 142
+  },
+  {
+    "title": "САМП (SAMP)",
+    "artist": "OG Buda (Ft. BUSHIDO ZHO)",
+    "album": "FREERIO",
+    "year": "2021",
+    "release": "2021-04-30",
+    "featuring": [
+      "BUSHIDO ZHO"
+    ],
+    "producer": [
+      "Heronwater Beats"
+    ],
+    "writers": [
+      "OG Buda",
+      "BUSHIDO ZHO"
+    ],
+    "label": "KOALA MUSIC, MELON MUSIC, RNDM CREW",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/913cf2d21ee84f748193d688df2dd47d.mp3",
+    "cover": "https://pomf2.lain.la/f/861vwt9s.jpg",
+    "duration": 139
+  },
+  {
+    "title": "FPV FLOW 2029",
+    "artist": "CMH",
+    "album": "все группи попадают в рай (AGGTH)",
+    "year": "2026",
+    "release": "2026-02-13",
+    "featuring": [],
+    "producer": [
+      "Skurt"
+    ],
+    "writers": [
+      "CMH",
+      "Skurt",
+      "spbwaves"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/82f7bd2e81544d6bbcaaaba4cb3cd43e.mp3",
+    "cover": "https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png",
+    "duration": 104
+  },
+  {
+    "title": "RAVE MODE",
+    "artist": "CMH",
+    "album": "BIOHAZARD",
+    "year": "2019",
+    "release": "2019-08-01",
+    "featuring": [],
+    "producer": [
+      "FirstFeel"
+    ],
+    "writers": [
+      "CMH"
+    ],
+    "label": "KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/fe7bf94bec6a40d49d7da37007d69fc7.mp3",
+    "cover": "https://images.genius.com/3b29f875a2d725ebc467d9e3c0fc0594.1000x1000x1.png",
+    "duration": 165
+  },
+  {
+    "title": "SKIN$",
+    "artist": "CMH",
+    "album": "Сингл",
+    "year": "2023",
+    "release": "2023-09-08",
+    "featuring": [],
+    "producer": [
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH"
+    ],
+    "label": "KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c2f49f91f1974c2689260abd453febd1.mp3",
+    "cover": "https://images.genius.com/734359417981da30b8cdc7d7e10e2457.1000x1000x1.png",
+    "duration": 104
   }
 ]
