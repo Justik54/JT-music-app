@@ -1810,10 +1810,10 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.5.7';
+const APP_VERSION = '1.5.8';
 
 /* @username бота — из него собираются короткие ссылки на трек */
-const BOT_USERNAME = 'JT_Music_bot';
+const BOT_USERNAME = 'jt_music_app_bot';
 const $ = (id) => document.getElementById(id);
 
 /* иконки lucide, которые движок подставляет в готовую разметку */
@@ -3800,9 +3800,23 @@ function copyToClipboard(text) {
   }
 }
 
+/* текст, который увидит получатель над ссылкой */
+function shareText(t) {
+  const lines = ['🎵 ' + (t.artist || '') + ' — ' + (t.title || '')];
+
+  const album = (t.album || '').trim();
+  const meta = [];
+  if (album && album.toLowerCase() !== 'сингл' && album.toLowerCase() !== 'single') meta.push(album);
+  if (t.year) meta.push(String(t.year));
+  if (meta.length) lines.push('💿 ' + meta.join(' · '));
+
+  lines.push('🎧 JT Music');
+  return lines.join('\n');
+}
+
 async function shareTrack(t) {
   const url = trackLink(t);
-  const text = (t.artist || '') + ' — ' + (t.title || '');
+  const text = shareText(t);
 
   // сразу кладём короткую ссылку в буфер — вставится в любой чат
   const copied = await copyToClipboard(url);
