@@ -1500,6 +1500,25 @@
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+
+  /* плашка с ошибкой — чтобы экран не оставался пустым молча */
+  .fatal {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    z-index: 95;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(58, 22, 26, 0.96);
+    border: 1px solid rgba(255, 90, 100, 0.35);
+    color: #ffd7da;
+    font-size: 12px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .fatal b { display: block; margin-bottom: 4px; color: #ff8b94; }
+
 </style>
 </head>
 <body>
@@ -1810,7 +1829,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.5.9';
+const APP_VERSION = '1.6.0';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -1959,6 +1978,24 @@ function saveVolume(v) {
 }
 
 const keyOf = (t) => (t.artist || '') + '\u0000' + (t.title || '');
+
+/* видимая плашка с ошибкой — вместо молча пустого экрана */
+function showFatal(text) {
+  try {
+    let el = document.getElementById('fatal');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'fatal';
+      el.className = 'fatal';
+      document.body.appendChild(el);
+    }
+    el.innerHTML = '<b>Ошибка</b>' + String(text || '').slice(0, 220);
+  } catch (e) {}
+}
+
+window.addEventListener('error', (e) => {
+  if (e && e.message) showFatal(e.message);
+});
 
 /* ══════════════════════════════════════════════════════════
    Загрузка
@@ -4328,10 +4365,19 @@ if ('serviceWorker' in navigator &&
 
   if (raw === null) {
     panels.all.innerHTML = '<div class="empty"><b>Плейлист не загрузился</b>Проверь интернет и обнови</div>';
+    showFatal('tracks.json не загрузился ни с GitHub Pages, ни с raw.githubusercontent');
     return;
   }
 
   tracks = raw.map(normalize).filter(Boolean);
+
+  if (!tracks.length) {
+    panels.all.innerHTML = '<div class="empty"><b>Треки пустые</b>В tracks.json ' +
+      raw.length + ' записей, но ни у одной нет ссылки на аудио</div>';
+    showFatal('Получено записей: ' + raw.length + ', после разбора осталось 0');
+    return;
+  }
+
   buildAlbumCovers();
 
   if (settings.motion) applyListMotion(true);
@@ -4344,7 +4390,13 @@ if ('serviceWorker' in navigator &&
     sortBtn.classList.toggle('active', sortMode !== 'default');
   }
 
-  renderAllPanels();
+  try {
+    renderAllPanels();
+  } catch (e) {
+    showFatal('Ошибка отрисовки: ' + (e && e.message ? e.message : e));
+    return;
+  }
+
   restoreQueue();               // порядок очереди с прошлой сессии
 
   // ссылка из бота (t.me/...?startapp=track_xxx) — сразу включаем трек
@@ -4378,7 +4430,7 @@ if ('serviceWorker' in navigator &&
     coverEl.src = PLACEHOLDER;
     setAmbient(PLACEHOLDER);
   }
-})();
+})().catch((e) => showFatal('Запуск: ' + (e && e.message ? e.message : e)));
 </script>
 </body>
 </html>

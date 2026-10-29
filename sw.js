@@ -4,7 +4,7 @@
    - обложки — кэш в приоритете
    - аудио — кэшируется по запросу плеера (последние несколько треков)
 */
-const VERSION = 'jt-v1.3.0';
+const VERSION = 'jt-v1.4.0';
 const SHELL = './index.html';
 const AUDIO_CACHE = 'jt-audio-v1';
 const AUDIO_MAX = 6;   // сколько треков держим офлайн
@@ -126,8 +126,33 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // html и json — сначала сеть
-  if (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('.json')) {
+  // json — сеть в приоритете, при обрыве отдаём прошлую копию,
+  // НО НИКОГДА не подменяем на index.html (иначе JSON.parse падает и список пустой)
+  if (url.pathname.endsWith('.json')) {
+    event.respondWith(
+      (async () => {
+        try {
+          const res = await fetch(req);
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(VERSION).then((c) => c.put(url.pathname, copy));
+          }
+          return res;
+        } catch (e) {
+          const hit = await caches.match(url.pathname);
+          if (hit) return hit;
+          return new Response('[]', {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      })()
+    );
+    return;
+  }
+
+  // html — сначала сеть
+  if (url.pathname.endsWith('/') || url.pathname.endsWith('.html')) {
     event.respondWith(
       fetch(req)
         .then((res) => {
