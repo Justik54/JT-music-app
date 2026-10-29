@@ -1345,5 +1345,26 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/ef538116b70742318efc2c0d429c06ab.mp3",
     "cover": "https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png",
     "duration": 169
+  },
+  {
+    "title": "даяизсибири (YIFS)",
+    "artist": "CMH",
+    "album": "все группи попадают в рай (AGGTH)",
+    "year": "2026",
+    "release": "2026-02-13",
+    "featuring": [],
+    "producer": [
+      "BEATCASTER"
+    ],
+    "writers": [
+      "CMH",
+      "BEATCASTER",
+      "spbwaves"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/b1fcda8edd7c47549754abd616920482.mp3",
+    "cover": "https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png",
+    "duration": 140
   }
 ]
