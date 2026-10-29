@@ -1325,5 +1325,25 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5a0239e6c7904e7db45d6023fce72a71.mp3",
     "cover": "https://images.genius.com/b929bdd1ba79cdea4c4c30ed53877eb5.1000x1000x1.png",
     "duration": 101
+  },
+  {
+    "title": "Штанги (Barbells)",
+    "artist": "Pretty Scream & SEEMEE",
+    "album": "Leave Your Bones",
+    "year": "2021",
+    "release": "2021-06-11",
+    "featuring": [],
+    "producer": [
+      "Pretty Scream"
+    ],
+    "writers": [
+      "Pretty Scream",
+      "SEEMEE"
+    ],
+    "label": "MELON MUSIC, Loyalty Means Everything",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7118110c884f41678c60ebbffa290eb5.mp3",
+    "cover": "https://images.genius.com/663619c33497033b1398a709c4d1eb14.1000x1000x1.png",
+    "duration": 97
   }
 ]
