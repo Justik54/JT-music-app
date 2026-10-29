@@ -319,6 +319,45 @@
     display: flex;
     gap: 8px;
     margin-top: 10px;
+    position: relative;
+  }
+
+  /* выпадающий список сортировки */
+  .sort-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 40;
+    min-width: 178px;
+    padding: 6px;
+    border-radius: 14px;
+    background: rgba(24, 26, 30, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .sort-menu.open { display: flex; }
+  .sort-item {
+    padding: 10px 12px;
+    border: none;
+    border-radius: 9px;
+    background: none;
+    color: rgba(244, 247, 250, 0.72);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .sort-item:active { background: rgba(255, 255, 255, 0.06); }
+  .sort-item.active {
+    color: var(--accent);
+    background: rgba(59, 157, 255, 0.12);
   }
   .search-wrap {
     flex: 1;
@@ -1540,7 +1579,8 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input id="searchInput" type="search" placeholder="Поиск" autocomplete="off" spellcheck="false">
         </div>
-        <button class="sort-btn" id="sortBtn">Порядок</button>
+        <button class="sort-btn" id="sortBtn">Новые</button>
+        <div class="sort-menu" id="sortMenu"></div>
       </div>
       <div class="search-history" id="searchHistory"></div>
     </div>
@@ -1829,7 +1869,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -1978,6 +2018,19 @@ function saveVolume(v) {
 }
 
 const keyOf = (t) => (t.artist || '') + '\u0000' + (t.title || '');
+
+/* если браузер не дал автозапуск — включаем по первому касанию экрана */
+function armAutoPlay() {
+  setTimeout(() => {
+    if (currentIndex < 0 || !audio.paused) return;
+
+    const once = () => {
+      document.removeEventListener('pointerdown', once);
+      if (audio.paused) play();
+    };
+    document.addEventListener('pointerdown', once, { once: true });
+  }, 600);
+}
 
 /* видимая плашка с ошибкой — вместо молча пустого экрана */
 function showFatal(text) {
@@ -2318,9 +2371,22 @@ function makeRow(index, delay) {
    Поиск и сортировка
    ══════════════════════════════════════════════════════════ */
 let searchQuery = '';
-let sortMode = 'default';   // default | az | new
+let sortMode = 'new';        // по умолчанию — сначала новые
 
-const SORT_LABELS = { default: 'Порядок', az: 'А-Я', new: 'Новые' };
+/* порядок в меню */
+const SORT_ORDER = ['new', 'old', 'az', 'za', 'artist', 'album', 'year', 'dur', 'default'];
+
+const SORT_LABELS = {
+  new: 'Новые',
+  old: 'Старые',
+  az: 'А-Я',
+  za: 'Я-А',
+  artist: 'По артисту',
+  album: 'По альбому',
+  year: 'По году',
+  dur: 'По длительности',
+  default: 'Как в базе'
+};
 
 function matches(t) {
   if (!searchQuery) return true;
@@ -2333,10 +2399,28 @@ function matches(t) {
 function visibleIndices() {
   let idx = tracks.map((_, i) => i).filter((i) => matches(tracks[i]));
 
-  if (sortMode === 'az') {
-    idx.sort((a, b) => tracks[a].title.localeCompare(tracks[b].title, 'ru'));
-  } else if (sortMode === 'new') {
-    idx = idx.reverse();
+  const byTitle = (a, b) => tracks[a].title.localeCompare(tracks[b].title, 'ru');
+
+  switch (sortMode) {
+    case 'az':     idx.sort(byTitle); break;
+    case 'za':     idx.sort((a, b) => byTitle(b, a)); break;
+    case 'artist':
+      idx.sort((a, b) =>
+        tracks[a].artist.localeCompare(tracks[b].artist, 'ru') || byTitle(a, b));
+      break;
+    case 'album':
+      idx.sort((a, b) =>
+        String(tracks[a].album || '').localeCompare(String(tracks[b].album || ''), 'ru') || byTitle(a, b));
+      break;
+    case 'year':
+      idx.sort((a, b) => (Number(tracks[b].year) || 0) - (Number(tracks[a].year) || 0) || byTitle(a, b));
+      break;
+    case 'dur':
+      idx.sort((a, b) => (tracks[a].duration || 0) - (tracks[b].duration || 0) || byTitle(a, b));
+      break;
+    case 'new':    idx.reverse(); break;   // новые сверху
+    case 'old':    break;                  // как добавляли
+    default:       break;
   }
 
   return idx;
@@ -3613,12 +3697,40 @@ searchInput.addEventListener('input', () => {
 });
 
 /* сортировка */
-sortBtn.addEventListener('click', () => {
-  sortMode = sortMode === 'default' ? 'az' : sortMode === 'az' ? 'new' : 'default';
-  sortBtn.textContent = SORT_LABELS[sortMode];
-  sortBtn.classList.toggle('active', sortMode !== 'default');
-  renderActive();
-  saveState(true);
+const sortMenu = $('sortMenu');
+
+function buildSortMenu() {
+  sortMenu.innerHTML = '';
+
+  SORT_ORDER.forEach((key) => {
+    const b = document.createElement('button');
+    b.className = 'sort-item' + (key === sortMode ? ' active' : '');
+    b.textContent = SORT_LABELS[key];
+
+    b.addEventListener('click', () => {
+      sortMode = key;
+      sortBtn.textContent = SORT_LABELS[key];
+      sortBtn.classList.toggle('active', key !== 'default');
+      sortMenu.classList.remove('open');
+      renderActive();
+      saveState(true);
+      hapticTap();
+    });
+
+    sortMenu.appendChild(b);
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (!sortMenu.contains(e.target) && e.target !== sortBtn) {
+    sortMenu.classList.remove('open');
+  }
+});
+
+sortBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  buildSortMenu();
+  sortMenu.classList.toggle('open');
   if (tg && tg.HapticFeedback) {
     try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
   }
@@ -3913,12 +4025,21 @@ function indexFromHash() {
   let raw = '';
   try { raw = decodeURIComponent(m[1]); } catch (e) { return -1; }
 
+  const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const want = norm(raw);
+
+  // точное совпадение «артист — название»
+  const exact = tracks.findIndex(
+    (t) => norm((t.artist || '') + ' — ' + (t.title || '')) === want
+  );
+  if (exact >= 0) return exact;
+
+  // запасной путь: только по названию, если оно уникально
   const cut = raw.lastIndexOf(' — ');
   if (cut < 0) return -1;
-  const artist = raw.slice(0, cut);
-  const title = raw.slice(cut + 3);
-
-  return tracks.findIndex((t) => (t.artist || '') === artist && (t.title || '') === title);
+  const title = norm(raw.slice(cut + 3));
+  const hits = tracks.map((t, i) => (norm(t.title) === title ? i : -1)).filter((i) => i >= 0);
+  return hits.length === 1 ? hits[0] : -1;
 }
 
 function setHashFor(t) {
@@ -3932,6 +4053,7 @@ window.addEventListener('hashchange', () => {
   if (i < 0) return;
   loadTrack(i);
   openPlayer();
+  play();
 });
 
 /* ══════════════════════════════════════════════════════════
@@ -4413,6 +4535,8 @@ if ('serviceWorker' in navigator &&
   if (deepIndex >= 0) {
     loadTrack(deepIndex);
     openPlayer();
+    play();
+    armAutoPlay();
     return;
   }
 
