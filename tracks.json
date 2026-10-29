@@ -1322,5 +1322,28 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7118110c884f41678c60ebbffa290eb5.mp3",
     "cover": "https://images.genius.com/663619c33497033b1398a709c4d1eb14.1000x1000x1.png",
     "duration": 97
+  },
+  {
+    "title": "чайка (gull)",
+    "artist": "CMH & Пошлая Молли (Poshlaya Molly)",
+    "album": "все группи попадают в рай (AGGTH)",
+    "year": "2026",
+    "release": "2026-02-13",
+    "featuring": [],
+    "producer": [
+      "Кирилл Бледный (Kirill Bledny)",
+      "Константин Пыжов (Konstantin Pyzhov)"
+    ],
+    "writers": [
+      "CMH",
+      "Кирилл Бледный (Kirill Bledny)",
+      "Константин Пыжов (Konstantin Pyzhov)",
+      "spbwaves"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/ef538116b70742318efc2c0d429c06ab.mp3",
+    "cover": "https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png",
+    "duration": 169
   }
 ]
