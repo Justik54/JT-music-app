@@ -1810,7 +1810,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.5.8';
+const APP_VERSION = '1.5.9';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -3774,9 +3774,10 @@ function toast(text) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 1900);
 }
 
-/* короткая ссылка: открывает Mini App сразу на этом треке */
+/* короткая ссылка: открывает бота, он сразу даёт кнопку на этот трек.
+   ?start= работает всегда, ?startapp= на части клиентов даёт BOT_INVALID */
 function trackLink(t) {
-  return 'https://t.me/' + BOT_USERNAME + '?startapp=track_' + trackIdOf(t);
+  return 'https://t.me/' + BOT_USERNAME + '?start=tr_' + trackIdOf(t);
 }
 
 function copyToClipboard(text) {
