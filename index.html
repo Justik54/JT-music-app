@@ -1650,10 +1650,6 @@
   @media (min-width: 900px) {
     :root { --content-w: min(100% - 64px, 1040px); --gutter: 28px; }
 
-    /* шапка как в обычном приложении: логотип слева, поиск под ним */
-    .brand-row { justify-content: flex-start; padding: 8px 0 12px; }
-    .search-row { max-width: 620px; margin-left: 0; margin-right: 0; }
-
     /* список в два столбца */
     .panel.active {
       display: grid;
@@ -1666,16 +1662,9 @@
     .panel.active > .album-grid { grid-column: 1 / -1; }
 
     .album-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .dock { width: calc(min(100%, var(--content-w)) - 56px); }
 
-    /* вкладки не разъезжаются по всей ширине дока — держим их кучкой по центру */
-    .tabbar {
-      max-width: 560px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .dock.has-track .tabbar { border-top: none; }
-    .dock.has-track .mini-slot { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+    /* док сжимается под кнопки, а не растягивается на всю ширину экрана */
+    .dock { width: min(560px, calc(100% - 48px)); }
 
     /* плеер: обложка слева, управление справа (а не всё в столбик) */
     .player-body {
@@ -1777,7 +1766,7 @@
     .mini-btn svg { width: 26px; height: 26px; }
 
     .dock {
-      width: calc(min(100%, var(--content-w)) - 64px);
+      width: min(660px, calc(100% - 64px));
       border-radius: 26px;
     }
 
@@ -2185,7 +2174,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.6.3';
+const APP_VERSION = '1.6.4';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
