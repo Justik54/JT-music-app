@@ -1173,8 +1173,8 @@
     cursor: grab;
     position: relative;
   }
-  .top-left { display: flex; align-items: center; gap: 6px; }
-  .top-right { display: flex; gap: 2px; }
+  .top-left { display: flex; align-items: center; gap: 4px; }
+  .top-right { display: flex; gap: 0; }
   .player-top::before {
     content: "";
     position: absolute;
@@ -1205,8 +1205,8 @@
   #sleepBtn.on svg { fill: none; }
 
   .icon-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border: none;
     background: none;
     color: rgba(244, 247, 250, 0.72);
@@ -1250,7 +1250,7 @@
     flex-direction: column;
     justify-content: center;      /* блок по центру, а не прижат к верху */
     justify-content: safe center; /* если не влезает — центрируем «безопасно», верх не обрежется */
-    padding: 4px 26px calc(14px + env(safe-area-inset-bottom));
+    padding: 8px 26px calc(14px + env(safe-area-inset-bottom));
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: none;
@@ -1275,26 +1275,28 @@
     will-change: transform;
   }
   /* живая аура: та же обложка, размытая и вынесенная назад.
-     Пластинка перестаёт быть плоской картинкой и начинает «светиться» */
+     Пластинка перестаёт быть плоской картинкой и начинает «светиться».
+     inset: 0 — иначе размытие уходит вверх и его обрезает контейнер прокрутки
+     (был виден ровный обрез чуть выше обложки) */
   .cover-wrap::before {
     content: "";
     position: absolute;
-    inset: -6px;
+    inset: 0;
     z-index: -1;
     border-radius: inherit;
     background-image: var(--cover-img);
     background-size: cover;
     background-position: center;
-    filter: blur(38px) saturate(220%) brightness(1.15);
+    filter: blur(24px) saturate(215%) brightness(1.12);
     opacity: 0.72;
-    transform: translateY(16px) scale(1.06) translate3d(0, 0, 0);
+    transform: translateY(20px) scale(1) translate3d(0, 0, 0);
     transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out), filter 600ms ease;
     pointer-events: none;
   }
   body.paused .cover-wrap::before {
     opacity: 0.16;
-    transform: translateY(4px) scale(0.82) translate3d(0, 0, 0);
-    filter: blur(20px) saturate(55%) brightness(0.9);
+    transform: translateY(10px) scale(0.86) translate3d(0, 0, 0);
+    filter: blur(18px) saturate(55%) brightness(0.9);
   }
   body.paused .cover-wrap {
     transform: scale(0.88) translate3d(0, 0, 0);
@@ -2627,7 +2629,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.7.1';
+const APP_VERSION = '1.7.2';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -3765,7 +3767,9 @@ function fadeTo(target, ms, done) {
 
 function pauseWithFade() {
   if (audio.paused) return;
-  fadeTo(0, 170, () => {
+  // интерфейс переключаем сразу: ждать, пока догорит затухание, — это и есть «задержка»
+  setPlayingUI(false);
+  fadeTo(0, 90, () => {
     audio.pause();
     audio.volume = volume;   // вернуть громкость, иначе следующий play будет тихим
   });
@@ -3778,7 +3782,7 @@ function switchWithFade(fn) {
     return;
   }
   switching = true;
-  fadeTo(0, 130, () => {
+  fadeTo(0, 100, () => {
     switching = false;
     fn();
   });
@@ -3902,7 +3906,7 @@ function play() {
   const p = audio.play();
   const ok = () => {
     flareGlow();
-    fadeTo(volume, 240);
+    fadeTo(volume, 170);
   };
   const fail = () => {
     audio.volume = volume;      // иначе останется на нуле и будет тишина
