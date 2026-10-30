@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#08090b">
 <title>JT · без мата</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
     /* чистый чёрный: на OLED-экранах пиксель просто выключен — контраст и экономия батареи */
-    --bg: #000000;
-    --surface: rgba(255, 255, 255, 0.045);
-    --surface-hi: rgba(255, 255, 255, 0.08);
-    --line: rgba(255, 255, 255, 0.07);
+    --bg: #08090b;
+    --surface: rgba(255, 255, 255, 0.05);
+    --surface-hi: rgba(255, 255, 255, 0.085);
+    --line: rgba(255, 255, 255, 0.075);
     --text: #f4f7fa;
     --sub: rgba(244, 247, 250, 0.46);
     --faint: rgba(244, 247, 250, 0.2);
@@ -82,7 +82,7 @@
     /* картинка теперь приходит уменьшенной до 32×32 — браузер растягивает её
        билинейно сам, поэтому вместо blur(105px) хватает 20px.
        Это главная экономия: 4 слоя с blur >50px грели телефон */
-    filter: blur(20px) saturate(200%) brightness(0.78);
+    filter: blur(22px) saturate(240%) brightness(0.5);
     opacity: 0;
     transform: scale(1.15) translate3d(0, 0, 0);
     transition: opacity 700ms var(--ease-out), filter 2s ease;
@@ -91,7 +91,7 @@
 
   /* трек не играет — фон тоже уходит в серый */
   body.paused .ambient img {
-    filter: blur(20px) saturate(0) brightness(0.72);
+    filter: blur(22px) saturate(0) brightness(0.45);
   }
   .ambient::after {
     content: "";
@@ -101,29 +101,34 @@
     background: radial-gradient(130% 85% at 50% 0%, rgba(8, 9, 11, 0.05) 0%, rgba(8, 9, 11, 0.7) 48%, var(--bg) 92%);
   }
 
-  /* ══ свечение сверху от цвета обложки (тестовая функция) ══ */
+  /* ══ свечение сверху от цвета обложки ══ */
   .glow-top {
     position: absolute;
-    top: -30%;
+    /* источник света — верхняя кромка экрана. Раньше слой висел выше экрана
+       (top: -26%) и наружу торчал только хвост затухания — отсюда «грязное пятно» */
+    top: 0;
     left: 50%;
-    width: min(1800px, 140%);   /* на 4К-телевизоре не раздуваем слой — иначе тормозит блюр */
-    height: 58%;
+    width: min(1800px, 150%);   /* на 4К-телевизоре не раздуваем слой — иначе тормозит блюр */
+    height: 50%;
     z-index: 2;
     display: none;
     transform: translateX(-50%) scale(1);
-    filter: blur(46px) saturate(220%) brightness(var(--glow-bright, 1.2));
+    transform-origin: 50% 0%;
+    filter: blur(54px) saturate(250%) brightness(calc(var(--glow-bright, 1.2) * 1.12));
     opacity: var(--glow-opacity, 0.2);
     pointer-events: none;
     will-change: opacity, transform;
-    -webkit-mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.45) 32%, transparent 62%);
-    mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.45) 32%, transparent 62%);
+    -webkit-mask-image: radial-gradient(64% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.55) 36%, transparent 68%);
+    mask-image: radial-gradient(64% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.55) 36%, transparent 68%);
   }
   /* два слоя: старый цвет плавно растворяется в новом */
   .glow-img {
     position: absolute;
     inset: 0;
-    background-size: cover;
-    background-position: center 40%;
+    background-repeat: no-repeat;
+    /* первый слой — цветной градиент из палитры, второй — сама обложка */
+    background-size: 100% 100%, cover;
+    background-position: 50% 0%, center 40%;
     opacity: 0;
     transition: opacity 6s ease-in-out;
   }
@@ -162,30 +167,31 @@
   /* ── aurora: медленные цветные лучи поверх свечения ── */
   .glow-aurora {
     position: absolute;
-    top: -34%;
+    top: 0;
     left: 50%;
     width: min(2100px, 170%);
-    height: 66%;
+    height: 62%;
     z-index: 3;
     display: none;
     transform: translateX(-50%);
+    transform-origin: 50% 0%;
     background: conic-gradient(from 0deg at 50% 0%,
       transparent 0deg,
-      rgba(var(--c1-rgb), 0.55) 34deg,
-      rgba(var(--c2-rgb), 0.30) 76deg,
+      rgba(var(--c1-rgb), 0.42) 34deg,
+      rgba(var(--c2-rgb), 0.22) 76deg,
       transparent 120deg,
       transparent 170deg,
-      rgba(var(--c3-rgb), 0.36) 232deg,
-      rgba(var(--c2-rgb), 0.44) 268deg,
+      rgba(var(--c3-rgb), 0.28) 232deg,
+      rgba(var(--c2-rgb), 0.32) 268deg,
       transparent 318deg,
       transparent 360deg);
-    filter: blur(64px) saturate(180%);
+    filter: blur(70px) saturate(210%) brightness(1.25);
     opacity: 0;
     mix-blend-mode: screen;
     pointer-events: none;
     will-change: transform, opacity;
-    -webkit-mask-image: radial-gradient(58% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.55) 46%, transparent 78%);
-    mask-image: radial-gradient(58% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.55) 46%, transparent 78%);
+    -webkit-mask-image: radial-gradient(70% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 78%);
+    mask-image: radial-gradient(70% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 78%);
   }
   body.glow-on .glow-aurora {
     display: block;
@@ -235,7 +241,7 @@
   /* пауза: цвет не выключаем совсем — просто замедляем в 3 раза.
      Так экран «замирает», но не выглядит мёртвым */
   body.glow-on.paused .glow-aurora {
-    filter: blur(64px) saturate(65%) brightness(1.1);
+    filter: blur(78px) saturate(75%) brightness(1.05);
     animation: auroraSpin 90s ease-in-out infinite;
     opacity: calc(var(--glow-opacity, 0.2) * 0.55);
   }
@@ -658,10 +664,10 @@
     z-index: 5;
     pointer-events: none;
     background: linear-gradient(to bottom,
-      rgba(0, 0, 0, 0) 0%,
-      rgba(0, 0, 0, 0.55) 34%,
-      rgba(0, 0, 0, 0.92) 62%,
-      #000 78%);
+      rgba(8, 9, 11, 0) 0%,
+      rgba(8, 9, 11, 0.55) 34%,
+      rgba(8, 9, 11, 0.92) 62%,
+      var(--bg) 78%);
   }
 
   .panel { display: none; }
@@ -845,7 +851,7 @@
     bottom: calc(12px + env(safe-area-inset-bottom));
     z-index: 20;
     border-radius: 21px;
-    background: rgba(10, 11, 14, 0.9);
+    background: rgba(18, 21, 26, 0.9);
     backdrop-filter: blur(26px) saturate(180%);
     -webkit-backdrop-filter: blur(26px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -976,10 +982,11 @@
 
   .set-group {
     margin: 12px 0 0;
-    background: var(--surface);
+    background: rgba(255, 255, 255, 0.055);
     border-radius: 16px;
     padding: 4px 16px;
     overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
   }
   .set-group-title {
     font-size: 11px;
@@ -1055,7 +1062,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.86) 46%, var(--bg) 86%);
+    background: linear-gradient(180deg, rgba(8, 9, 11, 0.15) 0%, rgba(8, 9, 11, 0.86) 46%, var(--bg) 86%);
   }
   #scrAlbum > * { position: relative; z-index: 1; }
 
@@ -1143,9 +1150,9 @@
     z-index: 5;
     background: linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.18) 0%,
-      rgba(0, 0, 0, 0.55) 32%,
-      rgba(0, 0, 0, 0.93) 62%,
+      rgba(8, 9, 11, 0.18) 0%,
+      rgba(8, 9, 11, 0.55) 32%,
+      rgba(8, 9, 11, 0.93) 62%,
       var(--bg) 100%
     );
     transform: translateY(100%);
@@ -1701,7 +1708,7 @@
     right: 0;
     bottom: 0;
     z-index: 61;
-    background: #0c0e11;
+    background: #14171c;
     border-radius: 22px 22px 0 0;
     box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     padding: 8px 22px calc(24px + env(safe-area-inset-bottom));
@@ -1711,7 +1718,7 @@
     transition: transform 380ms var(--ease-drawer);
     will-change: transform;
   }
-  .sheet.open { transform: translateY(0); }
+  .sheet.open { transform: translateY(0); transition: transform 460ms cubic-bezier(0.2, 1.06, 0.3, 1); }
   .sheet.dragging { transition: none; }
 
   .sheet-grab {
@@ -2094,12 +2101,119 @@
   }
 
   /* ══ появление списков ═════════════════════════════════ */
-  /* лёгкая анимация: панель просто проявляется, без «наползания» строк */
-  .panel.active { animation: panelIn 160ms ease-out; }
+  /* панель въезжает с той стороны, куда переключили вкладку */
+  .panel.active { animation: panelIn 260ms var(--ease-out); }
   @keyframes panelIn {
-    from { opacity: 0.4; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateX(var(--in-x, 0px)); }
+    to   { opacity: 1; transform: translateX(0); }
   }
+
+  /* ══ сборка плеера: части приезжают по очереди ═════════ */
+  #scrPlayer.open .meta,
+  #scrPlayer.open .scrub,
+  #scrPlayer.open .times,
+  #scrPlayer.open .controls,
+  #scrPlayer.open .volume {
+    animation: partIn 460ms var(--ease-out) backwards;
+  }
+  #scrPlayer.open .meta     { animation-delay: 70ms; }
+  #scrPlayer.open .scrub    { animation-delay: 120ms; }
+  #scrPlayer.open .times    { animation-delay: 140ms; }
+  #scrPlayer.open .controls { animation-delay: 180ms; }
+  #scrPlayer.open .volume   { animation-delay: 230ms; }
+
+  @keyframes partIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* обложка альбома «проявляется» размером */
+  #scrAlbum.open .album-hero img { animation: coverPop 620ms var(--ease-out) backwards; }
+  @keyframes coverPop {
+    from { opacity: 0; transform: scale(0.88); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  #scrAlbum.open .album-hero-name { animation: partIn 460ms var(--ease-out) 120ms backwards; }
+  #scrAlbum.open .album-hero-sub  { animation: partIn 460ms var(--ease-out) 160ms backwards; }
+  #scrAlbum.open .play-album      { animation: partIn 460ms var(--ease-out) 200ms backwards; }
+
+  /* строки альбома — лесенкой */
+  #albumTracks .row { animation: rowIn 380ms var(--ease-out) backwards; }
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* выпадающие меню */
+  .timer-menu.open { animation: menuIn 200ms var(--ease-out); }
+  .sort-menu.open { animation: menuIn 180ms var(--ease-out); }
+  @keyframes menuIn {
+    from { opacity: 0; transform: scale(0.95) translateY(-6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* карточки статистики */
+  .stat-card { animation: partIn 420ms var(--ease-out) backwards; }
+  .stat-card:nth-child(1) { animation-delay: 40ms; }
+  .stat-card:nth-child(2) { animation-delay: 90ms; }
+  .stat-card:nth-child(3) { animation-delay: 140ms; }
+  .stat-card:nth-child(4) { animation-delay: 190ms; }
+
+  /* мини-плеер: смена трека — лёгкий подъезд текста */
+  .mini-info.swap { animation: miniSwap 380ms var(--ease-out); }
+  @keyframes miniSwap {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* фокус в поиске */
+  .search-wrap {
+    transition: background-color 200ms ease, box-shadow 260ms ease;
+  }
+  .search-wrap:focus-within {
+    background: var(--surface-hi);
+    box-shadow: 0 0 0 1px rgba(59, 157, 255, 0.28);
+  }
+
+  /* строки-действия в настройках */
+  .set-row.action { transition: opacity 150ms ease, transform 160ms var(--ease-out); }
+  .set-row.action:active { transform: scale(0.985); }
+
+  /* сетка альбомов — лесенкой */
+  .album-card { animation: partIn 420ms var(--ease-out) backwards; }
+  .album-card:nth-child(1) { animation-delay: 0ms; }
+  .album-card:nth-child(2) { animation-delay: 30ms; }
+  .album-card:nth-child(3) { animation-delay: 60ms; }
+  .album-card:nth-child(4) { animation-delay: 90ms; }
+  .album-card:nth-child(5) { animation-delay: 120ms; }
+  .album-card:nth-child(6) { animation-delay: 150ms; }
+  .album-card:nth-child(n+7) { animation-delay: 180ms; }
+
+  /* активная вкладка подпрыгивает */
+  .tabbar-btn.active { animation: tabPop 320ms var(--ease-spring); }
+  @keyframes tabPop {
+    0%   { transform: scale(0.92); }
+    55%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  /* кнопка play мягко «толкает» при старте */
+  .btn-play.playing { animation: playPulse 460ms var(--ease-out); }
+  @keyframes playPulse {
+    0%   { transform: scale(0.9); }
+    45%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  /* лёгкий свет сверху на тёмных экранах — чтобы фон не выглядел плоским */
+  #scrSettings::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 55% at 50% 0%, rgba(255, 255, 255, 0.045), transparent 62%);
+  }
+  #scrSettings > * { position: relative; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -2131,11 +2245,11 @@
     font-weight: 600;
     text-align: center;
     opacity: 0;
-    transform: translate(-50%, 10px);
+    transform: translate(-50%, 12px) scale(0.94);
     pointer-events: none;
-    transition: opacity 200ms ease, transform 260ms var(--ease-out);
+    transition: opacity 200ms ease, transform 320ms cubic-bezier(0.2, 1.1, 0.3, 1);
   }
-  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
 
 
   /* плашка с ошибкой — чтобы экран не оставался пустым молча */
@@ -2222,7 +2336,7 @@
     <div class="mini-slot">
   <div class="mini" id="mini">
     <img class="mini-cover" id="miniCover" alt="">
-    <div class="mini-info">
+    <div class="mini-info" id="miniInfo">
       <div class="mini-title" id="miniTitle"></div>
       <div class="mini-sub" id="miniSub"></div>
     </div>
@@ -2489,8 +2603,8 @@ if (tg) {
     if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
 
     // цвет шторки Telegram под фон приложения (иначе сверху светлая полоса)
-    if (tg.setHeaderColor) tg.setHeaderColor('#000000');
-    if (tg.setBackgroundColor) tg.setBackgroundColor('#000000');
+    if (tg.setHeaderColor) tg.setHeaderColor('#08090b');
+    if (tg.setBackgroundColor) tg.setBackgroundColor('#08090b');
   } catch (e) {}
 }
 
@@ -2513,7 +2627,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.7.1';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -2613,6 +2727,7 @@ const miniTitle = $('miniTitle');
 const miniSub = $('miniSub');
 const miniPlay = $('miniPlay');
 const miniFill = $('miniFill');
+const miniInfo = $('miniInfo');
 
 const infoBtn = $('infoBtn');
 const infoSheet = $('infoSheet');
@@ -2987,6 +3102,7 @@ function makeRow(index, delay) {
   const row = document.createElement('div');
   row.className = 'row';
   row.dataset.index = index;
+  if (delay) row.style.animationDelay = delay + 'ms';   // лесенка при появлении
 
   const img = document.createElement('img');
   img.className = 'row-cover';
@@ -3321,6 +3437,7 @@ $('albumCover').addEventListener('click', () => {
    Табы
    ══════════════════════════════════════════════════════════ */
 const tabBtns = [...document.querySelectorAll('.tabbar-btn[data-tab]')];
+let lastTabIdx = 0;
 
 tabBtns.forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -3333,6 +3450,12 @@ tabBtns.forEach((btn) => {
     tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
     if (engine) engine.pill(idx);
     else tabPill.style.transform = 'translateX(' + idx * 100 + '%)';
+
+    // контент въезжает с той стороны, куда переключили
+    const dir = idx > lastTabIdx ? 1 : -1;
+    lastTabIdx = idx;
+    if (panels[name]) panels[name].style.setProperty('--in-x', (dir * 22) + 'px');
+
     Object.keys(panels).forEach((k) => panels[k].classList.toggle('active', k === name));
 
     if (engine) engine.refresh();
@@ -3511,21 +3634,35 @@ function readCover(img) {
   };
 }
 
-function setAmbient(src) {
+function setAmbient(src, palette) {
   const next = ambEls[1 - ambFront];
   const cur = ambEls[ambFront];
   next.onerror = () => { next.style.opacity = '0'; };
   next.src = src;
-  next.style.opacity = '0.55';
+  next.style.opacity = '0.42';
   cur.style.opacity = '0';
   ambFront = 1 - ambFront;
 
-  // свечение: новый слой проявляется за 3 сек, старый растворяется
+  // свечение: новый слой проявляется за 6 сек, старый растворяется
   const layers = [glowA, glowB];
   const nextLayer = layers[1 - glowFront];
   const curLayer = layers[glowFront];
 
-  nextLayer.style.backgroundImage = 'url("' + String(src).replace(/"/g, '%22') + '")';
+  /* Свет сверху строим из ЦВЕТА палитры, а не из самой картинки:
+     у тёмной обложки размытая картинка — почти чёрная, и вместо
+     света получалось грязное пятно. Градиент + картинка поверх. */
+  const img = 'url("' + String(src).replace(/"/g, '%22') + '")';
+  let bg = img;
+
+  if (palette) {
+    const c1 = palette[0].join(', ');
+    const c2 = palette[1].join(', ');
+    bg =
+      'radial-gradient(62% 100% at 50% 0%, rgba(' + c1 + ', 0.9) 0%, ' +
+      'rgba(' + c1 + ', 0.38) 38%, rgba(' + c2 + ', 0.14) 62%, rgba(' + c2 + ', 0) 82%), ' + img;
+  }
+
+  nextLayer.style.backgroundImage = bg;
   nextLayer.style.opacity = '1';
   curLayer.style.opacity = '0';
   glowFront = 1 - glowFront;
@@ -3539,7 +3676,7 @@ function setCover(src) {
     coverWrap.style.setProperty('--cover-img', 'url("' + String(src).replace(/"/g, '%22') + '")');
     if (palette) setPalette(palette[0], palette[1], palette[2]);
     else resetPalette();
-    setAmbient(tiny || src);
+    setAmbient(tiny || src, palette);
     coverWrap.classList.remove('dim');
   };
 
@@ -3709,6 +3846,11 @@ function loadTrack(index) {
   miniCover.src = coverOf(t);
   miniTitle.textContent = t.title;
   miniSub.textContent = artistLine(t);
+
+  // смена трека в мини-плеере — текст подъезжает, а не щёлкает
+  miniInfo.classList.remove('swap');
+  void miniInfo.offsetWidth;
+  miniInfo.classList.add('swap');
 
   scrubFill.style.width = '0%';
   scrubKnob.style.left = '0%';
@@ -3972,7 +4114,7 @@ function setupVolume() {
    ══════════════════════════════════════════════════════════ */
 (function setupPlayerDrag() {
   const top = $('playerTop');
-  const THRESHOLD = 8;   // до этого считаем что это тап по кнопке, а не свайп
+  const THRESHOLD = 14;  // до этого считаем что это тап по кнопке, а не свайп
 
   let armed = false;     // палец нажал
   let dragging = false;  // уже точно свайп
@@ -3984,6 +4126,9 @@ function setupVolume() {
 
   top.addEventListener('pointerdown', (e) => {
     if (!playerOpen) return;
+    // палец на кнопке — это тап. Раньше здесь включался свайп, забирал
+    // pointer capture, и click до кнопки уже не доходил: меню «не жалось»
+    if (e.target.closest('button')) return;
     armed = true;
     dragging = false;
     startY = e.clientY;
@@ -4511,8 +4656,8 @@ function stopEngine() {
 
 function applyGlowLevel(level) {
   const v = Math.max(0, Math.min(100, Number(level) || 0));
-  document.body.style.setProperty('--glow-opacity', String((0.04 + (v / 100) * 0.42).toFixed(3)));
-  document.body.style.setProperty('--glow-bright', String((1.0 + (v / 100) * 0.55).toFixed(3)));
+  document.body.style.setProperty('--glow-opacity', String((0.05 + (v / 100) * 0.5).toFixed(3)));
+  document.body.style.setProperty('--glow-bright', String((1.0 + (v / 100) * 0.7).toFixed(3)));
 
   const range = $('glowLevel');
   if (range) range.style.setProperty('--fill', v + '%');
@@ -5238,6 +5383,22 @@ function fmtLong(sec) {
   return m + ' мин';
 }
 
+/* число «набегает» от нуля — оживляет карточки статистики */
+function countUp(el, text) {
+  const n = Number(text);
+  if (!Number.isFinite(n) || String(n) !== text) { el.textContent = text; return; }
+
+  const t0 = performance.now();
+  const dur = 620;
+  const step = () => {
+    const k = Math.min(1, (performance.now() - t0) / dur);
+    const eased = 1 - Math.pow(1 - k, 3);
+    el.textContent = String(Math.round(n * eased));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  step();
+}
+
 function openStats() {
   sheetHead.textContent = 'Моя статистика';
   infoBody.innerHTML = '';
@@ -5256,7 +5417,7 @@ function openStats() {
     const c = document.createElement('div');
     c.className = 'stat-card';
     const b = document.createElement('b');
-    b.textContent = value;
+    countUp(b, value);
     const s = document.createElement('span');
     s.textContent = label;
     c.append(b, s);
@@ -5762,10 +5923,16 @@ function swipeTrack(dir) {
   let sy = 0;
   let dy = 0;
   let dragging = false;
+  let lastY = 0;
+  let lastT = 0;
+  let velocity = 0;
 
   grab.addEventListener('pointerdown', (e) => {
     if (!infoSheet.classList.contains('open')) return;
     sy = e.clientY;
+    lastY = e.clientY;
+    lastT = performance.now();
+    velocity = 0;
     dy = 0;
     dragging = true;
     infoSheet.classList.add('dragging');
@@ -5775,6 +5942,13 @@ function swipeTrack(dir) {
   grab.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     dy = Math.max(0, e.clientY - sy);
+
+    const now = performance.now();
+    const dt = now - lastT;
+    if (dt > 0) velocity = (e.clientY - lastY) / dt;
+    lastY = e.clientY;
+    lastT = now;
+
     infoSheet.style.transform = 'translateY(' + dy + 'px)';
   });
 
@@ -5783,8 +5957,10 @@ function swipeTrack(dir) {
     dragging = false;
     infoSheet.classList.remove('dragging');
     infoSheet.style.transform = '';
-    if (dy > 90) closeInfo();
+    // закрываем не только по расстоянию, но и по скорости броска — как в iOS
+    if (dy > 90 || velocity > 0.6) closeInfo();
     dy = 0;
+    velocity = 0;
   };
 
   grab.addEventListener('pointerup', end);
