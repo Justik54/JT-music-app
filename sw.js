@@ -4,7 +4,7 @@
    - обложки — кэш в приоритете
    - аудио — кэшируется по запросу плеера (последние несколько треков)
 */
-const VERSION = 'jt-v1.7.4';
+const VERSION = 'jt-v1.7.5';
 const SHELL = './index.html';
 const AUDIO_CACHE = 'jt-audio-v1';
 const AUDIO_MAX = 6;   // сколько треков держим офлайн
