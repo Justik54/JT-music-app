@@ -86,7 +86,7 @@
     position: absolute;
     top: -30%;
     left: 50%;
-    width: 140%;
+    width: min(1800px, 140%);   /* на 4К-телевизоре не раздуваем слой — иначе тормозит блюр */
     height: 58%;
     z-index: 2;
     display: none;
@@ -109,16 +109,119 @@
   }
   body.glow-on .glow-top {
     display: block;
-    animation: glowBreath 8s ease-in-out infinite;
+    animation: glowBreath 13s ease-in-out infinite;
+    transform-origin: 50% 6%;
   }
-  /* дышит только размером — яркость задаётся ползунком */
+  /* дышит размером, качается в стороны и чуть поворачивается — как живое пятно света */
   @keyframes glowBreath {
-    0%   { transform: translateX(-50%) scale(0.98) translateY(0);    opacity: calc(var(--glow-opacity, 0.2) * 0.75); }
-    50%  { transform: translateX(-52%) scale(1.24) translateY(6px);  opacity: calc(var(--glow-opacity, 0.2) * 1.15); }
-    100% { transform: translateX(-50%) scale(0.98) translateY(0);    opacity: calc(var(--glow-opacity, 0.2) * 0.75); }
+    0% {
+      transform: translateX(-50%) translateY(0) scale(0.92) rotate(-1.4deg);
+      opacity: calc(var(--glow-opacity, 0.2) * 0.72);
+    }
+    28% {
+      transform: translateX(-46%) translateY(5px) scale(1.12) rotate(0.9deg);
+      opacity: calc(var(--glow-opacity, 0.2) * 1.08);
+    }
+    52% {
+      transform: translateX(-54%) translateY(9px) scale(1.28) rotate(-0.7deg);
+      opacity: calc(var(--glow-opacity, 0.2) * 1.24);
+    }
+    76% {
+      transform: translateX(-48%) translateY(4px) scale(1.06) rotate(1.5deg);
+      opacity: calc(var(--glow-opacity, 0.2) * 0.94);
+    }
+    100% {
+      transform: translateX(-50%) translateY(0) scale(0.92) rotate(-1.4deg);
+      opacity: calc(var(--glow-opacity, 0.2) * 0.72);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     body.glow-on .glow-top { animation: none; }
+  }
+
+  /* ── aurora: медленные цветные лучи поверх свечения ── */
+  .glow-aurora {
+    position: absolute;
+    top: -34%;
+    left: 50%;
+    width: min(2100px, 170%);
+    height: 66%;
+    z-index: 3;
+    display: none;
+    transform: translateX(-50%);
+    background: conic-gradient(from 0deg at 50% 0%,
+      transparent 0deg,
+      rgba(120, 190, 255, 0.55) 34deg,
+      rgba(255, 130, 210, 0.30) 76deg,
+      transparent 120deg,
+      transparent 170deg,
+      rgba(120, 255, 225, 0.36) 232deg,
+      rgba(150, 170, 255, 0.44) 268deg,
+      transparent 318deg,
+      transparent 360deg);
+    filter: blur(64px) saturate(180%);
+    opacity: 0;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    will-change: transform, opacity;
+    -webkit-mask-image: radial-gradient(58% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.55) 46%, transparent 78%);
+    mask-image: radial-gradient(58% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.55) 46%, transparent 78%);
+  }
+  body.glow-on .glow-aurora {
+    display: block;
+    animation: auroraSpin 34s ease-in-out infinite, auroraFade 11s ease-in-out infinite;
+  }
+  @keyframes auroraSpin {
+    0%   { transform: translateX(-50%) rotate(-16deg) scale(1); }
+    50%  { transform: translateX(-50%) rotate(16deg) scale(1.1); }
+    100% { transform: translateX(-50%) rotate(-16deg) scale(1); }
+  }
+  @keyframes auroraFade {
+    0%, 100% { opacity: calc(var(--glow-opacity, 0.2) * 0.85); }
+    50%      { opacity: calc(var(--glow-opacity, 0.2) * 2.1); }
+  }
+
+  /* ── halo: мягкая волна, расходится от центра раз в 9 секунд ── */
+  .glow-halo {
+    position: absolute;
+    top: -28%;
+    left: 50%;
+    width: min(1900px, 118%);
+    height: 54%;
+    z-index: 4;
+    display: none;
+    transform: translateX(-50%) scale(0.8);
+    background: radial-gradient(closest-side,
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(170, 210, 255, 0.26) 38%,
+      transparent 72%);
+    filter: blur(56px);
+    opacity: 0;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+  body.glow-on .glow-halo {
+    display: block;
+    animation: glowHalo 9s cubic-bezier(0.33, 0, 0.2, 1) infinite;
+  }
+  @keyframes glowHalo {
+    0%   { opacity: 0; transform: translateX(-50%) scale(0.78); }
+    24%  { opacity: calc(var(--glow-opacity, 0.2) * 1.6); }
+    70%  { opacity: 0; transform: translateX(-50%) scale(1.34); }
+    100% { opacity: 0; transform: translateX(-50%) scale(1.34); }
+  }
+
+  /* пауза: цвет уходит, но волна продолжает жить — серая, спокойная */
+  body.glow-on.paused .glow-aurora {
+    filter: blur(64px) saturate(0) brightness(1.25);
+    animation: auroraSpin 40s ease-in-out infinite;
+    opacity: calc(var(--glow-opacity, 0.2) * 0.75);
+  }
+  body.glow-on.paused .glow-halo { animation: glowHaloIdle 7.5s ease-in-out infinite; }
+  @keyframes glowHaloIdle {
+    0%, 100% { opacity: calc(var(--glow-opacity, 0.22) * 0.45); transform: translateX(-50%) scale(0.92); }
+    50%      { opacity: calc(var(--glow-opacity, 0.22) * 1.25); transform: translateX(-50%) scale(1.14); }
   }
 
   /* серое переливание — отдельный слой поверх цветного */
@@ -982,7 +1085,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;      /* блок по центру, а не прижат к верху */
     padding: 4px 26px calc(14px + env(safe-area-inset-bottom));
     min-height: 0;
     overflow-y: auto;
@@ -1254,7 +1357,12 @@
     gap: 11px;
     padding: 8px 4px 0;
     min-height: 24px;
-    margin-top: auto;
+    margin-top: 16px;   /* было auto: на высоких экранах получалась дыра посередине */
+  }
+
+  /* низкий экран (телефон в горизонтали) — не центрируем, иначе обрежет верх */
+  @media (max-height: 720px) {
+    .player-body { justify-content: flex-start; }
   }
   .volume .btn { color: rgba(244, 247, 250, 0.55); width: 22px; height: 22px; flex-shrink: 0; }
   .vslider {
@@ -1499,6 +1607,158 @@
     margin-top: 2px;
   }
 
+  /* ══════════════════════════════════════════════════════════
+     АДАПТИВ: телефон → планшет → ПК → телевизор
+     Идея простая: контент живёт в колонке ограниченной ширины,
+     а на широких экранах раскладывается в несколько столбцов.
+     ══════════════════════════════════════════════════════════ */
+  :root {
+    --content-w: 100%;   /* максимальная ширина колонки контента */
+    --gutter: 18px;      /* боковые отступы */
+  }
+
+  .lib-head,
+  .scroll,
+  .navbar {
+    width: 100%;
+    max-width: var(--content-w);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ── планшет (портрет) ─────────────────────────────────── */
+  @media (min-width: 600px) {
+    :root { --content-w: 660px; --gutter: 24px; }
+
+    .lib-head { padding-left: var(--gutter); padding-right: var(--gutter); }
+    .scroll { padding-left: var(--gutter); padding-right: var(--gutter); }
+
+    .album-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 16px; }
+    .row-cover { width: 50px; height: 50px; }
+
+    /* док больше не липнет к краям и совпадает по ширине со списком */
+    .dock {
+      left: 0;
+      right: 0;
+      width: calc(min(100%, var(--content-w)) - 48px);
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
+  /* ── планшет (ландшафт) / ноутбук ──────────────────────── */
+  @media (min-width: 900px) {
+    :root { --content-w: 900px; --gutter: 28px; }
+
+    /* поиск по ширине списка — края совпадают */
+    .search-row { max-width: none; }
+
+    /* список в два столбца */
+    .panel.active {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 12px;
+      align-content: start;
+    }
+    .panel.active > .empty,
+    .panel.active > .list-actions,
+    .panel.active > .album-grid { grid-column: 1 / -1; }
+
+    .album-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .dock { width: calc(min(100%, var(--content-w)) - 56px); }
+
+    /* настройки — узкая читаемая колонка */
+    #scrSettings .scroll,
+    #scrSettings .navbar { max-width: 620px; }
+
+    /* плеер: обложка слева, управление справа (а не всё в столбик) */
+    .player-body {
+      display: grid;
+      grid-template-columns: auto minmax(340px, 430px);
+      grid-template-areas:
+        "cover meta"
+        "cover scrub"
+        "cover times"
+        "cover controls"
+        "cover volume";
+      align-content: center;
+      align-items: center;
+      justify-content: center;
+      column-gap: 56px;
+      padding: 24px 40px 32px;
+    }
+    .cover-wrap { grid-area: cover; width: min(340px, 40vh); margin: 0; }
+    .meta { grid-area: meta; text-align: left; margin-bottom: 26px; }
+    .scrub { grid-area: scrub; }
+    .times { grid-area: times; }
+    .controls { grid-area: controls; }
+    .volume { grid-area: volume; }
+
+    /* шапка альбома: обложка слева, текст справа */
+    .album-hero {
+      display: grid;
+      grid-template-columns: 176px minmax(0, 1fr);
+      grid-template-areas:
+        "cover name"
+        "cover sub"
+        "cover btn";
+      align-content: center;
+      align-items: start;
+      column-gap: 26px;
+      text-align: left;
+      padding: 16px 4px 26px;
+    }
+    .album-hero img { grid-area: cover; width: 176px; margin: 0; align-self: center; }
+    .album-hero-name { grid-area: name; align-self: end; font-size: 24px; }
+    .album-hero-sub { grid-area: sub; }
+    .play-album { grid-area: btn; justify-self: start; align-self: start; margin-top: 6px; }
+  }
+
+  /* ── большой монитор / телевизор ───────────────────────── */
+  @media (min-width: 1500px) {
+    :root { --content-w: 1240px; --gutter: 32px; }
+
+    .row { padding: 12px 14px; gap: 16px; border-radius: 16px; }
+    .row-cover { width: 58px; height: 58px; border-radius: 11px; }
+    .row-title { font-size: 16px; }
+    .row-sub { font-size: 13.5px; }
+    .row-fav { width: 40px; height: 40px; }
+
+    .brand { font-size: 11.5px; }
+    .search-wrap,
+    .sort-btn { height: 44px; }
+    .search-wrap input { font-size: 15px; }
+    .sort-btn { font-size: 13px; }
+
+    .tabbar { height: 76px; }
+    .tabbar-btn { font-size: 11.5px; }
+    .tabbar-btn svg { width: 24px; height: 24px; }
+
+    .mini { height: 78px; }
+    .dock.has-track .mini-slot { max-height: 78px; }
+    .mini-cover { width: 54px; height: 54px; border-radius: 12px; }
+    .mini-title { font-size: 15px; }
+    .mini-sub { font-size: 13px; }
+    .mini-btn { width: 44px; height: 44px; }
+    .mini-btn svg { width: 26px; height: 26px; }
+
+    .dock {
+      width: calc(min(100%, var(--content-w)) - 64px);
+      border-radius: 26px;
+    }
+
+    .album-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 22px 18px; }
+    .album-card-name { font-size: 15px; }
+    .album-card-sub { font-size: 13px; }
+
+    .title { font-size: 26px; }
+    .artist { font-size: 16px; }
+    .cover-wrap { width: min(420px, 44vh); }
+    .btn-play { width: 68px; height: 68px; }
+    .btn-side { width: 50px; height: 50px; }
+    .scroll { padding-bottom: 210px; }
+  }
+
   /* ══ появление списков ═════════════════════════════════ */
   /* лёгкая анимация: панель просто проявляется, без «наползания» строк */
   .panel.active { animation: panelIn 160ms ease-out; }
@@ -1513,6 +1773,10 @@
       transition-duration: 1ms !important;
     }
     .panel.active { animation: none; }
+    /* бесконечные анимации при 1ms крутились бы как бешеные — гасим совсем */
+    .glow-aurora,
+    .glow-halo,
+    .glow-top { animation: none !important; }
   }
 
   /* всплывающая подсказка (тост) */
@@ -1562,7 +1826,7 @@
 </head>
 <body>
 
-<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""><div class="glow-top"><div class="glow-img" id="glowA"></div><div class="glow-img" id="glowB"></div></div></div>
+<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""><div class="glow-top"><div class="glow-img" id="glowA"></div><div class="glow-img" id="glowB"></div></div><div class="glow-aurora"></div><div class="glow-halo"></div></div>
 
 <!-- ══════════ STAGE ══════════ -->
 <div class="stage" id="stage">
@@ -1869,7 +2133,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.6.1';
+const APP_VERSION = '1.6.2';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
