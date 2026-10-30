@@ -23,7 +23,6 @@
     --c1-rgb: 120, 190, 255;
     --c2-rgb: 255, 130, 210;
     --c3-rgb: 120, 255, 225;
-    --cover-img: none;
 
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -1264,7 +1263,13 @@
     margin: 0 auto 22px;
     border-radius: 22px;
     background: var(--surface);
-    box-shadow: 0 26px 60px -18px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    /* свечение под обложкой — цветная тень, а не размытая копия картинки:
+       у размытия был шов на краю контейнера и пересвет на ярких обложках.
+       --aura-alpha считает JS по средней яркости обложки */
+    box-shadow:
+      0 24px 48px -20px rgba(0, 0, 0, 0.9),
+      0 30px 44px -8px rgba(var(--c1-rgb), var(--aura-alpha, 0.5)),
+      0 0 0 1px rgba(255, 255, 255, 0.05) inset;
     flex-shrink: 0;
     cursor: zoom-in;
     /* «дышит» как в Apple Music: играет — полный размер, пауза — сжимается */
@@ -1274,34 +1279,13 @@
     touch-action: pan-y;
     will-change: transform;
   }
-  /* живая аура: та же обложка, размытая и вынесенная назад.
-     Пластинка перестаёт быть плоской картинкой и начинает «светиться».
-     inset: 0 — иначе размытие уходит вверх и его обрезает контейнер прокрутки
-     (был виден ровный обрез чуть выше обложки) */
-  .cover-wrap::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background-image: var(--cover-img);
-    background-size: cover;
-    background-position: center;
-    filter: blur(24px) saturate(215%) brightness(1.12);
-    opacity: 0.72;
-    transform: translateY(20px) scale(1) translate3d(0, 0, 0);
-    transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out), filter 600ms ease;
-    pointer-events: none;
-  }
-  body.paused .cover-wrap::before {
-    opacity: 0.16;
-    transform: translateY(10px) scale(0.86) translate3d(0, 0, 0);
-    filter: blur(18px) saturate(55%) brightness(0.9);
-  }
   body.paused .cover-wrap {
     transform: scale(0.88) translate3d(0, 0, 0);
     border-radius: 28px;
-    box-shadow: 0 12px 34px -20px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    box-shadow:
+      0 12px 34px -20px rgba(0, 0, 0, 0.85),
+      0 20px 30px -8px rgba(var(--c1-rgb), calc(var(--aura-alpha, 0.5) * 0.3)),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   }
   .cover-wrap img {
     width: 100%;
@@ -2161,10 +2145,10 @@
   .stat-card:nth-child(3) { animation-delay: 140ms; }
   .stat-card:nth-child(4) { animation-delay: 190ms; }
 
-  /* мини-плеер: смена трека — лёгкий подъезд текста */
+  /* мини-плеер: смена трека — текст уезжает и приезжает с другой стороны */
   .mini-info.swap { animation: miniSwap 380ms var(--ease-out); }
   @keyframes miniSwap {
-    from { opacity: 0; transform: translateX(10px); }
+    from { opacity: 0; transform: translateX(var(--swap-x, 12px)); }
     to   { opacity: 1; transform: translateX(0); }
   }
 
@@ -2629,7 +2613,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.7.2';
+const APP_VERSION = '1.7.3';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -3596,17 +3580,26 @@ function readCover(img) {
 
   const data = ctx.getImageData(0, 0, TINY, TINY).data;
   const px = [];
+  let lumSum = 0;
+  let lumN = 0;
 
   for (let i = 0; i < data.length; i += 4) {
     if (data[i + 3] < 200) continue;
-    const hsl = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    // средняя яркость обложки — по ней приглушаем ауру у светлых картинок
+    lumSum += (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    lumN++;
+
+    const hsl = rgbToHsl(r, g, b);
     // почти чёрное и почти белое — это фон, а не цвет
     if (hsl[2] < 0.1 || hsl[2] > 0.94 || hsl[1] < 0.12) continue;
-    px.push([data[i], data[i + 1], data[i + 2], hsl[0], hsl[1], hsl[2]]);
+    px.push([r, g, b, hsl[0], hsl[1], hsl[2]]);
   }
 
+  const lum = lumN ? lumSum / lumN : 0.3;
   const tiny = canvas.toDataURL('image/jpeg', 0.72);
-  if (!px.length) return { tiny, palette: null };
+  if (!px.length) return { tiny, palette: null, lum };
 
   // 1) самый насыщенный оттенок обложки
   px.sort((a, b) => (b[4] * 0.8 + b[5] * 0.2) - (a[4] * 0.8 + a[5] * 0.2));
@@ -3628,6 +3621,7 @@ function readCover(img) {
 
   return {
     tiny,
+    lum,
     palette: [
       glowColor([first[0], first[1], first[2]]),
       glowColor([second[0], second[1], second[2]]),
@@ -3673,9 +3667,13 @@ function setAmbient(src, palette) {
 function setCover(src) {
   coverWrap.classList.add('dim');
 
-  const finish = (palette, tiny) => {
-    // аура за обложкой — та же картинка, второй раз из сети не качается
-    coverWrap.style.setProperty('--cover-img', 'url("' + String(src).replace(/"/g, '%22') + '")');
+  const finish = (palette, tiny, lum) => {
+    // яркая обложка — слабее аура, иначе вокруг пластинки белое пятно
+    const alpha = lum == null
+      ? 0.62
+      : Math.max(0.28, Math.min(0.8, 0.72 - (lum - 0.3) * 0.6));
+    coverWrap.style.setProperty('--aura-alpha', alpha.toFixed(3));
+
     if (palette) setPalette(palette[0], palette[1], palette[2]);
     else resetPalette();
     setAmbient(tiny || src, palette);
@@ -3687,14 +3685,16 @@ function setCover(src) {
   coverEl.onload = () => {
     let palette = null;
     let tiny = null;
+    let lum = null;
     try {
       const res = readCover(coverEl);
       palette = res.palette;
       tiny = res.tiny;
+      lum = res.lum;
     } catch (e) {
       // CDN не отдал пиксели (нет CORS) — картинка важнее цвета
     }
-    finish(palette, tiny);
+    finish(palette, tiny, lum);
   };
 
   coverEl.onerror = () => {
@@ -3851,10 +3851,15 @@ function loadTrack(index) {
   miniTitle.textContent = t.title;
   miniSub.textContent = artistLine(t);
 
-  // смена трека в мини-плеере — текст подъезжает, а не щёлкает
+  // смена трека в мини-плеере — текст приезжает с той стороны, куда свайпнули
+  miniInfo.style.transition = '';
+  miniInfo.style.transform = '';
+  miniInfo.style.opacity = '';
+  miniInfo.style.setProperty('--swap-x', miniSwapX + 'px');
   miniInfo.classList.remove('swap');
   void miniInfo.offsetWidth;
   miniInfo.classList.add('swap');
+  miniSwapX = 12;
 
   scrubFill.style.width = '0%';
   scrubKnob.style.left = '0%';
@@ -5808,6 +5813,7 @@ scrPlayer.addEventListener('pointerup', (e) => {
    ══════════════════════════════════════════════════════════ */
 let coverSwiped = false;
 let miniSwiped = false;
+let miniSwapX = 12;   // с какой стороны приезжает текст нового трека
 
 function swipeTrack(dir) {
   if (currentIndex < 0) return;
@@ -5827,6 +5833,26 @@ function swipeTrack(dir) {
     if (dir > 0) nextTrack(false);
     else goPrevTrack();
   }, 160);
+}
+
+/* свайп по мини-плееру: текст уезжает в сторону жеста, трек меняется,
+   новый текст приезжает с противоположной стороны */
+function miniSwipe(dir) {
+  if (currentIndex < 0) return;
+  miniSwapX = dir > 0 ? 18 : -18;
+
+  miniInfo.style.transition = 'transform 150ms var(--ease-out), opacity 150ms ease';
+  miniInfo.style.transform = 'translateX(' + (dir > 0 ? -34 : 34) + 'px)';
+  miniInfo.style.opacity = '0';
+
+  if (tg && tg.HapticFeedback) {
+    try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
+  }
+
+  setTimeout(() => {
+    if (dir > 0) nextTrack(false);
+    else goPrevTrack();
+  }, 150);
 }
 
 (function setupCoverSwipe() {
@@ -5875,6 +5901,12 @@ function swipeTrack(dir) {
   let armed = false;
   let horizontal = false;
 
+  const reset = () => {
+    miniInfo.style.transition = '';
+    miniInfo.style.transform = '';
+    miniInfo.style.opacity = '';
+  };
+
   mini.addEventListener('pointerdown', (e) => {
     if (e.target.closest('button')) { armed = false; return; }
     armed = true;
@@ -5882,7 +5914,7 @@ function swipeTrack(dir) {
     dx = 0;
     sx = e.clientX;
     sy = e.clientY;
-    mini.style.transition = 'none';
+    miniInfo.style.transition = 'none';
   });
 
   mini.addEventListener('pointermove', (e) => {
@@ -5890,27 +5922,32 @@ function swipeTrack(dir) {
     dx = e.clientX - sx;
     const dy = e.clientY - sy;
 
-    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) horizontal = true;
+    if (!horizontal && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) horizontal = true;
+    if (!horizontal) return;
 
-    if (horizontal) {
-      mini.style.transform = 'translateX(' + Math.max(-64, Math.min(64, dx * 0.45)) + 'px)';
-      mini.style.opacity = String(1 - Math.min(0.4, Math.abs(dx) / 340));
-    }
+    /* едет только текст. Раньше уезжала вся карточка вместе с кнопками —
+       выглядело так, будто мини-плеер вываливается из дока */
+    miniInfo.style.transform = 'translateX(' + Math.max(-46, Math.min(46, dx * 0.5)) + 'px)';
+    miniInfo.style.opacity = String(1 - Math.min(0.75, Math.abs(dx) / 180));
   });
 
   const end = () => {
     if (!armed) return;
     armed = false;
-    mini.style.transition = '';
-    mini.style.transform = '';
-    mini.style.opacity = '';
-
-    if (!horizontal) return;
+    if (!horizontal) { reset(); return; }
     horizontal = false;
-    if (Math.abs(dx) < 52) return;
+
+    // не дотянули — текст пружинкой возвращается на место
+    if (Math.abs(dx) < 52) {
+      miniInfo.style.transition = 'transform 240ms var(--ease-spring), opacity 240ms ease';
+      miniInfo.style.transform = '';
+      miniInfo.style.opacity = '';
+      setTimeout(reset, 260);
+      return;
+    }
 
     miniSwiped = true;
-    swipeTrack(dx < 0 ? 1 : -1);
+    miniSwipe(dx < 0 ? 1 : -1);
   };
 
   mini.addEventListener('pointerup', end);
