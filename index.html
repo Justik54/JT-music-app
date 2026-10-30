@@ -1086,6 +1086,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;      /* блок по центру, а не прижат к верху */
+    justify-content: safe center; /* если не влезает — центрируем «безопасно», верх не обрежется */
     padding: 4px 26px calc(14px + env(safe-area-inset-bottom));
     min-height: 0;
     overflow-y: auto;
@@ -2164,7 +2165,31 @@ const PLACEHOLDER = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
    Telegram
    ══════════════════════════════════════════════════════════ */
 const tg = window.Telegram && window.Telegram.WebApp;
-if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+
+if (tg) {
+  try {
+    tg.ready();
+    tg.expand();
+
+    // свайп вниз сворачивал мини-апп прямо во время скролла списка и жеста плеера
+    if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+
+    // цвет шторки Telegram под фон приложения (иначе сверху светлая полоса)
+    if (tg.setHeaderColor) tg.setHeaderColor('#08090b');
+    if (tg.setBackgroundColor) tg.setBackgroundColor('#08090b');
+  } catch (e) {}
+}
+
+/* подтверждение закрытия — только пока играет музыка, иначе бесит */
+let closingLocked = false;
+function lockClosing(on) {
+  if (!tg || !tg.enableClosingConfirmation || closingLocked === on) return;
+  try {
+    if (on) tg.enableClosingConfirmation();
+    else if (tg.disableClosingConfirmation) tg.disableClosingConfirmation();
+    closingLocked = on;
+  } catch (e) {}
+}
 
 const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
 
@@ -2174,7 +2199,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.6.4';
+const APP_VERSION = '1.6.5';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -2664,9 +2689,20 @@ function makeRow(index, delay) {
   });
 
   row.append(img, info, eq, fav);
-  row.addEventListener('click', () => playIndex(index));
+  row.addEventListener('click', () => playIndex(index, listAround(row)));
 
   return row;
+}
+
+/* Очередь = то, что реально на экране: поиск, избранное, альбом, весь список.
+   Берём соседей по DOM — они уже в том порядке, в котором их видит человек. */
+function listAround(row) {
+  const parent = row.parentElement;
+  if (!parent) return null;
+  const list = [...parent.querySelectorAll('.row[data-index]')]
+    .map((el) => Number(el.dataset.index))
+    .filter((n) => Number.isInteger(n) && n >= 0);
+  return list.length ? list : null;
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -3077,11 +3113,20 @@ function loadTrack(index) {
   saveQueue();
 }
 
-function playIndex(index) {
+function playIndex(index, contextList) {
   if (index === currentIndex && !audio.paused) {
     audio.pause();
     return;
   }
+
+  // включили из поиска / избранного / альбома — очередь строим из этого списка,
+  // иначе «следующий» прыгает в случайный трек из всей базы
+  if (contextList && contextList.length && contextList.indexOf(index) >= 0) {
+    queue = contextList.slice();
+    if (shuffle) shuffleQueue(index);
+    queuePos = queue.indexOf(index);
+  }
+
   if (index !== currentIndex) loadTrack(index);
   play();
 }
@@ -3140,6 +3185,7 @@ function setPlayingUI(isPlaying) {
   playBtn.classList.toggle('playing', isPlaying);
   miniPlay.classList.toggle('playing', isPlaying);
   document.body.classList.toggle('paused', !isPlaying);
+  lockClosing(isPlaying);
 }
 
 function syncPlayingRow() {
@@ -3841,15 +3887,6 @@ function hapticTap() {
   }
 }
 
-function plural(n, one, few, many) {
-  const a = Math.abs(n) % 100;
-  const b = a % 10;
-  if (a > 10 && a < 20) return many;
-  if (b > 1 && b < 5) return few;
-  if (b === 1) return one;
-  return many;
-}
-
 function openSettings() {
   paintSettings();
   scrSettings.classList.add('open');
@@ -4300,7 +4337,7 @@ async function shareTrack(t) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Короткий id трека — для ссылок вида ?startapp=track_xxx
+   Короткий id трека — для ссылок вида ?start=tr_xxx
    (тот же самый хэш считается в боте)
    ══════════════════════════════════════════════════════════ */
 function trackIdOf(t) {
@@ -4312,9 +4349,13 @@ function trackIdOf(t) {
 
 function indexFromStartParam() {
   const param = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
-  if (param.indexOf('track_') !== 0) return -1;
 
-  const id = param.slice(6);
+  // бот присылает ссылки с префиксом tr_, раньше был track_ —
+  // понимаем оба, иначе старые ссылки перестанут открываться
+  let id = '';
+  if (param.indexOf('track_') === 0) id = param.slice(6);
+  else if (param.indexOf('tr_') === 0) id = param.slice(3);
+
   if (!id) return -1;
 
   return tracks.findIndex((t) => trackIdOf(t) === id);
@@ -4417,8 +4458,10 @@ async function cacheUpcoming() {
     for (const url of urls) {
       if (await cache.match(url)) continue;
       try {
-        const res = await fetch(url, { mode: 'no-cors' });
-        if (res) await cache.put(url, res);
+        // Только обычный CORS-запрос. Ответ no-cors («opaque») нельзя ни прочитать,
+        // ни перемотать — на iOS такой трек из кэша просто не играет.
+        const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+        if (res && res.ok && res.type !== 'opaque') await cache.put(url, res);
       } catch (e) {}
     }
 
@@ -4826,7 +4869,7 @@ if ('serviceWorker' in navigator &&
 
   restoreQueue();               // порядок очереди с прошлой сессии
 
-  // ссылка из бота (t.me/...?startapp=track_xxx) — сразу включаем трек
+  // ссылка из бота (t.me/...?start=tr_xxx) — сразу включаем трек
   const startIndex = indexFromStartParam();
   if (startIndex >= 0) {
     loadTrack(startIndex);

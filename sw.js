@@ -4,7 +4,7 @@
    - обложки — кэш в приоритете
    - аудио — кэшируется по запросу плеера (последние несколько треков)
 */
-const VERSION = 'jt-v1.6.4';
+const VERSION = 'jt-v1.6.5';
 const SHELL = './index.html';
 const AUDIO_CACHE = 'jt-audio-v1';
 const AUDIO_MAX = 6;   // сколько треков держим офлайн
@@ -39,10 +39,12 @@ async function prefetchAudio(urls) {
     try {
       const hit = await cache.match(url);
       if (hit) continue;
-      const res = await fetch(url, { mode: 'no-cors', cache: 'force-cache' });
-      if (res) await cache.put(url, res);
+      // no-cors даёт «opaque»-ответ: он занимает место и не поддерживает перемотку,
+      // поэтому кэшируем только нормальный CORS-ответ
+      const res = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+      if (res && res.ok && res.type !== 'opaque') await cache.put(url, res);
     } catch (e) {
-      // нет сети или файл не отдался — не страшно
+      // нет сети, нет CORS или файл не отдался — не страшно
     }
   }
 
