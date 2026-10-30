@@ -1376,5 +1376,34 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/62c80ac0d68343b082b45e20f6883692.mp3",
     "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/aaf913a8d1c4420093be2b5d551f7d40.jpg",
     "duration": 136
+  },
+  {
+    "title": "G-SHOKK",
+    "artist": "SODA LUV (Ft. OG Buda)",
+    "album": "КОТЬ! КОТЬ! (KITTY! KITTY!)",
+    "year": "2021",
+    "release": "2021-04-02",
+    "featuring": [
+      "OG Buda"
+    ],
+    "producer": [
+      "amyp",
+      "demarcxx",
+      "gob wants nothing",
+      "CPLUS",
+      "Даниил Александров (Daniil Alexandrov)"
+    ],
+    "writers": [
+      "gob wants nothing",
+      "demarcxx",
+      "amyp",
+      "OG Buda",
+      "SODA LUV"
+    ],
+    "label": "MELON MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4fc8997d02af4803b1f5eff2580e8cc9.mp3",
+    "cover": "https://images.genius.com/4402557e32beb3438605e1923266e622.1000x1000x1.png",
+    "duration": 185
   }
 ]
