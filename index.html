@@ -2613,7 +2613,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.7.3';
+const APP_VERSION = '1.7.4';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -3556,7 +3556,7 @@ function glowColor(rgb) {
   return hslToRgb(
     hsl[0],
     Math.max(0.55, Math.min(0.95, hsl[1])),
-    Math.max(0.5, Math.min(0.66, hsl[2]))
+    Math.max(0.44, Math.min(0.58, hsl[2]))
   );
 }
 
@@ -3579,9 +3579,15 @@ function readCover(img) {
   ctx.drawImage(img, 0, 0, TINY, TINY);
 
   const data = ctx.getImageData(0, 0, TINY, TINY).data;
-  const px = [];
   let lumSum = 0;
   let lumN = 0;
+
+  /* 12 секторов по кругу оттенков. Копим «вес» цвета: чем больше таких
+     пикселей и чем они насыщеннее — тем весомее сектор. Так находится
+     ДОМИНИРУЮЩИЙ цвет обложки, а не случайная яркая деталь
+     (раньше у бирюзовой обложки побеждали оранжевые волосы) */
+  const buckets = [];
+  for (let i = 0; i < 12; i++) buckets.push({ w: 0, r: 0, g: 0, b: 0, n: 0 });
 
   for (let i = 0; i < data.length; i += 4) {
     if (data[i + 3] < 200) continue;
@@ -3594,38 +3600,49 @@ function readCover(img) {
     const hsl = rgbToHsl(r, g, b);
     // почти чёрное и почти белое — это фон, а не цвет
     if (hsl[2] < 0.1 || hsl[2] > 0.94 || hsl[1] < 0.12) continue;
-    px.push([r, g, b, hsl[0], hsl[1], hsl[2]]);
+
+    const bi = Math.min(11, Math.floor(hsl[0] * 12));
+    const bk = buckets[bi];
+    bk.w += 0.3 + hsl[1] * (0.4 + hsl[2]);
+    bk.r += r;
+    bk.g += g;
+    bk.b += b;
+    bk.n++;
   }
 
   const lum = lumN ? lumSum / lumN : 0.3;
   const tiny = canvas.toDataURL('image/jpeg', 0.72);
-  if (!px.length) return { tiny, palette: null, lum };
 
-  // 1) самый насыщенный оттенок обложки
-  px.sort((a, b) => (b[4] * 0.8 + b[5] * 0.2) - (a[4] * 0.8 + a[5] * 0.2));
-  const first = px[0];
+  const order = buckets
+    .map((b, i) => ({ i, w: b.w, n: b.n, r: b.r, g: b.g, b: b.b }))
+    .filter((b) => b.n > 0)
+    .sort((a, b) => b.w - a.w);
 
-  // 2) самый далёкий от него по кругу оттенков — чтобы аврора не была однотонной
-  let second = px[1] || first;
-  let best = -1;
-  for (const p of px) {
-    let dh = Math.abs(p[3] - first[3]);
-    if (dh > 0.5) dh = 1 - dh;
-    const score = dh * (0.45 + p[4]);
-    if (score > best) { best = score; second = p; }
-  }
+  if (!order.length) return { tiny, palette: null, lum };
 
-  // 3) третий — средний между ними
-  const midH = (first[3] + second[3]) / 2;
-  const midS = Math.max(0.5, (first[4] + second[4]) / 2);
+  const avg = (b) => [Math.round(b.r / b.n), Math.round(b.g / b.n), Math.round(b.b / b.n)];
+
+  // 1) доминирующий оттенок
+  const first = order[0];
+
+  // 2) самый весомый из тех, что далеко по кругу — чтобы аврора не была однотонной
+  const second = order.find((b) => {
+    let d = Math.abs(b.i - first.i);
+    if (d > 6) d = 12 - d;
+    return d >= 3;   // минимум 90 градусов
+  }) || order[1] || first;
+
+  // 3) третий — между ними
+  const midH = ((first.i + second.i) / 2) / 12;
+  const midS = Math.max(0.45, 0.55);
 
   return {
     tiny,
     lum,
     palette: [
-      glowColor([first[0], first[1], first[2]]),
-      glowColor([second[0], second[1], second[2]]),
-      hslToRgb(midH, midS, 0.58)
+      glowColor(avg(first)),
+      glowColor(avg(second)),
+      hslToRgb(midH, midS, 0.5)
     ]
   };
 }
@@ -3635,7 +3652,7 @@ function setAmbient(src, palette) {
   const cur = ambEls[ambFront];
   next.onerror = () => { next.style.opacity = '0'; };
   next.src = src;
-  next.style.opacity = '0.42';
+  next.style.opacity = '0.3';
   cur.style.opacity = '0';
   ambFront = 1 - ambFront;
 
@@ -3650,12 +3667,16 @@ function setAmbient(src, palette) {
   const img = 'url("' + String(src).replace(/"/g, '%22') + '")';
   let bg = img;
 
+  /* Свет сверху — только чистый цвет палитры, без картинки под ним.
+     С картинкой градиент смешивался с обложкой (у СТИКЕРа оранжевый
+     палитровый цвет ложился на бирюзовую картинку) и получалась
+     белёсая яркая каша. Один цвет читается как свет. */
   if (palette) {
     const c1 = palette[0].join(', ');
     const c2 = palette[1].join(', ');
     bg =
-      'radial-gradient(62% 100% at 50% 0%, rgba(' + c1 + ', 0.9) 0%, ' +
-      'rgba(' + c1 + ', 0.38) 38%, rgba(' + c2 + ', 0.14) 62%, rgba(' + c2 + ', 0) 82%), ' + img;
+      'radial-gradient(62% 100% at 50% 0%, rgba(' + c1 + ', 0.62) 0%, ' +
+      'rgba(' + c1 + ', 0.26) 38%, rgba(' + c2 + ', 0.1) 62%, rgba(' + c2 + ', 0) 82%)';
   }
 
   nextLayer.style.backgroundImage = bg;
@@ -4665,7 +4686,7 @@ function stopEngine() {
 
 function applyGlowLevel(level) {
   const v = Math.max(0, Math.min(100, Number(level) || 0));
-  document.body.style.setProperty('--glow-opacity', String((0.05 + (v / 100) * 0.5).toFixed(3)));
+  document.body.style.setProperty('--glow-opacity', String((0.05 + (v / 100) * 0.42).toFixed(3)));
   document.body.style.setProperty('--glow-bright', String((1.0 + (v / 100) * 0.7).toFixed(3)));
 
   const range = $('glowLevel');
