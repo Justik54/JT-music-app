@@ -1366,5 +1366,15 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/b1fcda8edd7c47549754abd616920482.mp3",
     "cover": "https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png",
     "duration": 140
+  },
+  {
+    "title": "все группи попадают в рай",
+    "artist": "CMH",
+    "album": "все группи попадают в рай",
+    "year": "2026",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/62c80ac0d68343b082b45e20f6883692.mp3",
+    "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/aaf913a8d1c4420093be2b5d551f7d40.jpg",
+    "duration": 136
   }
 ]
