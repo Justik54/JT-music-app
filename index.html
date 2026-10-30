@@ -1609,8 +1609,8 @@
 
   /* ══════════════════════════════════════════════════════════
      АДАПТИВ: телефон → планшет → ПК → телевизор
-     Идея простая: контент живёт в колонке ограниченной ширины,
-     а на широких экранах раскладывается в несколько столбцов.
+     Контент растёт вместе с экраном: сначала становится шире,
+     потом список и альбомы расходятся в несколько столбцов.
      ══════════════════════════════════════════════════════════ */
   :root {
     --content-w: 100%;   /* максимальная ширина колонки контента */
@@ -1628,7 +1628,7 @@
 
   /* ── планшет (портрет) ─────────────────────────────────── */
   @media (min-width: 600px) {
-    :root { --content-w: 660px; --gutter: 24px; }
+    :root { --content-w: 680px; --gutter: 24px; }
 
     .lib-head { padding-left: var(--gutter); padding-right: var(--gutter); }
     .scroll { padding-left: var(--gutter); padding-right: var(--gutter); }
@@ -1648,16 +1648,17 @@
 
   /* ── планшет (ландшафт) / ноутбук ──────────────────────── */
   @media (min-width: 900px) {
-    :root { --content-w: 900px; --gutter: 28px; }
+    :root { --content-w: min(100% - 64px, 1040px); --gutter: 28px; }
 
-    /* поиск по ширине списка — края совпадают */
-    .search-row { max-width: none; }
+    /* шапка как в обычном приложении: логотип слева, поиск под ним */
+    .brand-row { justify-content: flex-start; padding: 8px 0 12px; }
+    .search-row { max-width: 620px; margin-left: 0; margin-right: 0; }
 
     /* список в два столбца */
     .panel.active {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      column-gap: 12px;
+      column-gap: 14px;
       align-content: start;
     }
     .panel.active > .empty,
@@ -1667,9 +1668,14 @@
     .album-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .dock { width: calc(min(100%, var(--content-w)) - 56px); }
 
-    /* настройки — узкая читаемая колонка */
-    #scrSettings .scroll,
-    #scrSettings .navbar { max-width: 620px; }
+    /* вкладки не разъезжаются по всей ширине дока — держим их кучкой по центру */
+    .tabbar {
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .dock.has-track .tabbar { border-top: none; }
+    .dock.has-track .mini-slot { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
 
     /* плеер: обложка слева, управление справа (а не всё в столбик) */
     .player-body {
@@ -1714,13 +1720,41 @@
     .play-album { grid-area: btn; justify-self: start; align-self: start; margin-top: 6px; }
   }
 
+  /* ── большой ноутбук / монитор ─────────────────────────── */
+  @media (min-width: 1200px) {
+    :root { --content-w: min(100% - 80px, 1240px); --gutter: 30px; }
+
+    .album-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+    /* настройки: две колонки — слева короткие блоки, справа длинный «Данные» */
+    #scrSettings .navbar,
+    #scrSettings .scroll { max-width: 1180px; }
+
+    #scrSettings .scroll {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-content: center;
+      align-items: start;
+      gap: 16px;
+      padding-bottom: 40px;
+    }
+    #scrSettings .set-group { margin: 0; }
+    #setGroup1 { grid-column: 1; grid-row: 1; }
+    #setGroup2 { grid-column: 1; grid-row: 2; }
+    #setGroup3 { grid-column: 2; grid-row: 1 / span 2; }
+    #scrSettings .set-foot { grid-column: 1 / -1; }
+  }
+
   /* ── большой монитор / телевизор ───────────────────────── */
   @media (min-width: 1500px) {
-    :root { --content-w: 1240px; --gutter: 32px; }
+    :root { --content-w: min(100% - 96px, 1560px); --gutter: 32px; }
+
+    /* список в три столбца */
+    .panel.active { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 16px; }
 
     .row { padding: 12px 14px; gap: 16px; border-radius: 16px; }
-    .row-cover { width: 58px; height: 58px; border-radius: 11px; }
-    .row-title { font-size: 16px; }
+    .row-cover { width: 56px; height: 56px; border-radius: 11px; }
+    .row-title { font-size: 15.5px; }
     .row-sub { font-size: 13.5px; }
     .row-fav { width: 40px; height: 40px; }
 
@@ -1757,6 +1791,24 @@
     .btn-play { width: 68px; height: 68px; }
     .btn-side { width: 50px; height: 50px; }
     .scroll { padding-bottom: 210px; }
+
+    /* настройки — воздух внутри карточек */
+    .set-group { padding: 6px 20px; }
+    .set-row { padding: 15px 0; }
+    .set-label { font-size: 14.5px; }
+    .set-group-title { font-size: 11.5px; padding: 18px 2px 6px; }
+  }
+
+  /* ── 4К / очень широкий экран ──────────────────────────── */
+  @media (min-width: 1900px) {
+    :root { --content-w: min(100% - 120px, 1820px); }
+
+    .panel.active { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .album-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .row-cover { width: 62px; height: 62px; }
+    .row-title { font-size: 16.5px; }
+    .row-sub { font-size: 14px; }
+    .title { font-size: 30px; }
   }
 
   /* ══ появление списков ═════════════════════════════════ */
@@ -2133,7 +2185,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.6.2';
+const APP_VERSION = '1.6.3';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
