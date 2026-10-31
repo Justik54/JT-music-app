@@ -1415,5 +1415,24 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4fc8997d02af4803b1f5eff2580e8cc9.mp3",
     "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/1f85db54165f40feaf6afed80baee15c.jpg",
     "duration": 185
+  },
+  {
+    "title": "Dirrt",
+    "artist": "Big Baby Tape & kizaru",
+    "album": "BANDANA I",
+    "year": "2021",
+    "release": "2021-10-22",
+    "featuring": [],
+    "producer": [
+      "Big Baby Tape"
+    ],
+    "writers": [
+      "Big Baby Tape"
+    ],
+    "label": "BENZO RECORDS, HAUNTED FAMILY, KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/eb7a0aab555349fd9777950443a648d0.mp3",
+    "cover": "https://images.genius.com/1932d8ea8a964db81269e0857821807d.1000x1000x1.png",
+    "duration": 161
   }
 ]
