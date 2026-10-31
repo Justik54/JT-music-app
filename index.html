@@ -938,6 +938,26 @@
   }
   .mini-btn:active { transform: scale(0.88); background: rgba(255, 255, 255, 0.06); }
 
+  /* переключение трека кнопками — только там, где есть мышка:
+     на телефоне листают свайпом, на ПК это неудобно */
+  .mini-skip {
+    display: none;
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: none;
+    color: rgba(244, 247, 250, 0.6);
+    place-items: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 150ms var(--ease-out), color 160ms ease, background-color 160ms ease;
+  }
+  .mini-skip:active { transform: scale(0.86); background: rgba(255, 255, 255, 0.07); }
+  @media (hover: hover) and (pointer: fine) {
+    .mini-skip { display: grid; }
+  }
+
   .mini-close {
     width: 30px;
     height: 30px;
@@ -2330,6 +2350,12 @@
       <div class="mini-title" id="miniTitle"></div>
       <div class="mini-sub" id="miniSub"></div>
     </div>
+    <button class="mini-skip" id="miniPrev" aria-label="Предыдущий трек">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1Zm11.7.4a1 1 0 0 1 .3.7v11a1 1 0 0 1-1.55.83l-8.2-5.5a1 1 0 0 1 0-1.66l8.2-5.5a1 1 0 0 1 1.25.13Z"/></svg>
+    </button>
+    <button class="mini-skip" id="miniNext" aria-label="Следующий трек">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1ZM5.8 5.9a1 1 0 0 1 1.25-.13l8.2 5.5a1 1 0 0 1 0 1.66l-8.2 5.5A1 1 0 0 1 5.5 17.6V6.6a1 1 0 0 1 .3-.7Z"/></svg>
+    </button>
     <button class="mini-btn" id="miniPlay" aria-label="Играть">
       <span class="icon-swap">
         <svg class="i-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8.2 4.6a1 1 0 0 1 1.02.05l10 6.9a1 1 0 0 1 0 1.65l-10 6.9A1 1 0 0 1 7.7 19.3V5.7a1 1 0 0 1 .5-.1Z"/></svg>
@@ -2617,7 +2643,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.7.7';
+const APP_VERSION = '1.7.8';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -4866,7 +4892,7 @@ infoScrim.addEventListener('click', closeInfo);
 /* обложка во весь экран */
 coverWrap.addEventListener('click', () => {
   // это был свайп на смену трека, а не тап
-  if (coverSwiped) { coverSwiped = false; return; }
+  if (performance.now() - coverSwipedAt < SWIPE_GUARD_MS) return;
   if (currentIndex < 0) return;
   coverFullImg.src = coverOf(tracks[currentIndex]);
   coverFull.classList.add('open');
@@ -4946,9 +4972,19 @@ document.addEventListener('visibilitychange', () => {
 });
 
 mini.addEventListener('click', (e) => {
-  if (e.target.closest('#miniPlay')) return;
-  if (miniSwiped) { miniSwiped = false; return; }
+  if (e.target.closest('button')) return;
+  if (performance.now() - miniSwipedAt < SWIPE_GUARD_MS) return;
   openPlayer();
+});
+
+$('miniPrev').addEventListener('click', (e) => {
+  e.stopPropagation();
+  miniSwipe(-1);
+});
+
+$('miniNext').addEventListener('click', (e) => {
+  e.stopPropagation();
+  miniSwipe(1);
 });
 
 $('miniClose').addEventListener('click', (e) => {
@@ -5875,8 +5911,13 @@ scrPlayer.addEventListener('pointerup', (e) => {
 /* ══════════════════════════════════════════════════════════
    Свайп по обложке / мини-плееру — переключение трека
    ══════════════════════════════════════════════════════════ */
-let coverSwiped = false;
-let miniSwiped = false;
+/* Метка времени, а не флаг: после свайпа браузер не всегда кидает click,
+   и булев флаг оставался включённым — следующий тап по мини-плееру
+   съедался вместо открытия. 400 мс гасят синтетический клик от жеста,
+   но живой тап проходит. */
+const SWIPE_GUARD_MS = 400;
+let coverSwipedAt = 0;
+let miniSwipedAt = 0;
 let miniSwapX = 12;   // с какой стороны приезжает текст нового трека
 
 function swipeTrack(dir) {
@@ -5950,7 +5991,7 @@ function miniSwipe(dir) {
     const dx = e.clientX - sx;
     if (Math.abs(dx) < 55) return;
 
-    coverSwiped = true;
+    coverSwipedAt = performance.now();
     swipeTrack(dx < 0 ? 1 : -1);
   };
 
@@ -6010,7 +6051,7 @@ function miniSwipe(dir) {
       return;
     }
 
-    miniSwiped = true;
+    miniSwipedAt = performance.now();
     miniSwipe(dx < 0 ? 1 : -1);
   };
 
