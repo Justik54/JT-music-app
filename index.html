@@ -1249,7 +1249,8 @@
     flex-direction: column;
     justify-content: center;      /* блок по центру, а не прижат к верху */
     justify-content: safe center; /* если не влезает — центрируем «безопасно», верх не обрежется */
-    padding: 8px 26px calc(14px + env(safe-area-inset-bottom));
+    /* safe-area-inset-bottom уже учтён в padding у #scrPlayer — второй раз не добавляем */
+    padding: 8px 26px 14px;
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: none;
@@ -1387,11 +1388,12 @@
     border-radius: 1.5px;
     background: var(--text);
     transform: translateY(-50%);
-    transition: width 180ms var(--ease-spring), margin-left 180ms var(--ease-spring);
+    /* left едет синхронно с width у .scrub-fill — иначе бегунок дёргается */
+    transition: left 120ms linear, width 180ms var(--ease-spring), margin-left 180ms var(--ease-spring);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     pointer-events: none;
   }
-  .scrub.dragging .scrub-knob { width: 5px; margin-left: -2.5px; }
+  .scrub.dragging .scrub-knob { width: 5px; margin-left: -2.5px; transition: none; }
 
   /* всплывающая плашка со временем — палец закрывает полоску и цифры */
   .time-bubble {
@@ -2604,7 +2606,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.7.5';
+const APP_VERSION = '1.7.6';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -2839,6 +2841,11 @@ function splitArtists(raw) {
   const text = (raw || '').trim();
   if (!text) return [];
 
+  /* «&» — это союз внутри названия дуэта (Simon & Garfunkel, MiyaGi & Эндшпиль),
+     а не разделитель. Режем по нему только когда строка явно перечисляет
+     гостей: есть feat. / ft. / «при участии» */
+  const hasFeat = /\bfeat\b|\bft\b|при\s+участии/i.test(text);
+
   const parts = [];
   let depth = 0;
   let buf = '';
@@ -2847,7 +2854,7 @@ function splitArtists(raw) {
     if (ch === '(' || ch === '[') depth += 1;
     if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1);
 
-    const sep = depth === 0 && (ch === '&' || ch === ',');
+    const sep = depth === 0 && (ch === ',' || (ch === '&' && hasFeat));
     if (sep) { parts.push(buf); buf = ''; continue; }
     buf += ch;
   }
@@ -3150,7 +3157,8 @@ function makeRow(index, delay) {
 
   row.addEventListener('pointermove', (e) => {
     if (!pressTimer) return;
-    if (Math.abs(e.clientX - pressX) > 10 || Math.abs(e.clientY - pressY) > 10) cancelPress();
+    // 18px вместо 10: на телефоне палец всегда чуть съезжает и меню не открывалось
+    if (Math.abs(e.clientX - pressX) > 18 || Math.abs(e.clientY - pressY) > 18) cancelPress();
   });
 
   row.addEventListener('pointerup', cancelPress);
@@ -3779,6 +3787,7 @@ function pauseWithFade() {
 /* смена трека: сначала тихо, потом меняем — без «щёлк» в тишину */
 function switchWithFade(fn) {
   if (switching || audio.paused || audio.volume < 0.02) {
+    switching = false;          // флаг не должен залипнуть, если сюда попали посреди затухания
     fn();
     return;
   }
@@ -3906,7 +3915,11 @@ function playIndex(index, contextList) {
 function play() {
   if (currentIndex < 0) return;
 
+  // отменяем незавершённое затухание и снимаем флаг: иначе switchWithFade
+  // навсегда решит, что смена трека ещё идёт, и перестанет гасить звук
   cancelAnimationFrame(fadeRaf);
+  switching = false;
+
   audio.volume = 0;                 // начинаем с нуля и поднимаем — без резкого старта
 
   const p = audio.play();
@@ -4349,6 +4362,7 @@ function reorderQueue(from, to) {
 
   const [item] = queue.splice(src, 1);
   queue.splice(base + to, 0, item);
+  saveQueue();          // новый порядок переживёт перезапуск
   openQueue();
   hapticTap();
 }
@@ -4959,6 +4973,17 @@ audio.addEventListener('play', () => {
 audio.addEventListener('pause', () => {
   setPlayingUI(false);
   saveState(true);
+
+  /* остановились — таймер сна больше не нужен. Проверяем audio.paused:
+     при смене трека плеер тоже кидает pause, но там мы уже запускаем
+     следующий и глушить таймер нельзя */
+  if (audio.paused && sleepMode !== 'off') {
+    clearTimeout(sleepTimerId);
+    sleepTimerId = 0;
+    sleepMode = 'off';
+    sleepEndsAt = 0;
+    sleepBtn.classList.remove('on');
+  }
 });
 
 audio.addEventListener('loadedmetadata', () => {
@@ -5782,6 +5807,7 @@ document.addEventListener('click', (e) => {
    ══════════════════════════════════════════════════════════ */
 let lastTapTime = 0;
 let lastTapX = 0;
+let lastTapY = 0;
 
 function flashSeek(side) {
   const el = side === 'left' ? seekFlashL : seekFlashR;
@@ -5792,14 +5818,20 @@ function flashSeek(side) {
 
 scrPlayer.addEventListener('pointerup', (e) => {
   if (!playerOpen) return;
-  // кнопки, ползунок, обложка и верхняя панель живут своей жизнью
-  if (e.target.closest('button, input, .scrub, .volume, .cover-wrap, .player-top, .timer-menu')) return;
+  // кнопки, ползунок, обложка, верхняя панель, название и таймкоды живут своей жизнью
+  if (e.target.closest('button, input, .scrub, .volume, .cover-wrap, .player-top, .timer-menu, .meta, .times')) return;
 
   const now = performance.now();
   const half = scrPlayer.clientWidth / 2;
   const isLeft = e.clientX < half;
 
-  if (now - lastTapTime < 330 && Math.abs(e.clientX - lastTapX) < 70) {
+  // два тапа считаем двойным только если палец почти не уехал и по вертикали:
+  // иначе обычная попытка прокрутить экран перематывала трек
+  const samePlace =
+    Math.abs(e.clientX - lastTapX) < 70 &&
+    Math.abs(e.clientY - lastTapY) <= 15;
+
+  if (now - lastTapTime < 330 && samePlace) {
     lastTapTime = 0;
     seekBy(isLeft ? -10 : 10);
     flashSeek(isLeft ? 'left' : 'right');
@@ -5807,6 +5839,7 @@ scrPlayer.addEventListener('pointerup', (e) => {
   }
   lastTapTime = now;
   lastTapX = e.clientX;
+  lastTapY = e.clientY;
 });
 
 /* ══════════════════════════════════════════════════════════
