@@ -71,6 +71,9 @@
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
+    /* изолируем композитинг: пока внутри этого блока что-то двигается,
+       браузер не пересчитывает остальную страницу */
+    contain: strict;
   }
   .ambient img {
     position: absolute;
@@ -78,19 +81,39 @@
     width: 190%;
     height: 190%;
     object-fit: cover;
-    /* картинка теперь приходит уменьшенной до 32×32 — браузер растягивает её
-       билинейно сам, поэтому вместо blur(105px) хватает 20px.
-       Это главная экономия: 4 слоя с blur >50px грели телефон */
-    filter: blur(22px) saturate(240%) brightness(0.5);
+    /* картинка приходит 32×32 — браузер растягивает её билинейно сам,
+       поэтому вместо blur(105px) хватает 16px. Радиус больше 40px заставляет
+       GPU пересчитывать размытие каждый кадр — это и грело телефон */
+    filter: blur(16px) saturate(240%) brightness(0.5);
     opacity: 0;
     transform: scale(1.15) translate3d(0, 0, 0);
-    transition: opacity 700ms var(--ease-out), filter 2s ease;
-    will-change: opacity;
+    transition: opacity 700ms var(--ease-out), filter 900ms ease, transform 900ms var(--ease-out);
+    will-change: opacity, transform;
+    backface-visibility: hidden;
   }
 
-  /* трек не играет — фон тоже уходит в серый */
+  /* пауза: не выключаем цвет в ноль (saturate(0) выглядит как сломанный плеер) —
+     просто сжимаем радиус света и гасим яркость. Тёплый оттенок трека остаётся */
   body.paused .ambient img {
-    filter: blur(22px) saturate(0) brightness(0.45);
+    filter: blur(16px) saturate(150%) brightness(0.42);
+    transform: scale(0.86) translate3d(0, 0, 0);
+  }
+
+  /* ── дизеринг ──────────────────────────────────────────
+     На глубоком чёрном 8-битный градиент разбивается на концентрические
+     кольца. Слой мелкого шума на 3.5% размывает границу между ступенями —
+     кольца исчезают. Картинка векторная и растягивается один раз, так что
+     по производительности это почти бесплатно. */
+  .ambient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    background-repeat: repeat;
+    pointer-events: none;
   }
   .ambient::after {
     content: "";
@@ -100,201 +123,161 @@
     background: radial-gradient(130% 85% at 50% 0%, rgba(8, 9, 11, 0.05) 0%, rgba(8, 9, 11, 0.7) 48%, var(--bg) 92%);
   }
 
-  /* ══ свечение сверху от цвета обложки ══ */
-  .glow-top {
-    position: absolute;
-    /* источник света — верхняя кромка экрана. Раньше слой висел выше экрана
-       (top: -26%) и наружу торчал только хвост затухания — отсюда «грязное пятно» */
-    top: 0;
-    left: 50%;
-    width: min(1800px, 150%);
-    height: 56%;
-    z-index: 2;
-    display: none;
-    transform: translateX(-50%) scale(1);
-    transform-origin: 50% 0%;
-    /* без filter: blur — именно он вместе с маской давал резкую полосу
-       на границе слоя. Градиент и так плавный */
-    filter: saturate(230%) brightness(calc(var(--glow-bright, 1.2) * 1.05));
-    opacity: var(--glow-opacity, 0.2);
-    mix-blend-mode: screen;
-    pointer-events: none;
-    will-change: opacity, transform;
-  }
-  /* два слоя: старый цвет плавно растворяется в новом */
-  .glow-img {
+  /* ══ fluid mesh: три цветных сгустка вместо конуса и гало ══
+     conic-gradient + blur(70px) на слое шириной 2100px заставляли WebKit
+     перерастеризовывать края каждый кадр — отсюда нагрев в Telegram WebApp.
+     Три пятна с blur 28px, дрейфующие по своим осям через translate3d,
+     дают ту же «живую» картинку при в разы меньшей нагрузке на GPU. */
+  .mesh {
     position: absolute;
     inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    /* блендим группу целиком: одна операция screen вместо трёх */
+    mix-blend-mode: screen;
+    transform: scale(var(--mesh-scale, 1));
+    transition: transform 900ms var(--ease-out), opacity 700ms ease;
+  }
+  .mesh-blob {
+    position: absolute;
+    border-radius: 50%;
+    /* 24–32px: меньше — видно резкий край пятна, больше — GPU начинает плавиться */
+    filter: blur(28px) saturate(220%) brightness(var(--glow-bright, 1.2));
     background-repeat: no-repeat;
     background-size: 100% 100%;
-    background-position: 50% 0%;
     opacity: 0;
-    transition: opacity 6s ease-in-out;
-  }
-  body.glow-on .glow-top {
-    display: block;
-    animation: glowBreath 13s ease-in-out infinite;
-    transform-origin: 50% 6%;
-  }
-  /* дышит размером, качается в стороны и чуть поворачивается — как живое пятно света */
-  @keyframes glowBreath {
-    0% {
-      transform: translateX(-50%) translateY(0) scale(0.92) rotate(-1.4deg);
-      opacity: calc(var(--glow-opacity, 0.2) * 0.72);
-    }
-    28% {
-      transform: translateX(-46%) translateY(5px) scale(1.12) rotate(0.9deg);
-      opacity: calc(var(--glow-opacity, 0.2) * 1.08);
-    }
-    52% {
-      transform: translateX(-54%) translateY(9px) scale(1.28) rotate(-0.7deg);
-      opacity: calc(var(--glow-opacity, 0.2) * 1.24);
-    }
-    76% {
-      transform: translateX(-48%) translateY(4px) scale(1.06) rotate(1.5deg);
-      opacity: calc(var(--glow-opacity, 0.2) * 0.94);
-    }
-    100% {
-      transform: translateX(-50%) translateY(0) scale(0.92) rotate(-1.4deg);
-      opacity: calc(var(--glow-opacity, 0.2) * 0.72);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    body.glow-on .glow-top { animation: none; }
-  }
-
-  /* ── aurora: медленные цветные лучи поверх свечения ── */
-  .glow-aurora {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: min(2100px, 170%);
-    height: 62%;
-    z-index: 3;
-    display: none;
-    transform: translateX(-50%);
-    transform-origin: 50% 0%;
-    background: conic-gradient(from 0deg at 50% 0%,
-      transparent 0deg,
-      rgba(var(--c1-rgb), 0.42) 34deg,
-      rgba(var(--c2-rgb), 0.22) 76deg,
-      transparent 120deg,
-      transparent 170deg,
-      rgba(var(--c3-rgb), 0.28) 232deg,
-      rgba(var(--c2-rgb), 0.32) 268deg,
-      transparent 318deg,
-      transparent 360deg);
-    filter: blur(70px) saturate(210%) brightness(1.25);
-    opacity: 0;
-    mix-blend-mode: screen;
-    pointer-events: none;
     will-change: transform, opacity;
-    -webkit-mask-image: radial-gradient(70% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 78%);
-    mask-image: radial-gradient(70% 100% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 78%);
-  }
-  body.glow-on .glow-aurora {
-    display: block;
-    animation: auroraSpin 34s ease-in-out infinite, auroraFade 11s ease-in-out infinite;
-  }
-  @keyframes auroraSpin {
-    0%   { transform: translateX(-50%) rotate(-16deg) scale(1); }
-    50%  { transform: translateX(-50%) rotate(16deg) scale(1.1); }
-    100% { transform: translateX(-50%) rotate(-16deg) scale(1); }
-  }
-  @keyframes auroraFade {
-    0%, 100% { opacity: calc(var(--glow-opacity, 0.2) * 0.85); }
-    50%      { opacity: calc(var(--glow-opacity, 0.2) * 2.1); }
-  }
-
-  /* ── halo: мягкая волна, расходится от центра раз в 9 секунд ── */
-  .glow-halo {
-    position: absolute;
-    top: -28%;
-    left: 50%;
-    width: min(1900px, 118%);
-    height: 54%;
-    z-index: 4;
-    display: none;
-    transform: translateX(-50%) scale(0.8);
-    background: radial-gradient(closest-side,
-      rgba(255, 255, 255, 0.5) 0%,
-      rgba(var(--c1-rgb), 0.26) 38%,
-      transparent 72%);
-    filter: blur(56px);
-    opacity: 0;
-    mix-blend-mode: screen;
     pointer-events: none;
-    will-change: transform, opacity;
+    backface-visibility: hidden;
   }
-  body.glow-on .glow-halo {
-    display: block;
-    animation: glowHalo 9s cubic-bezier(0.33, 0, 0.2, 1) infinite;
+  /* пятно 1 — доминирующий цвет обложки, левый верх */
+  .mesh-blob.blob-1 {
+    left: -18%;
+    top: -16%;
+    width: 92%;
+    height: 64%;
+    background-image: radial-gradient(closest-side,
+      rgba(var(--c1-rgb), 0.72) 0%,
+      rgba(var(--c1-rgb), 0.34) 38%,
+      rgba(var(--c1-rgb), 0) 76%);
   }
-  @keyframes glowHalo {
-    0%   { opacity: 0; transform: translateX(-50%) scale(0.78); }
-    24%  { opacity: calc(var(--glow-opacity, 0.2) * 1.6); }
-    70%  { opacity: 0; transform: translateX(-50%) scale(1.34); }
-    100% { opacity: 0; transform: translateX(-50%) scale(1.34); }
+  /* пятно 2 — второй цвет палитры, центр-верх.
+     Именно оно вспыхивает при смене трека */
+  .mesh-blob.blob-2 {
+    left: 24%;
+    top: -12%;
+    width: 92%;
+    height: 64%;
+    background-image: radial-gradient(closest-side,
+      rgba(var(--c2-rgb), 0.6) 0%,
+      rgba(var(--c2-rgb), 0.27) 40%,
+      rgba(var(--c2-rgb), 0) 78%);
   }
-
-  /* пауза: цвет не выключаем совсем — просто замедляем в 3 раза.
-     Так экран «замирает», но не выглядит мёртвым */
-  body.glow-on.paused .glow-aurora {
-    filter: blur(78px) saturate(75%) brightness(1.05);
-    animation: auroraSpin 90s ease-in-out infinite;
-    opacity: calc(var(--glow-opacity, 0.2) * 0.55);
-  }
-  body.glow-on.paused .glow-halo { animation: glowHaloIdle 7.5s ease-in-out infinite; }
-  @keyframes glowHaloIdle {
-    0%, 100% { opacity: calc(var(--glow-opacity, 0.22) * 0.45); transform: translateX(-50%) scale(0.92); }
-    50%      { opacity: calc(var(--glow-opacity, 0.22) * 1.25); transform: translateX(-50%) scale(1.14); }
-  }
-
-  /* одноразовая вспышка при старте трека — тактильный отклик «поехали» */
-  body.glow-on .glow-halo.flare {
-    animation: haloFlare 820ms cubic-bezier(0.2, 0, 0.2, 1);
-    animation-play-state: running;
-  }
-  @keyframes haloFlare {
-    0%   { opacity: 0; transform: translateX(-50%) scale(0.78); }
-    20%  { opacity: calc(var(--glow-opacity, 0.2) * 2.6); }
-    100% { opacity: 0; transform: translateX(-50%) scale(1.5); }
-  }
-
-  /* плеер свёрнут — аврора и гало стоят на паузе.
-     Человек листает библиотеку, и два тяжёлых размытых слоя ему не нужны */
-  body:not(.player-open) .glow-aurora,
-  body:not(.player-open) .glow-halo { animation-play-state: paused; }
-  body:not(.player-open) .glow-halo.flare { animation-play-state: running; }
-
-  /* серое переливание — отдельный слой поверх цветного */
-  .glow-top::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background: radial-gradient(closest-side,
-      rgba(238, 243, 250, 0.9) 0%,
-      rgba(214, 222, 232, 0.4) 45%,
-      transparent 76%);
-    opacity: 0;
-    transition: opacity 2.5s ease;
-    pointer-events: none;
+  /* пятно 3 — мягкое основание снизу */
+  .mesh-blob.blob-3 {
+    left: -6%;
+    top: 32%;
+    width: 106%;
+    height: 64%;
+    background-image: radial-gradient(closest-side,
+      rgba(var(--c3-rgb), 0.48) 0%,
+      rgba(var(--c3-rgb), 0.2) 44%,
+      rgba(var(--c3-rgb), 0) 80%);
   }
 
-  /* трек не играет — цвет уходит, остаётся серое переливание */
-  body.glow-on.paused .glow-top::before { opacity: 1; }
-  body.glow-on.paused .glow-img { opacity: 0 !important; }
+  /* тумблер «Анимация свечения»: выключили — пятен нет совсем */
+  body.glow-on .mesh-blob { opacity: calc(var(--glow-opacity, 0.2) * 1.6); }
+  /* базовая непрозрачность выше нужна на случай prefers-reduced-motion:
+     там анимация выключена и keyframes не задают opacity */
+  body.glow-on .mesh-blob.blob-1 { animation: meshDrift1 23s linear infinite; }
+  body.glow-on .mesh-blob.blob-2 { animation: meshDrift2 31s linear infinite; }
+  body.glow-on .mesh-blob.blob-3 { animation: meshDrift3 37s linear infinite; }
 
-  body.glow-on.paused .glow-top {
-    animation: glowIdle 6s ease-in-out infinite;
+  /* ── дрейф по фигурам Лиссажу ──────────────────────────
+     Пятно ходит по замкнутой кривой: по X одна частота, по Y другая
+     (у blob-1 — 1:2, у blob-2 — 2:3, у blob-3 — 3:2). Круга нет,
+     «прожектор» не вращается — движение читается как живое перетекание.
+     Периоды 23 / 31 / 37 s — простые числа: общий рисунок не совпадёт
+     никогда, глазу не за что зацепиться как за цикл. */
+  @keyframes meshDrift1 {
+    0%    { transform: translate3d(0, 3.9%, 0) scale(1);     opacity: calc(var(--glow-opacity, 0.2) * 1.6); }
+    12.5% { transform: translate3d(5.7%, 4.6%, 0) scale(1.06);  opacity: calc(var(--glow-opacity, 0.2) * 1.9); }
+    25%   { transform: translate3d(8%, -3.9%, 0) scale(1.12);   opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
+    37.5% { transform: translate3d(5.7%, -4.6%, 0) scale(1.04); opacity: calc(var(--glow-opacity, 0.2) * 1.1); }
+    50%   { transform: translate3d(0, 3.9%, 0) scale(0.96);     opacity: calc(var(--glow-opacity, 0.2) * 1.7); }
+    62.5% { transform: translate3d(-5.7%, 4.6%, 0) scale(1.02); opacity: calc(var(--glow-opacity, 0.2) * 2.1); }
+    75%   { transform: translate3d(-8%, -3.9%, 0) scale(1.1);   opacity: calc(var(--glow-opacity, 0.2) * 1.5); }
+    87.5% { transform: translate3d(-5.7%, -4.6%, 0) scale(1.04); opacity: calc(var(--glow-opacity, 0.2) * 1.2); }
+    100%  { transform: translate3d(0, 3.9%, 0) scale(1);        opacity: calc(var(--glow-opacity, 0.2) * 1.6); }
   }
-  @keyframes glowIdle {
-    0%, 100% { transform: translateX(-50%) scale(0.92); opacity: calc(var(--glow-opacity, 0.22) * 0.9); }
-    50%      { transform: translateX(-50%) scale(1.18); opacity: calc(var(--glow-opacity, 0.22) * 1.75); }
+  @keyframes meshDrift2 {
+    0%    { transform: translate3d(0, 4.5%, 0) scale(1.04);    opacity: calc(var(--glow-opacity, 0.2) * 1.3); }
+    12.5% { transform: translate3d(7%, -1.5%, 0) scale(0.94);  opacity: calc(var(--glow-opacity, 0.2) * 1.8); }
+    25%   { transform: translate3d(0, -2.3%, 0) scale(1.1);    opacity: calc(var(--glow-opacity, 0.2) * 2.1); }
+    37.5% { transform: translate3d(-7%, 4.8%, 0) scale(1);     opacity: calc(var(--glow-opacity, 0.2) * 1.2); }
+    50%   { transform: translate3d(0, -4.5%, 0) scale(0.96);   opacity: calc(var(--glow-opacity, 0.2) * 1.6); }
+    62.5% { transform: translate3d(7%, 1.5%, 0) scale(1.08);   opacity: calc(var(--glow-opacity, 0.2) * 1.1); }
+    75%   { transform: translate3d(0, 2.3%, 0) scale(0.92);    opacity: calc(var(--glow-opacity, 0.2) * 1.9); }
+    87.5% { transform: translate3d(-7%, -4.7%, 0) scale(1.02); opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
+    100%  { transform: translate3d(0, 4.5%, 0) scale(1.04);    opacity: calc(var(--glow-opacity, 0.2) * 1.3); }
   }
-  @media (prefers-reduced-motion: reduce) {
-    body.glow-on.paused .glow-top { animation: none; }
+  @keyframes meshDrift3 {
+    0%    { transform: translate3d(2.4%, 0, 0) scale(1);       opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
+    12.5% { transform: translate3d(4.4%, 2.8%, 0) scale(1.05); opacity: calc(var(--glow-opacity, 0.2) * 1.1); }
+    25%   { transform: translate3d(-2.4%, 4%, 0) scale(0.95);  opacity: calc(var(--glow-opacity, 0.2) * 1.7); }
+    37.5% { transform: translate3d(-4.4%, 2.8%, 0) scale(1.02); opacity: calc(var(--glow-opacity, 0.2) * 2); }
+    50%   { transform: translate3d(2.4%, 0, 0) scale(1.08);    opacity: calc(var(--glow-opacity, 0.2) * 1.3); }
+    62.5% { transform: translate3d(4.4%, -2.8%, 0) scale(0.97); opacity: calc(var(--glow-opacity, 0.2) * 1.6); }
+    75%   { transform: translate3d(-2.4%, -4%, 0) scale(1.04); opacity: calc(var(--glow-opacity, 0.2) * 1.2); }
+    87.5% { transform: translate3d(-4.4%, -2.8%, 0) scale(1);  opacity: calc(var(--glow-opacity, 0.2) * 1.9); }
+    100%  { transform: translate3d(2.4%, 0, 0) scale(1);       opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
+  }
+
+  /* OKLCH: в sRGB переход между контрастными цветами обложки проходит через
+     грязно-серую середину. В oklab середина остаётся цветной.
+     Внутри @supports: старый WebKit просто оставит градиент выше */
+  @supports (background-image: linear-gradient(in oklab, red, blue)) {
+    .mesh-blob.blob-1 {
+      background-image: radial-gradient(closest-side in oklab,
+        rgba(var(--c1-rgb), 0.72) 0%,
+        rgba(var(--c1-rgb), 0.34) 38%,
+        rgba(var(--c1-rgb), 0) 76%);
+    }
+    .mesh-blob.blob-2 {
+      background-image: radial-gradient(closest-side in oklab,
+        rgba(var(--c2-rgb), 0.6) 0%,
+        rgba(var(--c2-rgb), 0.27) 40%,
+        rgba(var(--c2-rgb), 0) 78%);
+    }
+    .mesh-blob.blob-3 {
+      background-image: radial-gradient(closest-side in oklab,
+        rgba(var(--c3-rgb), 0.48) 0%,
+        rgba(var(--c3-rgb), 0.2) 44%,
+        rgba(var(--c3-rgb), 0) 80%);
+    }
+  }
+
+  /* ── пауза: в серый не выключаем (экран выглядел «сломанным») —
+     сжимаем сетку и гасим на 40%, цвет трека остаётся */
+  body.glow-on.paused .mesh {
+    --mesh-scale: 0.9;
+    opacity: 0.62;
+  }
+  body.glow-on.paused .mesh-blob { animation-play-state: paused; }
+
+  /* плеер свёрнут — сетка стоит: человек листает библиотеку,
+     размытые слои ему сейчас не нужны */
+  body:not(.player-open) .mesh-blob { animation-play-state: paused; }
+
+  /* ── импульс при смене трека ──────────────────────────
+     Вспышка масштаба всей сетки: 600ms, быстрый подъём и мягкое затухание.
+     Масштаб считается на композиторе — градиент не перерисовывается,
+     поэтому вспышка не стоит ни одного лишнего кадра */
+  .mesh.pulse { animation: meshPulse 600ms cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes meshPulse {
+    0%   { transform: scale(var(--mesh-scale, 1)); }
+    22%  { transform: scale(calc(var(--mesh-scale, 1) * 1.14)); }
+    100% { transform: scale(var(--mesh-scale, 1)); }
   }
 
   /* ползунок в настройках */
@@ -1284,6 +1267,9 @@
     padding: 8px 26px 14px;
     min-height: 0;
     overflow-y: auto;
+    /* свечение обложки выступает за её края — без этого появлялся
+       горизонтальный скролл и экран «гулял» вбок */
+    overflow-x: hidden;
     scrollbar-width: none;
   }
   .player-body::-webkit-scrollbar { display: none; }
@@ -1309,6 +1295,41 @@
     transform: scale(0.88) translate3d(0, 0, 0);
     border-radius: 28px;
     box-shadow: 0 12px 34px -20px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  }
+
+  /* свет исходит от самой обложки, а не висит «лампой» над экраном.
+     В iOS источник света физически привязан к объекту — это читается как нативное.
+     inset отрицательный: свечение живёт ПОД карточкой, поэтому наружу должен
+     выступать заметный ореол, иначе от него видно только 12px размытия */
+  .cover-wrap::after {
+    content: "";
+    position: absolute;
+    inset: -12%;
+    z-index: -1;
+    border-radius: inherit;
+    background: rgb(var(--c1-rgb));
+    filter: blur(36px);
+    opacity: 0.5;
+    transform: scale(0.96) translate3d(0, 0, 0);
+    transition: opacity 400ms ease, transform 500ms var(--ease-spring), filter 500ms ease;
+    pointer-events: none;
+    will-change: opacity, transform;
+  }
+  /* на паузе аура сжимается и гаснет, но цвет остаётся на ~50% насыщенности —
+     полностью обесцвеченный плеер выглядит сломанным */
+  body.paused .cover-wrap::after {
+    opacity: 0.3;
+    filter: blur(30px) saturate(50%);
+    transform: scale(0.88) translate3d(0, 0, 0);
+  }
+
+  /* скраббинг ползунка: аура сжимается и становится злее по цвету —
+     палец чувствует, что время «тянется» */
+  body.scrubbing .cover-wrap::after {
+    opacity: 0.62;
+    filter: blur(20px) saturate(155%);
+    transform: scale(0.9) translate3d(0, 0, 0);
+    transition-duration: 180ms;
   }
   .cover-wrap img {
     width: 100%;
@@ -2232,9 +2253,8 @@
     }
     .panel.active { animation: none; }
     /* бесконечные анимации при 1ms крутились бы как бешеные — гасим совсем */
-    .glow-aurora,
-    .glow-halo,
-    .glow-top { animation: none !important; }
+    .mesh-blob,
+    .mesh.pulse { animation: none !important; }
   }
 
   /* всплывающая подсказка (тост) */
@@ -2284,7 +2304,7 @@
 </head>
 <body>
 
-<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""><div class="glow-top"><div class="glow-img" id="glowA"></div><div class="glow-img" id="glowB"></div></div><div class="glow-aurora"></div><div class="glow-halo"></div></div>
+<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""><div class="mesh"><span class="mesh-blob blob-1"></span><span class="mesh-blob blob-2"></span><span class="mesh-blob blob-3"></span></div></div>
 
 <!-- ══════════ STAGE ══════════ -->
 <div class="stage" id="stage">
@@ -3545,9 +3565,7 @@ function syncFavButtons() {
    ══════════════════════════════════════════════════════════ */
 let ambFront = 0;
 const ambEls = [$('ambA'), $('ambB')];
-const glowA = $('glowA');
-const glowB = $('glowB');
-let glowFront = 0;
+const meshEl = document.querySelector('.mesh');
 
 /* ── палитра обложки ───────────────────────────────────────
    Обложку рисуем в холст 32×32 и вытаскиваем оттуда 3 цвета.
@@ -3692,37 +3710,11 @@ function setAmbient(src, palette) {
   cur.style.opacity = '0';
   ambFront = 1 - ambFront;
 
-  // свечение: новый слой проявляется за 6 сек, старый растворяется
-  const layers = [glowA, glowB];
-  const nextLayer = layers[1 - glowFront];
-  const curLayer = layers[glowFront];
-
-  /* Свет сверху строим из ЦВЕТА палитры, а не из самой картинки:
-     у тёмной обложки размытая картинка — почти чёрная, и вместо
-     света получалось грязное пятно. Градиент + картинка поверх. */
-  const img = 'url("' + String(src).replace(/"/g, '%22') + '")';
-  let bg = img;
-
-  /* Свет сверху — только чистый цвет палитры, без картинки под ним.
-     С картинкой градиент смешивался с обложкой (у СТИКЕРа оранжевый
-     палитровый цвет ложился на бирюзовую картинку) и получалась
-     белёсая яркая каша. Один цвет читается как свет. */
-  if (palette) {
-    const c1 = palette[0].join(', ');
-    const c2 = palette[1].join(', ');
-    bg =
-      'radial-gradient(130% 100% at 50% -6%, ' +
-      'rgba(' + c1 + ', 0.55) 0%, ' +
-      'rgba(' + c1 + ', 0.3) 26%, ' +
-      'rgba(' + c1 + ', 0.14) 46%, ' +
-      'rgba(' + c2 + ', 0.06) 64%, ' +
-      'rgba(' + c2 + ', 0) 82%)';
-  }
-
-  nextLayer.style.backgroundImage = bg;
-  nextLayer.style.opacity = '1';
-  curLayer.style.opacity = '0';
-  glowFront = 1 - glowFront;
+  /* Свечение больше не рисуется картинкой: три mesh-пятна берут цвет
+     из CSS-переменных --c1/c2/c3-rgb (их ставит setPalette выше).
+     Меняем только переменные — пятна перекрашиваются сами, без
+     лишнего слоя и без пересчёта размытия. */
+  if (palette) setPalette(palette[0], palette[1], palette[2]);
 }
 
 function setCover(src) {
@@ -3785,16 +3777,18 @@ function setMarquee(el, text) {
   });
 }
 
-/* ══ одноразовая вспышка свечения — отклик на старт трека ══ */
-function flareGlow() {
+/* ══ импульс при смене трека ══
+   Короткая вспышка масштаба mesh-сетки: 600ms, плавное затухание.
+   Перезапускаем класс вручную — иначе повторный вызов не сработает,
+   пока висит прошлая анимация */
+function pulseMesh() {
   if (!document.body.classList.contains('glow-on')) return;
-  const halo = document.querySelector('.glow-halo');
-  if (!halo) return;
+  if (!meshEl) return;
 
-  halo.classList.remove('flare');
-  void halo.offsetWidth;
-  halo.classList.add('flare');
-  halo.addEventListener('animationend', () => halo.classList.remove('flare'), { once: true });
+  meshEl.classList.remove('pulse');
+  void meshEl.offsetWidth;          // заставляем браузер «забыть» прошлую анимацию
+  meshEl.classList.add('pulse');
+  meshEl.addEventListener('animationend', () => meshEl.classList.remove('pulse'), { once: true });
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -3968,7 +3962,7 @@ function play() {
 
   const p = audio.play();
   const ok = () => {
-    flareGlow();
+    pulseMesh();
     fadeTo(volume, 170);
   };
   const fail = () => {
@@ -4084,6 +4078,10 @@ function makeSlider(el, onChange, onCommit, bubble) {
 
   el.addEventListener('pointerdown', (e) => {
     dragging = true;
+    /* скраббинг: аура обложки сжимается и насыщается (см. body.scrubbing в CSS).
+       Вешаем только на полосу перемотки — громкость так не светится.
+       Ставим класс ДО setPointerCapture: если захват упадёт, отклик всё равно будет */
+    if (el.classList.contains('scrub')) document.body.classList.add('scrubbing');
     el.setPointerCapture(e.pointerId);
     el.classList.add('dragging');
     const ratio = ratioFromEvent(e);
@@ -4102,6 +4100,7 @@ function makeSlider(el, onChange, onCommit, bubble) {
     if (!dragging) return;
     dragging = false;
     el.classList.remove('dragging');
+    document.body.classList.remove('scrubbing');
     if (bubble && bubble.el) bubble.el.classList.remove('show');
     try { el.releasePointerCapture(e.pointerId); } catch (err) {}
     if (onCommit) onCommit();
