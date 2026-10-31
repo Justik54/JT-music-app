@@ -132,7 +132,9 @@
 
   /* слабый свет по кромкам экрана. По умолчанию выключен —
      включается тумблером «Свечение у кромки» в настройках.
-     Лежит выше экранов (z-index 4), поэтому виден и в библиотеке, и в плеере */
+     Не рамка, а мягкий «залив» от краёв: четыре градиента + радиальная
+     маска, которая гасит середину и скругляет углы. Резкой линии 1px нет —
+     именно она читалась как дешёвая обводка */
   .edge-glow {
     position: fixed;
     inset: 0;
@@ -140,24 +142,28 @@
     pointer-events: none;
     opacity: 0;
     transition: opacity 600ms ease;
-    box-shadow:
-      inset 0 0 0 1px rgba(var(--c1-rgb), 0.1),
-      inset 0 0 44px -14px rgba(var(--c1-rgb), 0.55);
+    background:
+      linear-gradient(to right,  rgba(var(--c1-rgb), 0.26), rgba(var(--c1-rgb), 0) 9%),
+      linear-gradient(to left,   rgba(var(--c1-rgb), 0.26), rgba(var(--c1-rgb), 0) 9%),
+      linear-gradient(to top,    rgba(var(--c2-rgb), 0.18), rgba(var(--c2-rgb), 0) 8%),
+      /* сверху уже светит основное свечение — тут только лёгкая поддержка,
+         тем же цветом, чтобы не спорить с ним оттенком */
+      linear-gradient(to bottom, rgba(var(--c1-rgb), 0.12), rgba(var(--c1-rgb), 0) 8%);
   }
-  body.edge-on .edge-glow { opacity: calc(var(--glow-opacity, 0.2) * 3.4); }
+  body.edge-on .edge-glow { opacity: calc(0.35 + var(--glow-opacity, 0.2) * 2.2); }
 
-  /* пока играет — кайма дышит в такт (удар + затухание),
+  /* пока играет — свет у кромки дышит в такт (удар + затухание),
      на паузе замирает на нижнем уровне */
   body.edge-on:not(.paused) .edge-glow {
     animation: edgePulse 1.05s cubic-bezier(0.33, 0, 0.35, 1) infinite;
   }
   @keyframes edgePulse {
-    0%   { opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
-    9%   { opacity: calc(var(--glow-opacity, 0.2) * 3.6); }
-    28%  { opacity: calc(var(--glow-opacity, 0.2) * 2); }
-    50%  { opacity: calc(var(--glow-opacity, 0.2) * 3.1); }
-    76%  { opacity: calc(var(--glow-opacity, 0.2) * 1.9); }
-    100% { opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
+    0%   { opacity: calc(0.26 + var(--glow-opacity, 0.2) * 1.7); }
+    9%   { opacity: calc(0.35 + var(--glow-opacity, 0.2) * 2.2); }
+    28%  { opacity: calc(0.29 + var(--glow-opacity, 0.2) * 1.9); }
+    50%  { opacity: calc(0.32 + var(--glow-opacity, 0.2) * 2.1); }
+    76%  { opacity: calc(0.28 + var(--glow-opacity, 0.2) * 1.8); }
+    100% { opacity: calc(0.26 + var(--glow-opacity, 0.2) * 1.7); }
   }
 
   /* ══ fluid mesh: три цветных сгустка вместо конуса и гало ══
@@ -2695,7 +2701,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.8.3';
+const APP_VERSION = '1.8.4';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
