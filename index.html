@@ -385,6 +385,14 @@
   }
   .layer > .screen { pointer-events: auto; }
 
+  /* Закрытый экран не должен ловить касания ни при каких условиях.
+     На iOS/WebKit элемент с will-change: transform, уехавший за экран,
+     иногда остаётся «живым» по старому месту и съедает тапы по библиотеке:
+     список не листается, строки не нажимаются, а нижнее меню работает. */
+  #scrPlayer:not(.open),
+  #scrAlbum:not(.open),
+  #scrSettings:not(.open) { pointer-events: none; }
+
   #scrLibrary { transition: opacity 340ms var(--ease-out); }
   .stage.shrink #scrLibrary,
   .stage.shrink #scrAlbum { opacity: 0; }
@@ -860,6 +868,9 @@
     overflow: hidden;
     transform: translateY(0);
     transition: transform 420ms var(--ease-drawer), opacity 260ms ease;
+    /* меню в доке должно работать даже если .stage почему-то остался
+       в состоянии shrink (pointer-events: none) */
+    pointer-events: auto;
   }
   .dock.hide {
     opacity: 0;
@@ -2606,7 +2617,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.7.6';
+const APP_VERSION = '1.7.7';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -3006,10 +3017,12 @@ function stopPlayback() {
 }
 
 function closePlayer() {
-  if (!playerOpen) return;
-  closeInfo();
-  coverFull.classList.remove('open');
+  const wasOpen = playerOpen;
   playerOpen = false;
+
+  /* Чистим состояние всегда, даже если плеер уже считался закрытым:
+     иначе залипший .shrink (pointer-events: none) или inline-transform
+     от прерванного свайпа остаются на экране навсегда и убивают библиотеку */
   scrPlayer.style.transform = '';
   scrPlayer.classList.remove('open');
   stage.classList.remove('shrink');
@@ -3017,6 +3030,11 @@ function closePlayer() {
   document.body.classList.remove('player-open');
   closeCtxMenu();
   timerMenu.classList.remove('open');
+
+  if (!wasOpen) return;
+
+  closeInfo();
+  coverFull.classList.remove('open');
   showTgBack(albumOpenName !== null);
 }
 
@@ -4912,7 +4930,19 @@ sortBtn.addEventListener('click', (e) => {
 /* сохраняем позицию, когда уходим со страницы */
 window.addEventListener('pagehide', () => saveState(true));
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') saveState(true);
+  if (document.visibilityState === 'hidden') { saveState(true); return; }
+
+  /* Вернулись в мини-апп: WebView иногда оставляет залипшие классы после
+     анимаций. Приводим состояние экранов в порядок, чтобы библиотека
+     не оказалась «мёртвой» после открытия/закрытия плеера */
+  if (!playerOpen) {
+    stage.classList.remove('shrink');
+    scrPlayer.classList.remove('open');
+    scrPlayer.style.transform = '';
+    dock.classList.remove('hide');
+    document.body.classList.remove('player-open');
+  }
+  if (albumOpenName === null) scrAlbum.classList.remove('open');
 });
 
 mini.addEventListener('click', (e) => {
