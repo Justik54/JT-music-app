@@ -1434,5 +1434,27 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/eb7a0aab555349fd9777950443a648d0.mp3",
     "cover": "https://images.genius.com/1932d8ea8a964db81269e0857821807d.1000x1000x1.png",
     "duration": 161
+  },
+  {
+    "title": "Накипь (Scum)",
+    "artist": "MAYOT",
+    "album": "ЗАПРАВКА КИД (REFUELING KID)",
+    "year": "2020",
+    "release": "2020-12-25",
+    "featuring": [],
+    "producer": [
+      "blsq",
+      "manyice"
+    ],
+    "writers": [
+      "manyice",
+      "blsq",
+      "MAYOT"
+    ],
+    "label": "CPLUS, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/db3d81c997114459b30b83476554f263.mp3",
+    "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg",
+    "duration": 127
   }
 ]
