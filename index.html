@@ -3,1524 +3,468 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#08090b">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
 <title>JT · без мата</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ══════════════════════════════════════════════════════════════
+     ДИЗАЙН-СИСТЕМА: Apple Music / iOS Dark Mode
+     Все цвета — семантические токены iOS. Никаких самодельных.
+     ══════════════════════════════════════════════════════════════ */
   :root {
-    /* чистый чёрный: на OLED-экранах пиксель просто выключен — контраст и экономия батареи */
-    --bg: #08090b;
-    --surface: rgba(255, 255, 255, 0.05);
-    --surface-hi: rgba(255, 255, 255, 0.085);
-    --line: rgba(255, 255, 255, 0.075);
-    --text: #f4f7fa;
-    --sub: rgba(244, 247, 250, 0.46);
-    --faint: rgba(244, 247, 250, 0.2);
-    --accent: #3b9dff;
+    color-scheme: dark;
 
-    /* цвета, вытащенные из обложки текущего трека (ставит JS).
-       Значения — тройки RGB, чтобы работало rgba(var(--c1-rgb), 0.5) */
+    /* ── поверхности ── */
+    --bg: #000000;                       /* чистый OLED-чёрный */
+    --surface: #1c1c1e;                  /* сгруппированные карточки */
+    --surface-3: #2c2c2e;                /* нажатие / третичный фон */
+
+    /* ── текст ── */
+    --label: #ffffff;
+    --secondary-label: rgba(235, 235, 245, 0.6);
+    --tertiary-label: rgba(235, 235, 245, 0.3);
+    --faint: rgba(235, 235, 245, 0.3);   /* используется в JS */
+
+    /* ── линии и акцент ── */
+    --separator: rgba(84, 84, 88, 0.36);
+    --accent: #fa233b;                   /* системный красный Apple Music */
+    --green: #30d158;
+    --red: #ff453a;
+
+    /* ── liquid glass ── */
+    --glass: rgba(30, 30, 32, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.12);
+
+    /* цвета обложки (ставит JS) */
     --c1-rgb: 120, 190, 255;
     --c2-rgb: 255, 130, 210;
     --c3-rgb: 120, 255, 225;
+    --glow-opacity: 0.2;
+    --glow-bright: 1.2;
 
+    /* ── движение ── */
+    --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* ── размеры ── */
+    --tabbar-h: 50px;
+    --mini-h: 56px;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+    --dock-space: calc(var(--mini-h) + 8px + var(--tabbar-h) + var(--safe-b));
   }
 
-  * {
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* картинки в браузере «перетаскиваемые»: начатый drag отменяет pointer-события,
-     и свайп по обложке умирает на первом же движении */
   img {
     -webkit-user-drag: none;
     -webkit-user-select: none;
     user-select: none;
-    pointer-events: auto;
   }
 
   html, body {
-    background: var(--bg);
     height: 100%;
+    background: var(--bg);
     overflow: hidden;
-    overflow: clip;              /* скрытые экраны не должны растягивать страницу вбок */
+    overflow: clip;
     overscroll-behavior: none;
     max-width: 100vw;
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
-    color: var(--text);
-    user-select: none;
-    -webkit-user-select: none;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", -apple-system-subheadline, sans-serif;
+    color: var(--label);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    touch-action: manipulation;
   }
 
-  /* ══ ambient ═══════════════════════════════════════════ */
-  .ambient {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-    pointer-events: none;
-    /* изолируем композитинг: пока внутри этого блока что-то двигается,
-       браузер не пересчитывает остальную страницу */
-    contain: strict;
-  }
-  .ambient img {
-    position: absolute;
-    inset: -45%;
-    width: 190%;
-    height: 190%;
-    object-fit: cover;
-    /* картинка приходит 32×32 — браузер растягивает её билинейно сам,
-       поэтому вместо blur(105px) хватает 16px. Радиус больше 40px заставляет
-       GPU пересчитывать размытие каждый кадр — это и грело телефон */
-    filter: blur(16px) saturate(190%) brightness(0.32);
-    opacity: 0;
-    transform: scale(1.15) translate3d(0, 0, 0);
-    transition: opacity 700ms var(--ease-out), filter 900ms ease, transform 900ms var(--ease-out);
-    will-change: opacity, transform;
-    backface-visibility: hidden;
-  }
-
-  /* пауза: не выключаем цвет в ноль (saturate(0) выглядит как сломанный плеер) —
-     просто сжимаем радиус света и гасим яркость. Тёплый оттенок трека остаётся */
-  body.paused .ambient img {
-    filter: blur(16px) saturate(150%) brightness(0.28);
-    transform: scale(0.86) translate3d(0, 0, 0);
-  }
-
-  /* ── дизеринг ──────────────────────────────────────────
-     На глубоком чёрном 8-битный градиент разбивается на концентрические
-     кольца. Слой мелкого шума на 3.5% размывает границу между ступенями —
-     кольца исчезают. Картинка векторная и растягивается один раз, так что
-     по производительности это почти бесплатно. */
-  .ambient::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    opacity: 0.035;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 200px 200px;
-    background-repeat: repeat;
-    pointer-events: none;
-  }
-  /* лёгкая вуаль: верх почти чистый, низ притемнён — чтобы текст и кнопки
-     читались. Полностью в чёрный не уводим: цвет должен жить по всему экрану */
-  .ambient::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    pointer-events: none;
-    background: linear-gradient(180deg,
-      rgba(8, 9, 11, 0) 0%,
-      rgba(8, 9, 11, 0.1) 30%,
-      rgba(8, 9, 11, 0.42) 62%,
-      rgba(8, 9, 11, 0.72) 86%,
-      rgba(8, 9, 11, 0.88) 100%);
-  }
-
-  /* слабый свет по кромкам экрана. По умолчанию выключен —
-     включается тумблером «Свечение у кромки» в настройках.
-     Не рамка, а мягкий «залив» от краёв: четыре градиента + радиальная
-     маска, которая гасит середину и скругляет углы. Резкой линии 1px нет —
-     именно она читалась как дешёвая обводка */
-  .edge-glow {
-    position: fixed;
-    inset: 0;
-    z-index: 4;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 600ms ease;
-    background:
-      linear-gradient(to right,  rgba(var(--c1-rgb), 0.26), rgba(var(--c1-rgb), 0) 9%),
-      linear-gradient(to left,   rgba(var(--c1-rgb), 0.26), rgba(var(--c1-rgb), 0) 9%),
-      linear-gradient(to top,    rgba(var(--c2-rgb), 0.18), rgba(var(--c2-rgb), 0) 8%),
-      /* сверху уже светит основное свечение — тут только лёгкая поддержка,
-         тем же цветом, чтобы не спорить с ним оттенком */
-      linear-gradient(to bottom, rgba(var(--c1-rgb), 0.12), rgba(var(--c1-rgb), 0) 8%);
-  }
-  body.edge-on .edge-glow { opacity: calc(0.35 + var(--glow-opacity, 0.2) * 2.2); }
-
-  /* пока играет — свет у кромки дышит в такт (удар + затухание),
-     на паузе замирает на нижнем уровне */
-  body.edge-on:not(.paused) .edge-glow {
-    animation: edgePulse 1.05s cubic-bezier(0.33, 0, 0.35, 1) infinite;
-  }
-  @keyframes edgePulse {
-    0%   { opacity: calc(0.26 + var(--glow-opacity, 0.2) * 1.7); }
-    9%   { opacity: calc(0.35 + var(--glow-opacity, 0.2) * 2.2); }
-    28%  { opacity: calc(0.29 + var(--glow-opacity, 0.2) * 1.9); }
-    50%  { opacity: calc(0.32 + var(--glow-opacity, 0.2) * 2.1); }
-    76%  { opacity: calc(0.28 + var(--glow-opacity, 0.2) * 1.8); }
-    100% { opacity: calc(0.26 + var(--glow-opacity, 0.2) * 1.7); }
-  }
-
-  /* ══ fluid mesh: цветные волны по всему экрану ══
-     Ключевая идея: радиальный градиент САМ ПО СЕБЕ гладкий — filter: blur()
-     ему не нужен. Без размытия пятна можно растянуть на весь экран, и это
-     всё равно дешевле трёх маленьких пятен с blur(28px): GPU не считает
-     ядро размытия вообще, только композитит слой.
-     Дрейф по фигурам Лиссажу: X и Y с разными частотами, поэтому цвет
-     перетекает волной, а не вращается по кругу. */
-  .mesh {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    /* блендим группу целиком: одна операция screen вместо трёх */
-    mix-blend-mode: screen;
-    transform: scale(var(--mesh-scale, 1));
-    transition: transform 900ms var(--ease-out), opacity 700ms ease;
-  }
-  .mesh-blob {
-    position: absolute;
-    border-radius: 50%;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    opacity: 0;
-    will-change: transform, opacity;
-    pointer-events: none;
-    backface-visibility: hidden;
-  }
-  /* пятно 1 — доминирующий цвет обложки, верх-слева */
-  .mesh-blob.blob-1 {
-    left: -32%;
-    top: -20%;
-    width: 130%;
-    height: 80%;
-    background-image: radial-gradient(closest-side,
-      rgba(var(--c1-rgb), 0.62) 0%,
-      rgba(var(--c1-rgb), 0.34) 34%,
-      rgba(var(--c1-rgb), 0.11) 62%,
-      rgba(var(--c1-rgb), 0) 88%);
-  }
-  /* пятно 2 — второй цвет, верх-справа. Оно же вспыхивает при смене трека */
-  .mesh-blob.blob-2 {
-    left: 16%;
-    top: -26%;
-    width: 122%;
-    height: 76%;
-    background-image: radial-gradient(closest-side,
-      rgba(var(--c2-rgb), 0.5) 0%,
-      rgba(var(--c2-rgb), 0.27) 36%,
-      rgba(var(--c2-rgb), 0.09) 64%,
-      rgba(var(--c2-rgb), 0) 90%);
-  }
-  /* пятно 3 — третий цвет, низ-слева: даёт «волну» в нижней половине экрана */
-  .mesh-blob.blob-3 {
-    left: -26%;
-    top: 32%;
-    width: 140%;
-    height: 88%;
-    background-image: radial-gradient(closest-side,
-      rgba(var(--c3-rgb), 0.46) 0%,
-      rgba(var(--c3-rgb), 0.24) 38%,
-      rgba(var(--c3-rgb), 0.08) 66%,
-      rgba(var(--c3-rgb), 0) 90%);
-  }
-
-  /* тумблер «Анимация свечения»: выключили — волн нет совсем */
-  body.glow-on .mesh-blob { opacity: calc(var(--glow-opacity, 0.2) * 1.15); }
-  /* базовая непрозрачность выше нужна на случай prefers-reduced-motion:
-     там анимация выключена и keyframes не задают opacity */
-  body.glow-on .mesh-blob.blob-1 { animation: meshDrift1 26s linear infinite; }
-  body.glow-on .mesh-blob.blob-2 { animation: meshDrift2 34s linear infinite; }
-  body.glow-on .mesh-blob.blob-3 { animation: meshDrift3 43s linear infinite; }
-
-  /* ── дрейф ─────────────────────────────────────────────
-     Пятно ходит по замкнутой кривой: по X одна частота, по Y другая.
-     Круга нет, «прожектор» не вращается — цвет перетекает волной.
-     Периоды 41 / 53 / 67 s — простые числа: общий рисунок не совпадёт
-     никогда, глазу не за что зацепиться как за цикл. */
-  @keyframes meshDrift1 {
-    0%    { transform: translate3d(0, 4%, 0) scale(1);        opacity: calc(var(--glow-opacity, 0.2) * 1.15); }
-    12.5% { transform: translate3d(9%, 7%, 0) scale(1.08);    opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
-    25%   { transform: translate3d(14%, -4%, 0) scale(1.15);  opacity: calc(var(--glow-opacity, 0.2) * 0.95); }
-    37.5% { transform: translate3d(9%, -8%, 0) scale(1.05);   opacity: calc(var(--glow-opacity, 0.2) * 0.8); }
-    50%   { transform: translate3d(0, 4%, 0) scale(0.94);     opacity: calc(var(--glow-opacity, 0.2) * 1.2); }
-    62.5% { transform: translate3d(-9%, 7%, 0) scale(1.03);   opacity: calc(var(--glow-opacity, 0.2) * 1.5); }
-    75%   { transform: translate3d(-14%, -4%, 0) scale(1.12); opacity: calc(var(--glow-opacity, 0.2) * 1.05); }
-    87.5% { transform: translate3d(-9%, -8%, 0) scale(1.04);  opacity: calc(var(--glow-opacity, 0.2) * 0.9); }
-    100%  { transform: translate3d(0, 4%, 0) scale(1);        opacity: calc(var(--glow-opacity, 0.2) * 1.15); }
-  }
-  @keyframes meshDrift2 {
-    0%    { transform: translate3d(0, 6%, 0) scale(1.05);     opacity: calc(var(--glow-opacity, 0.2) * 0.95); }
-    12.5% { transform: translate3d(-11%, 2%, 0) scale(0.95);  opacity: calc(var(--glow-opacity, 0.2) * 1.25); }
-    25%   { transform: translate3d(0, -5%, 0) scale(1.12);    opacity: calc(var(--glow-opacity, 0.2) * 1.45); }
-    37.5% { transform: translate3d(12%, 8%, 0) scale(1);      opacity: calc(var(--glow-opacity, 0.2) * 0.85); }
-    50%   { transform: translate3d(0, -6%, 0) scale(0.96);    opacity: calc(var(--glow-opacity, 0.2) * 1.1); }
-    62.5% { transform: translate3d(-12%, 2%, 0) scale(1.09);  opacity: calc(var(--glow-opacity, 0.2) * 0.8); }
-    75%   { transform: translate3d(0, 5%, 0) scale(0.93);     opacity: calc(var(--glow-opacity, 0.2) * 1.3); }
-    87.5% { transform: translate3d(12%, -8%, 0) scale(1.02);  opacity: calc(var(--glow-opacity, 0.2) * 1); }
-    100%  { transform: translate3d(0, 6%, 0) scale(1.05);     opacity: calc(var(--glow-opacity, 0.2) * 0.95); }
-  }
-  @keyframes meshDrift3 {
-    0%    { transform: translate3d(3%, 0, 0) scale(1);        opacity: calc(var(--glow-opacity, 0.2) * 1.1); }
-    12.5% { transform: translate3d(8%, 5%, 0) scale(1.06);    opacity: calc(var(--glow-opacity, 0.2) * 0.85); }
-    25%   { transform: translate3d(-4%, 8%, 0) scale(0.96);   opacity: calc(var(--glow-opacity, 0.2) * 1.35); }
-    37.5% { transform: translate3d(-10%, 5%, 0) scale(1.03);  opacity: calc(var(--glow-opacity, 0.2) * 1.5); }
-    50%   { transform: translate3d(3%, 0, 0) scale(1.1);      opacity: calc(var(--glow-opacity, 0.2) * 1); }
-    62.5% { transform: translate3d(8%, -5%, 0) scale(0.98);   opacity: calc(var(--glow-opacity, 0.2) * 1.25); }
-    75%   { transform: translate3d(-4%, -8%, 0) scale(1.05);  opacity: calc(var(--glow-opacity, 0.2) * 0.9); }
-    87.5% { transform: translate3d(-10%, -5%, 0) scale(1);    opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
-    100%  { transform: translate3d(3%, 0, 0) scale(1);        opacity: calc(var(--glow-opacity, 0.2) * 1.1); }
-  }
-
-  }
-
-  /* ── пауза: в серый не выключаем (экран выглядел «сломанным») —
-     сжимаем сетку и гасим на 40%, цвет трека остаётся */
-  body.glow-on.paused .mesh {
-    --mesh-scale: 0.9;
-    opacity: 0.62;
-  }
-  body.glow-on.paused .mesh-blob { animation-play-state: paused; }
-
-  /* раньше сетка замирала при свёрнутом плеере — экономили GPU на скролле.
-     Но библиотека это главный экран, и «мёртвый» фон там смотрелся плохо.
-     Теперь волны идут всегда, пока включён тумблер свечения */
-
-  /* ── импульс при смене трека ──────────────────────────
-     Вспышка масштаба всей сетки: 600ms, быстрый подъём и мягкое затухание.
-     Масштаб считается на композиторе — градиент не перерисовывается,
-     поэтому вспышка не стоит ни одного лишнего кадра */
-  .mesh.pulse { animation: meshPulse 600ms cubic-bezier(0.22, 1, 0.36, 1); }
-  @keyframes meshPulse {
-    0%   { transform: scale(var(--mesh-scale, 1)); }
-    22%  { transform: scale(calc(var(--mesh-scale, 1) * 1.14)); }
-    100% { transform: scale(var(--mesh-scale, 1)); }
-  }
-
-  /* ползунок в настройках */
-  .set-row.column {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 9px;
-  }
-  .set-range {
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
     -webkit-appearance: none;
     appearance: none;
-    width: 100%;
-    height: 4px;
-    border-radius: 2px;
-    outline: none;
-    margin: 6px 0;
-    background: linear-gradient(
-      to right,
-      rgba(244, 247, 250, 0.9) 0%,
-      rgba(244, 247, 250, 0.9) var(--fill, 35%),
-      rgba(255, 255, 255, 0.12) var(--fill, 35%),
-      rgba(255, 255, 255, 0.12) 100%
-    );
-  }
-  .set-range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
-  }
-  .set-range::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border: none;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
-  }
-  .set-value {
-    float: right;
-    font-variant-numeric: tabular-nums;
-    color: var(--sub);
   }
 
-  /* ══ stage (библиотека + альбом) ═══════════════════════ */
+  input {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     СЛОЙ 0: фон плеера — Mesh Aurora из цветов обложки
+     ══════════════════════════════════════════════════════════════ */
+  .ambient {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: #000;
+  }
+
+  .ambient > img {
+    position: absolute;
+    inset: -20%;
+    width: 140%;
+    height: 140%;
+    object-fit: cover;
+    filter: blur(90px) saturate(220%) brightness(0.72);
+    transform: scale(1.1);
+    opacity: 0;
+    transition: opacity 0.9s ease;
+  }
+
+  .mesh {
+    position: absolute;
+    inset: -25%;
+    filter: blur(60px) saturate(190%);
+    opacity: calc(0.62 + var(--glow-opacity));
+    will-change: transform, opacity;
+  }
+
+  .mesh-blob {
+    position: absolute;
+    width: 78vw;
+    height: 78vw;
+    border-radius: 50%;
+    mix-blend-mode: screen;
+    filter: brightness(var(--glow-bright));
+    animation-play-state: paused;
+    will-change: transform;
+  }
+
+  .blob-1 {
+    top: -12%;
+    left: -22%;
+    background: radial-gradient(circle at 50% 50%, rgba(var(--c1-rgb), 0.95), transparent 68%);
+    animation: drift1 24s ease-in-out infinite alternate;
+  }
+
+  .blob-2 {
+    top: 6%;
+    right: -26%;
+    background: radial-gradient(circle at 50% 50%, rgba(var(--c2-rgb), 0.9), transparent 68%);
+    animation: drift2 30s ease-in-out infinite alternate;
+  }
+
+  .blob-3 {
+    bottom: -18%;
+    left: 4%;
+    background: radial-gradient(circle at 50% 50%, rgba(var(--c3-rgb), 0.85), transparent 70%);
+    animation: drift3 27s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift1 {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(6%, 10%, 0) scale(1.16); }
+  }
+  @keyframes drift2 {
+    from { transform: translate3d(0, 0, 0) scale(1.1); }
+    to   { transform: translate3d(-8%, 8%, 0) scale(0.94); }
+  }
+  @keyframes drift3 {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(4%, -12%, 0) scale(1.12); }
+  }
+
+  /* анимация дрейфа только когда в настройках включили «свечение» */
+  body.glow-on .mesh-blob { animation-play-state: running; }
+
+  .mesh.pulse { animation: meshPulse 0.6s var(--ease-out); }
+  @keyframes meshPulse {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  /* дизеринг: убивает бандинг (полосы) на градиентах */
+  .ambient .noise {
+    position: absolute;
+    inset: 0;
+    opacity: 0.15;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+
+  /* глубокое затемнение к нижней трети — иначе кнопки не читаются */
+  .ambient .veil {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg,
+        rgba(0, 0, 0, 0.26) 0%,
+        rgba(0, 0, 0, 0.06) 32%,
+        rgba(0, 0, 0, 0.5) 68%,
+        rgba(0, 0, 0, 0.92) 88%,
+        #000 100%);
+  }
+
+  .edge-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 34%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    background: radial-gradient(120% 100% at 50% 0%,
+      rgba(var(--c1-rgb), 0.34), transparent 70%);
+  }
+
+  body.edge-on .edge-glow { opacity: 1; }
+
+  /* ══════════════════════════════════════════════════════════════
+     СЛОЙ 1: контент (библиотека)
+     ══════════════════════════════════════════════════════════════ */
   .stage {
     position: fixed;
     inset: 0;
-    z-index: 1;
+    z-index: 10;
+    background: var(--bg);
+    transform-origin: center top;
+    transition: transform 0.46s var(--ease-ios), border-radius 0.46s var(--ease-ios);
     overflow: hidden;
-    transform-origin: 50% 40%;
-    transition: transform 460ms var(--ease-drawer), border-radius 460ms var(--ease-drawer);
   }
+
   .stage::after {
-    content: "";
+    content: '';
     position: absolute;
     inset: 0;
-    background: var(--bg);
+    background: #000;
     opacity: 0;
-    z-index: 40;
     pointer-events: none;
-    transition: opacity 420ms var(--ease-drawer);
+    transition: opacity 0.46s var(--ease-ios);
+    z-index: 5;
   }
+
+  /* плеер открыт — библиотека «уезжает назад» */
   .stage.shrink {
-    /* не масштабируем: иначе чёрная подложка обрезает свечение обложки */
-    pointer-events: none;
+    transform: scale(0.92) translateY(1.2vh);
+    border-radius: 28px;
   }
-  .stage.shrink::after { opacity: 0; }
+
+  body.player-open .stage::after { opacity: 0.42; }
 
   .screen {
     position: absolute;
     inset: 0;
     display: flex;
     flex-direction: column;
-    background: transparent;
+    background: var(--bg);
   }
 
-  /* обёртка, которая обрезает уехавшие за экран слои —
-     иначе страница растягивается вбок и WebView умеет её скроллить */
-  .layer {
-    position: fixed;
-    inset: 0;
-    z-index: 3;                 /* выше .stage (у него 1) */
-    overflow: hidden;
-    pointer-events: none;
-  }
-  .layer > .screen { pointer-events: auto; }
+  #scrLibrary { z-index: 1; }
 
-  /* Закрытый экран не должен ловить касания ни при каких условиях.
-     На iOS/WebKit элемент с will-change: transform, уехавший за экран,
-     остаётся «живым» по СТАРОМУ месту: список не листается, строки не
-     нажимаются, а нижнее меню работает. pointer-events: none этот баг
-     не лечит — композиторный слой всё равно участвует в hit-test.
-     Лечим двумя вещами:
-       1) visibility: hidden — элемент физически выпадает из дерева попаданий;
-       2) will-change: auto — слой не висит в памяти.
-     Задержка visibility нужна, чтобы анимация уезда успела проиграться. */
-  #scrPlayer:not(.open),
-  #scrAlbum:not(.open),
-  #scrSettings:not(.open) {
-    pointer-events: none;
-    visibility: hidden;
-    will-change: auto;
-  }
-  #scrPlayer:not(.open) { transition: transform 460ms var(--ease-drawer), visibility 0s linear 460ms; }
-  #scrAlbum:not(.open) { transition: transform 380ms var(--ease-out), opacity 340ms var(--ease-out), visibility 0s linear 380ms; }
-  #scrSettings:not(.open) { transition: transform 380ms var(--ease-drawer), visibility 0s linear 380ms; }
-
-  #scrPlayer.open,
-  #scrAlbum.open,
-  #scrSettings.open {
-    visibility: visible;
-    transition-delay: 0s;
+  #scrAlbum {
+    z-index: 2;
+    transform: translateX(100%);
+    transition: transform 0.42s var(--ease-ios);
+    background: var(--bg);
+    isolation: isolate;
   }
 
-  #scrLibrary { transition: opacity 340ms var(--ease-out); }
-  .stage.shrink #scrLibrary,
-  .stage.shrink #scrAlbum { opacity: 0; }
+  #scrAlbum.open { transform: none; }
 
-  /* ══ экран: библиотека ═════════════════════════════════ */
-  .lib-head {
-    padding: calc(10px + env(safe-area-inset-top)) 18px 0;
-    flex-shrink: 0;
-  }
-
-  .brand-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px 0 14px;
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: 0.42em;
-    text-transform: uppercase;
-    color: rgba(244, 247, 250, 0.15);
-  }
-  .brand b { font-weight: 700; color: rgba(244, 247, 250, 0.3); letter-spacing: 0.5em; }
-  .brand i { font-style: normal; color: rgba(59, 157, 255, 0.42); letter-spacing: 0; }
-
-  .tabbar {
-    position: relative;
-    height: 62px;
-    display: flex;
-    align-items: stretch;
-    overflow: hidden;
-  }
-  .dock.has-track .tabbar { border-top: 1px solid rgba(255, 255, 255, 0.06); }
-  .tabbar-pill {
-    position: absolute;
-    top: 5px;
-    bottom: 5px;
-    left: 0;
-    width: 25%;
-    transition: transform 340ms var(--ease-drawer);
-    pointer-events: none;
-  }
-  .tabbar-pill::after {
+  #scrAlbum::before {
     content: '';
     position: absolute;
-    inset: 0 11px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.075);
-  }
-  .tabbar-btn {
-    flex: 1;
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    border: none;
-    background: none;
-    color: rgba(244, 247, 250, 0.32);
-    font-family: inherit;
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    cursor: pointer;
-    transition: color 220ms ease, transform 140ms var(--ease-out);
-  }
-  .tabbar-btn:active { transform: scale(0.94); }
-  .tabbar-btn.active { color: var(--text); }
-
-  .search-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    position: relative;
-  }
-
-  /* выпадающий список сортировки */
-  .sort-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    z-index: 40;
-    min-width: 178px;
-    padding: 6px;
-    border-radius: 14px;
-    background: rgba(24, 26, 30, 0.97);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    display: none;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .sort-menu.open { display: flex; }
-  .sort-item {
-    padding: 10px 12px;
-    border: none;
-    border-radius: 9px;
-    background: none;
-    color: rgba(244, 247, 250, 0.72);
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    text-align: left;
-    cursor: pointer;
-    transition: background 160ms ease, color 160ms ease;
-  }
-  .sort-item:active { background: rgba(255, 255, 255, 0.06); }
-  .sort-item.active {
-    color: var(--accent);
-    background: rgba(59, 157, 255, 0.12);
-  }
-
-  /* таймер сна — маленькое меню под верхней панелью плеера */
-  .timer-menu {
-    position: absolute;
-    top: calc(100% + 2px);
-    left: 10px;
-    z-index: 45;
-    min-width: 196px;
-    padding: 6px;
-    border-radius: 14px;
-    background: rgba(22, 24, 29, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    display: none;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .timer-menu.open { display: flex; }
-  .timer-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .timer-item i {
-    font-style: normal;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--faint);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* контекстное меню по долгому тапу на треке */
-  .ctx-menu {
-    position: fixed;
-    z-index: 92;
-    min-width: 214px;
-    padding: 6px;
-    border-radius: 15px;
-    background: rgba(23, 25, 30, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.68);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    opacity: 0;
-    transform: scale(0.94);
-    transform-origin: var(--ox, 50%) var(--oy, 50%);
+    inset: 0;
+    z-index: -1;
+    background-image: var(--album-cover, none);
+    background-size: cover;
+    background-position: center;
+    filter: blur(70px) saturate(160%) brightness(0.5);
+    opacity: 0.35;
+    transform: scale(1.25);
     pointer-events: none;
-    transition: opacity 140ms ease, transform 190ms var(--ease-out);
   }
-  .ctx-menu.open { opacity: 1; transform: scale(1); pointer-events: auto; }
-  .ctx-item {
+
+  /* ── шапка библиотеки ─────────────────────────────────────── */
+  .lib-head {
+    flex: none;
+    padding: calc(var(--safe-t) + 10px) 16px 8px;
+    position: relative;
+    z-index: 20;
+  }
+
+  .lib-title-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .brand-eyebrow {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 11px 12px;
-    border: none;
-    border-radius: 10px;
-    background: none;
-    color: rgba(244, 247, 250, 0.86);
-    font-family: inherit;
-    font-size: 13.5px;
-    font-weight: 600;
-    text-align: left;
-    cursor: pointer;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 2px;
   }
-  .ctx-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.65; }
-  .ctx-item:active { background: rgba(255, 255, 255, 0.07); }
-  .ctx-item.on { color: #ff5c8a; }
-  .ctx-item.on svg { opacity: 1; fill: currentColor; }
 
-  /* строка, на которой держат палец, слегка приподнимается */
-  .row.pressing {
-    background: var(--surface-hi);
-    transform: scale(0.985);
+  .large-title {
+    font-size: 34px;
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--label);
   }
+
+  .gear-btn {
+    width: 44px;
+    height: 44px;
+    margin-right: -8px;
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    border-radius: 50%;
+    transition: background 0.15s;
+  }
+
+  .gear-btn:active { background: var(--surface-3); }
+  .gear-btn svg { width: 22px; height: 22px; }
+
+  /* ── поиск ────────────────────────────────────────────────── */
+  .search-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
   .search-wrap {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     height: 36px;
-    padding: 0 11px;
-    border-radius: 11px;
+    padding: 0 8px 0 10px;
     background: var(--surface);
-    color: var(--sub);
+    border-radius: 10px;
+    color: var(--secondary-label);
+    transition: background 0.2s;
   }
+
+  .search-wrap svg { flex: none; }
+
   .search-wrap input {
     flex: 1;
     min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
     background: none;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-family: inherit;
-    font-size: 13.5px;
-  }
-  .search-wrap input::placeholder { color: rgba(244, 247, 250, 0.3); }
-  .search-wrap input::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    appearance: none;
+    font-size: 16px;
+    color: var(--label);
   }
 
-  /* крестик «стереть запрос» — одним тапом вместо зажатого backspace */
+  .search-wrap input::placeholder { color: var(--tertiary-label); }
+  .search-wrap input::-webkit-search-cancel-button { display: none; }
+
   .search-clear {
-    flex-shrink: 0;
-    width: 21px;
-    height: 21px;
-    padding: 0;
-    border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.13);
-    color: rgba(244, 247, 250, 0.8);
     display: none;
+    width: 26px;
+    height: 26px;
     place-items: center;
-    cursor: pointer;
-    transition: transform 140ms var(--ease-out), background-color 160ms ease;
+    border-radius: 50%;
+    background: rgba(235, 235, 245, 0.16);
+    color: var(--secondary-label);
+    flex: none;
   }
+
   .search-wrap.filled .search-clear { display: grid; }
-  .search-clear:active { transform: scale(0.85); background: rgba(255, 255, 255, 0.2); }
 
   .sort-btn {
-    flex-shrink: 0;
     height: 36px;
     padding: 0 12px;
-    border: none;
-    border-radius: 11px;
+    border-radius: 10px;
     background: var(--surface);
-    color: var(--sub);
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: color 200ms ease, background 200ms ease, transform 150ms var(--ease-out);
-  }
-  .sort-btn:active { transform: scale(0.95); }
-  .sort-btn.active { color: var(--text); background: var(--surface-hi); }
-
-  .scroll {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding: 14px 14px calc(172px + env(safe-area-inset-bottom));
-  }
-  .scroll::-webkit-scrollbar { width: 0; }
-
-  /* список растворяется в темноте перед мини-плеером, а не обрывается жёстко */
-  .list-fade {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: calc(158px + env(safe-area-inset-bottom));
-    z-index: 5;
-    pointer-events: none;
-    background: linear-gradient(to bottom,
-      rgba(8, 9, 11, 0) 0%,
-      rgba(8, 9, 11, 0.55) 34%,
-      rgba(8, 9, 11, 0.92) 62%,
-      var(--bg) 78%);
-  }
-
-  .panel { display: none; }
-  .panel.active { display: block; }
-
-  /* ══ строки треков ═════════════════════════════════════ */
-  .row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 9px 10px;
-    border-radius: 13px;
-    cursor: pointer;
-    transition: background 200ms ease, transform 150ms var(--ease-out);
-    position: relative;
-  }
-  .row:active { transform: scale(0.985); background: var(--surface); }
-  .row.playing { background: var(--surface); }
-
-  @media (hover: hover) and (pointer: fine) {
-    .row:hover { background: var(--surface); }
-  }
-
-  .row-cover {
-    width: 46px;
-    height: 46px;
-    border-radius: 9px;
-    object-fit: cover;
-    background: var(--surface-hi);
-    flex-shrink: 0;
-  }
-  .row-info { flex: 1; min-width: 0; }
-  .row-title {
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: -0.008em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 2px;
-  }
-  .row.playing .row-title { color: var(--accent); }
-  .row-title mark {
-    background: rgba(59, 157, 255, 0.22);
-    color: var(--accent);
-    border-radius: 3px;
-    padding: 0 1px;
-  }
-  .row-sub {
-    font-size: 12px;
-    color: var(--sub);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .row-fav {
-    width: 34px;
-    height: 34px;
-    border: none;
-    background: none;
-    color: rgba(244, 247, 250, 0.2);
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: color 200ms ease, transform 150ms var(--ease-out);
-  }
-  .row-fav:active { transform: scale(0.85); }
-  .row-fav.on { color: #ff5c8a; }
-  .row-fav.on svg { fill: currentColor; animation: heartPop 300ms var(--ease-out); }
-
-  @keyframes heartPop {
-    0% { transform: scale(0.82); }
-    55% { transform: scale(1.14); }
-    100% { transform: scale(1); }
-  }
-
-  .eq {
-    display: none;
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    color: var(--accent);
-    overflow: visible;
-  }
-  .row.playing .eq { display: block; }
-  .row.playing .row-fav { display: none; }
-
-  .eq svg { display: block; width: 100%; height: 100%; }
-
-  .eq line {
-    stroke: currentColor;
-    stroke-width: 2.6;
-    stroke-linecap: round;
-    transform-box: fill-box;
-    transform-origin: 50% 100%;
-    animation: eq 820ms var(--ease-in-out) infinite alternate;
-  }
-  .eq line:nth-child(1) { animation-delay: 0ms; }
-  .eq line:nth-child(2) { animation-delay: 210ms; }
-  .eq line:nth-child(3) { animation-delay: 90ms; }
-  .eq line:nth-child(4) { animation-delay: 300ms; }
-
-  /* вариант из lucide audio-lines (продвинутый движок) */
-  .eq path {
-    stroke: currentColor;
-    stroke-width: 2.4;
-    stroke-linecap: round;
-    transform-box: fill-box;
-    transform-origin: 50% 50%;
-    animation: eq 820ms var(--ease-in-out) infinite alternate;
-  }
-  .eq path:nth-child(2) { animation-delay: 180ms; }
-  .eq path:nth-child(3) { animation-delay: 60ms; }
-  .eq path:nth-child(4) { animation-delay: 260ms; }
-  .eq path:nth-child(5) { animation-delay: 120ms; }
-  .eq path:nth-child(6) { animation-delay: 320ms; }
-
-  /* на паузе индикатор замирает ровными столбиками, а не дёргается */
-  body.paused .eq line,
-  body.paused .eq path {
-    animation: none;
-    transform: none;
-  }
-
-  @keyframes eq {
-    from { transform: scaleY(0.25); }
-    to { transform: scaleY(1); }
-  }
-
-  /* ══ сетка альбомов ════════════════════════════════════ */
-  .album-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 14px;
-  }
-  .album-card { cursor: pointer; min-width: 0; }
-  .album-card:active .album-card-img { transform: scale(0.97); }
-  .album-card-img {
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 14px;
-    object-fit: cover;
-    background: var(--surface-hi);
-    display: block;
-    transition: transform 200ms var(--ease-out);
-    box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.9);
-  }
-  .album-card-name {
-    font-size: 13.5px;
+    color: var(--secondary-label);
+    font-size: 13px;
     font-weight: 600;
     letter-spacing: -0.01em;
-    margin-top: 9px;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .album-card-sub {
-    font-size: 11.5px;
-    color: var(--sub);
-    margin-top: 2px;
+    transition: color 0.15s, background 0.15s;
   }
 
-  /* ══ пустые состояния ══════════════════════════════════ */
-  .empty {
-    text-align: center;
-    padding: 44px 16px;
-    color: var(--faint);
-    font-size: 13px;
-    line-height: 1.55;
-  }
-  .empty b { display: block; color: var(--sub); font-weight: 600; margin-bottom: 5px; font-size: 14px; }
+  .sort-btn.active { color: var(--accent); }
+  .sort-btn:active { background: var(--surface-3); }
 
-  /* ══ мини-плеер ════════════════════════════════════════ */
-  /* док: мини-плеер сверху, навигация снизу — один блок */
-  .dock {
+  /* выпадающее меню сортировки */
+  .sort-menu {
     position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: calc(12px + env(safe-area-inset-bottom));
-    z-index: 20;
-    border-radius: 21px;
-    background: rgba(18, 21, 26, 0.9);
-    backdrop-filter: blur(26px) saturate(180%);
-    -webkit-backdrop-filter: blur(26px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow:
-      0 16px 40px rgba(0, 0, 0, 0.6),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    overflow: hidden;
-    transform: translateY(0);
-    transition: transform 420ms var(--ease-drawer), opacity 260ms ease;
-    /* меню в доке должно работать даже если .stage почему-то остался
-       в состоянии shrink (pointer-events: none) */
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 40;
+    min-width: 178px;
+    padding: 5px;
+    background: rgba(44, 44, 46, 0.94);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 0.5px solid var(--glass-border);
+    border-radius: 13px;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.65);
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+    transform-origin: top right;
+    pointer-events: none;
+    transition: opacity 0.16s, transform 0.16s var(--ease-ios);
+  }
+
+  .sort-menu.open {
+    opacity: 1;
+    transform: none;
     pointer-events: auto;
   }
-  .dock.hide {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(calc(100% + 40px));
-  }
 
-  .mini-slot {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 380ms var(--ease-drawer);
-  }
-  .dock.has-track .mini-slot { max-height: 64px; }
-
-  .mini {
-    position: relative;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 12px 0 10px;
-    cursor: pointer;
-    overflow: hidden;
-    touch-action: pan-y;
-    transition: transform 200ms var(--ease-out), opacity 200ms ease;
-  }
-  .mini-cover {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    object-fit: cover;
-    background: var(--surface-hi);
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
-  }
-  .mini-info { flex: 1; min-width: 0; }
-  .mini-title {
-    font-size: 13.5px;
-    font-weight: 600;
-    letter-spacing: -0.008em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .mini-sub {
-    font-size: 11.5px;
-    color: var(--sub);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: 1px;
-  }
-  .mini-btn {
-    width: 38px;
-    height: 38px;
-    border: none;
-    background: none;
-    color: var(--text);
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    border-radius: 50%;
-    transition: transform 150ms var(--ease-out), background 200ms ease;
-  }
-  .mini-btn:active { transform: scale(0.88); background: rgba(255, 255, 255, 0.06); }
-
-  /* переключение трека кнопками — только там, где есть мышка:
-     на телефоне листают свайпом, на ПК это неудобно */
-  .mini-skip {
-    display: none;
-    width: 34px;
-    height: 34px;
-    border: none;
-    background: none;
-    color: rgba(244, 247, 250, 0.6);
-    place-items: center;
-    border-radius: 50%;
-    flex-shrink: 0;
-    cursor: pointer;
-    transition: transform 150ms var(--ease-out), color 160ms ease, background-color 160ms ease;
-  }
-  .mini-skip:active { transform: scale(0.86); background: rgba(255, 255, 255, 0.07); }
-  @media (hover: hover) and (pointer: fine) {
-    .mini-skip { display: grid; }
-  }
-
-  .mini-close {
-    width: 30px;
-    height: 30px;
-    border: none;
-    background: none;
-    color: rgba(244, 247, 250, 0.4);
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: color 160ms ease, transform 140ms var(--ease-out);
-  }
-  .mini-close:active { transform: scale(0.86); color: rgba(244, 247, 250, 0.85); }
-
-  .mini-progress {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.07);
-  }
-  .mini-progress i {
-    display: block;
-    height: 100%;
-    width: 0%;
-    background: rgba(255, 255, 255, 0.55);
-    transition: width 120ms linear;
-  }
-
-  /* ══ экран: альбом ═════════════════════════════════════ */
-  #scrAlbum {
-    z-index: 2;
-    background: var(--bg);
-    overflow: hidden;
-    transform: translateX(100%);
-    transition: transform 380ms var(--ease-out), opacity 340ms var(--ease-out);
-    will-change: transform;
-  }
-  #scrAlbum.open { transform: translateX(0); }
-
-  #scrSettings {
-    z-index: 3;
-    background: var(--bg);
-    overflow: hidden;
-    transform: translateX(100%);
-    transition: transform 380ms var(--ease-drawer);
-    will-change: transform;
-  }
-  #scrSettings.open { transform: translateX(0); }
-
-  .set-group {
-    margin: 12px 0 0;
-    background: rgba(255, 255, 255, 0.055);
-    border-radius: 16px;
-    padding: 4px 16px;
-    overflow: hidden;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
-  }
-  .set-group-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    color: var(--faint);
-    padding: 16px 2px 4px;
-  }
-  .set-value {
-    font-size: 13px;
-    color: var(--sub);
-    font-variant-numeric: tabular-nums;
-  }
-  .set-hint {
-    display: block;
-    font-size: 11px;
-    color: var(--faint);
-    margin-top: 3px;
-  }
-  .set-chev { color: var(--faint); flex-shrink: 0; }
-  .set-foot {
-    text-align: center;
-    font-size: 11px;
-    color: var(--faint);
-    padding: 26px 0 10px;
-    letter-spacing: 0.04em;
-  }
-
-  /* ══ уменьшенное движение ══════════════════════════════ */
-  @media (prefers-reduced-motion: reduce) {
-    #scrSettings,
-    #scrAlbum,
-    #scrPlayer,
-    .mini,
-    .sheet,
-    .tabbar-pill,
-    .scrub-knob,
-    .tabbar-btn,
-    .icon-btn {
-      transition-duration: 1ms;
-    }
-    #scrSettings.open .set-group { animation: none; }
-    .eq line { animation: none; }
-  }
-
-  /* строки настроек проявляются лесенкой */
-  #scrSettings.open .set-group {
-    animation: groupIn 340ms var(--ease-out) both;
-  }
-  #scrSettings.open .set-group:nth-child(1) { animation-delay: 40ms; }
-  #scrSettings.open .set-group:nth-child(2) { animation-delay: 90ms; }
-  #scrSettings.open .set-group:nth-child(3) { animation-delay: 140ms; }
-  #scrSettings.open .set-group:nth-child(4) { animation-delay: 190ms; }
-  #scrSettings.open .set-group:nth-child(5) { animation-delay: 240ms; }
-
-  @keyframes groupIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  #scrAlbum::before {
-    content: "";
-    position: absolute;
-    inset: -20%;
-    background-image: var(--album-cover, none);
-    background-size: cover;
-    background-position: center;
-    filter: blur(70px) saturate(180%) brightness(0.5);
-    opacity: 0.65;
-  }
-  #scrAlbum::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(8, 9, 11, 0.15) 0%, rgba(8, 9, 11, 0.86) 46%, var(--bg) 86%);
-  }
-  #scrAlbum > * { position: relative; z-index: 1; }
-
-  .navbar {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
-    flex-shrink: 0;
-    position: relative;
-  }
-  .nav-title {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    pointer-events: none;
-  }
-  .nav-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: var(--text);
-    cursor: pointer;
-    padding: 0;
-    border-radius: 12px;
-    transition: transform 150ms var(--ease-out), background-color 200ms ease;
-  }
-  .nav-btn:active { transform: scale(0.92); background: rgba(255, 255, 255, 0.12); }
-
-  .album-hero {
-    padding: 8px 22px 22px;
-    text-align: center;
-    flex-shrink: 0;
-  }
-  .album-hero img {
-    width: min(46vw, 190px);
-    aspect-ratio: 1;
-    border-radius: 16px;
-    object-fit: cover;
-    background: var(--surface-hi);
-    box-shadow: 0 22px 50px -16px rgba(0, 0, 0, 0.9);
-    display: block;
-    margin: 0 auto 16px;
-  }
-  .album-hero-name {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.022em;
-    margin-bottom: 4px;
-    line-height: 1.2;
-  }
-  .album-hero-sub {
-    font-size: 12px;
-    color: var(--sub);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 16px;
-  }
-  .play-album {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    background: #fff;
-    color: #08090b;
-    border: none;
-    border-radius: 99px;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: transform 150ms var(--ease-out), background 200ms ease;
-  }
-  .play-album:active { transform: scale(0.95); background: #e9edf2; }
-
-  /* ══ экран: плеер ══════════════════════════════════════ */
-  #scrPlayer {
-    z-index: 5;
-    /* раньше тут было почти в ноль — волны на плеере не читались.
-       Теперь фон пропускает цвет, но низ притемнён под кнопки */
-    background: linear-gradient(
-      180deg,
-      rgba(8, 9, 11, 0.06) 0%,
-      rgba(8, 9, 11, 0.22) 34%,
-      rgba(8, 9, 11, 0.5) 66%,
-      rgba(8, 9, 11, 0.78) 100%
-    );
-    transform: translateY(100%);
-    transition: transform 460ms var(--ease-drawer);
-    will-change: transform;
-    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-  }
-  #scrPlayer.open { transform: translateY(0); }
-  #scrPlayer.dragging { transition: none; }
-
-  .player-top {
+  .sort-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 14px 4px;
-    flex-shrink: 0;
-    touch-action: none;
-    cursor: grab;
-    position: relative;
-  }
-  .top-left { display: flex; align-items: center; gap: 4px; }
-  .top-right { display: flex; gap: 0; }
-  .player-top::before {
-    content: "";
-    position: absolute;
-    top: calc(6px + env(safe-area-inset-top));
-    left: 50%;
-    margin-left: -18px;
-    width: 36px;
-    height: 4px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.16);
-  }
-  .player-label {
-    /* в потоке, а не поверх кнопок: с таймером сна кнопок стало больше */
-    flex: 1;
-    min-width: 0;
-    text-align: center;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--faint);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    pointer-events: none;
-  }
-  #sleepBtn.on { color: var(--accent); }
-  #sleepBtn.on svg { fill: none; }
-
-  .icon-btn {
-    width: 44px;
-    height: 44px;
-    border: none;
-    background: none;
-    color: rgba(244, 247, 250, 0.72);
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-    border-radius: 50%;
-    transition: transform 150ms var(--ease-out), color 200ms ease;
-  }
-  .icon-btn:active { transform: scale(0.88); }
-
-  .speed-btn {
-    min-width: 34px;
-    height: 26px;
-    padding: 0 8px;
-    align-self: center;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 13px;
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(244, 247, 250, 0.6);
-    font-family: inherit;
-    font-size: 11.5px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    cursor: pointer;
-    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease,
-                transform 140ms var(--ease-out);
-  }
-  .speed-btn:active { transform: scale(0.94); }
-  .speed-btn.on {
-    color: var(--accent);
-    border-color: rgba(59, 157, 255, 0.4);
-    background: rgba(59, 157, 255, 0.14);
-  }
-  .icon-btn.on { color: #ff5c8a; }
-  .icon-btn.on svg { fill: currentColor; }
-
-  .player-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;      /* блок по центру, а не прижат к верху */
-    justify-content: safe center; /* если не влезает — центрируем «безопасно», верх не обрежется */
-    /* safe-area-inset-bottom уже учтён в padding у #scrPlayer — второй раз не добавляем */
-    padding: 8px 26px 14px;
-    min-height: 0;
-    overflow-y: auto;
-    /* свечение обложки выступает за её края — без этого появлялся
-       горизонтальный скролл и экран «гулял» вбок */
-    overflow-x: hidden;
-    scrollbar-width: none;
-  }
-  .player-body::-webkit-scrollbar { display: none; }
-
-  .cover-wrap {
-    position: relative;
-    width: min(80vw, 330px, 42vh);
-    aspect-ratio: 1;
-    margin: 0 auto 22px;
-    border-radius: 22px;
-    background: var(--surface);
-    /* тень обычная чёрная: цветная читалась как ещё одно свечение вокруг обложки */
-    box-shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-    flex-shrink: 0;
-    cursor: zoom-in;
-    /* «дышит» как в Apple Music: играет — полный размер, пауза — сжимается */
-    transform: scale(1) translate3d(0, 0, 0);
-    transition: transform 520ms var(--ease-spring), border-radius 520ms var(--ease-out),
-                box-shadow 520ms var(--ease-out);
-    touch-action: pan-y;
-    will-change: transform;
-  }
-  body.paused .cover-wrap {
-    transform: scale(0.88) translate3d(0, 0, 0);
-    border-radius: 28px;
-    box-shadow: 0 12px 34px -20px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  }
-
-  .cover-wrap img {
+    gap: 10px;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    border-radius: inherit;
-    transition: opacity 260ms var(--ease-out);
-  }
-  .cover-wrap.dim img { opacity: 0; }
-
-  /* свайп по обложке: перелистывание «карточкой» в 3D */
-  .cover-wrap.swipe-next { animation: coverSwipeNext 380ms var(--ease-out); }
-  .cover-wrap.swipe-prev { animation: coverSwipePrev 380ms var(--ease-out); }
-  @keyframes coverSwipeNext {
-    0%   { transform: perspective(900px) rotateY(0deg) translateX(0) scale(1); opacity: 1; }
-    45%  { transform: perspective(900px) rotateY(-42deg) translateX(-16%) scale(0.88); opacity: 0.15; }
-    55%  { transform: perspective(900px) rotateY(42deg) translateX(16%) scale(0.88); opacity: 0.15; }
-    100% { transform: perspective(900px) rotateY(0deg) translateX(0) scale(1); opacity: 1; }
-  }
-  @keyframes coverSwipePrev {
-    0%   { transform: perspective(900px) rotateY(0deg) translateX(0) scale(1); opacity: 1; }
-    45%  { transform: perspective(900px) rotateY(42deg) translateX(16%) scale(0.88); opacity: 0.15; }
-    55%  { transform: perspective(900px) rotateY(-42deg) translateX(-16%) scale(0.88); opacity: 0.15; }
-    100% { transform: perspective(900px) rotateY(0deg) translateX(0) scale(1); opacity: 1; }
+    min-height: 38px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--label);
+    text-align: left;
   }
 
-  .meta { text-align: center; margin-bottom: 22px; }
-  .title {
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: -0.022em;
-    line-height: 1.2;
-    margin-bottom: 7px;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-  /* длинное название не режем троеточием — оно плавно уезжает и возвращается */
-  .title .t-inner,
-  .artist .t-inner {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .title.marquee .t-inner,
-  .artist.marquee .t-inner {
-    display: inline-block;
-    overflow: visible;
-    text-overflow: clip;
-    animation: marqueeScroll var(--marq-dur, 14s) ease-in-out infinite alternate;
-  }
-  @keyframes marqueeScroll {
-    0%, 8%   { transform: translateX(0); }
-    92%, 100% { transform: translateX(calc(-1 * var(--marq, 0px))); }
-  }
-  .artist {
-    font-size: 14px;
-    color: var(--sub);
-    margin-bottom: 9px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .album-label {
-    font-size: 10.5px;
-    color: var(--faint);
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  .sort-item:active { background: rgba(255, 255, 255, 0.08); }
+  .sort-item.active { color: var(--accent); font-weight: 600; }
+  .sort-item i { font-style: normal; font-size: 12px; color: var(--secondary-label); }
 
-  /* прогресс — тонкий слайдер */
-  .scrub {
-    position: relative;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    touch-action: none;
-    margin-bottom: 4px;
-  }
-  .scrub-track {
-    position: absolute;
-    left: 0; right: 0;
-    height: 5px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.1);
-    overflow: hidden;
-  }
-  .scrub-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: 3px;
-    background: var(--text);
-    transition: width 120ms linear;
-  }
-  .scrub.dragging .scrub-fill { transition: none; }
-  .scrub-knob {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 3px;
-    height: 11px;
-    margin-left: -1.5px;
-    border-radius: 1.5px;
-    background: var(--text);
-    transform: translateY(-50%);
-    /* left едет синхронно с width у .scrub-fill — иначе бегунок дёргается */
-    transition: left 120ms linear, width 180ms var(--ease-spring), margin-left 180ms var(--ease-spring);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-  }
-  .scrub.dragging .scrub-knob { width: 5px; margin-left: -2.5px; transition: none; }
-
-  /* всплывающая плашка со временем — палец закрывает полоску и цифры */
-  .time-bubble {
-    position: absolute;
-    bottom: calc(100% + 10px);
-    left: 0;
-    transform: translateX(-50%) translateY(4px) scale(0.92);
-    padding: 5px 9px;
-    border-radius: 9px;
-    background: rgba(30, 33, 39, 0.97);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
-    font-size: 11.5px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--text);
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 140ms ease, transform 180ms var(--ease-out);
-  }
-  .time-bubble.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-
-  /* двойной тап по половине экрана: −10 / +10 секунд */
-  .seek-flash {
-    position: absolute;
-    top: 46%;
-    width: 88px;
-    height: 88px;
-    margin-top: -44px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(2px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    color: #fff;
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 6;
-  }
-  .seek-flash.left { left: 6%; }
-  .seek-flash.right { right: 6%; }
-  .seek-flash.left svg { transform: scaleX(-1); }
-  .seek-flash svg { width: 24px; height: 24px; }
-  .seek-flash.show { animation: seekFlash 640ms var(--ease-out); }
-  @keyframes seekFlash {
-    0%   { opacity: 0; transform: scale(0.72); }
-    22%  { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(1.22); }
-  }
-
-  .times {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: rgba(244, 247, 250, 0.34);
-    font-variant-numeric: tabular-nums;
-    margin-bottom: 14px;
+  /* история поиска */
+  .search-history {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 10px;
   }
 
   .chip {
@@ -1528,220 +472,1190 @@
     align-items: center;
     gap: 6px;
     height: 30px;
-    padding: 0 13px;
+    padding: 0 12px;
     border-radius: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--sub);
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out);
+    background: var(--surface);
+    color: var(--label);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
   }
-  .chip svg { width: 15px; height: 15px; flex-shrink: 0; }
-  .chip:active { transform: scale(0.95); }
-  .chip.on {
-    background: rgba(59, 157, 255, 0.16);
-    border-color: rgba(59, 157, 255, 0.38);
+
+  .chip:active { background: var(--surface-3); }
+
+  /* невысокие кнопки: вид 30–36px, зона нажатия 44px */
+  .chip,
+  .sort-btn,
+  .play-album { position: relative; }
+
+  .chip::after,
+  .sort-btn::after,
+  .play-album::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+  .chip svg { width: 14px; height: 14px; }
+
+  /* ── скролл-контейнер ─────────────────────────────────────── */
+  .scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: calc(var(--dock-space) + 24px);
+  }
+
+  .panel { display: none; }
+
+  .panel.active {
+    display: block;
+    animation: panelIn 0.32s var(--ease-ios);
+  }
+
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateX(var(--in-x, 0px)); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .list-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 120px;
+    z-index: 3;
+    pointer-events: none;
+    background: linear-gradient(to top, #000 18%, rgba(0, 0, 0, 0) 100%);
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     СТРОКИ ТРЕКОВ (Apple HIG: 56px / обложка 44px)
+     ══════════════════════════════════════════════════════════════ */
+  .row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding: 0 16px;
+    transition: background 0.12s;
+    animation: rowIn 0.28s var(--ease-out) both;
+  }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .row:active,
+  .row.pressing { background: var(--surface-3); }
+
+  /* разделитель начинается строго от текстового блока, не под обложкой */
+  .row::after {
+    content: '';
+    position: absolute;
+    left: 72px;
+    right: 0;
+    bottom: 0;
+    height: 0.5px;
+    background: var(--separator);
+  }
+
+  .row-cover {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--surface);
+  }
+
+  .row-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .row-title {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--label);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .row.playing .row-title { color: var(--accent); }
+
+  .row-title mark {
+    background: none;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .row-sub {
+    font-size: 13px;
+    line-height: 1.25;
+    color: var(--secondary-label);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .row-fav {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    color: var(--tertiary-label);
+    transition: color 0.15s, transform 0.15s var(--ease-spring);
+  }
+
+  .row-fav.on { color: var(--accent); }
+  .row-fav:active { transform: scale(0.88); }
+
+  /* индикатор «играет» */
+  .eq {
+    display: none;
+    width: 20px;
+    height: 20px;
+    flex: none;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
     color: var(--accent);
   }
 
-  /* очередь: перетаскивание */
-  .q-grip {
-    width: 26px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    color: var(--faint);
-    flex-shrink: 0;
-    touch-action: none;
-    cursor: grab;
-  }
-  .q-row.dragging {
-    background: rgba(255, 255, 255, 0.07);
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-    z-index: 2;
-    position: relative;
+  .row.playing .eq { display: flex; }
+  .eq svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+  .eq svg line { transform-origin: center bottom; animation: eqBar 0.9s ease-in-out infinite alternate; }
+  .eq svg line:nth-child(1) { animation-delay: -0.1s; }
+  .eq svg line:nth-child(2) { animation-delay: -0.45s; }
+  .eq svg line:nth-child(3) { animation-delay: -0.25s; }
+  .eq svg line:nth-child(4) { animation-delay: -0.6s; }
+
+  @keyframes eqBar {
+    from { transform: scaleY(0.35); }
+    to   { transform: scaleY(1); }
   }
 
-  .list-actions, .sheet-actions {
+  body.paused .eq svg line { animation-play-state: paused; }
+
+  .list-actions {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
+    padding: 12px 16px 4px;
   }
-  .list-actions { margin-bottom: 10px; }
-  .sheet-actions { margin: 10px 0 6px; }
 
-  /* статистика */
-  .stat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 18px;
-  }
-  .stat-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 14px;
-    padding: 14px;
-  }
-  .stat-card b {
-    display: block;
-    font-size: 20px;
-    letter-spacing: -0.02em;
-  }
-  .stat-card span {
-    font-size: 11.5px;
-    color: var(--sub);
-  }
-  .stat-list-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--faint);
-    margin: 16px 0 8px;
-  }
-  .stat-line {
+  .empty {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 64px 28px;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.35;
+    color: var(--secondary-label);
+  }
+
+  .empty b {
+    display: block;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--label);
+  }
+
+  /* ── сетка альбомов ───────────────────────────────────────── */
+  .album-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 14px;
+    padding: 14px 16px 0;
+  }
+
+  .album-card { min-width: 0; }
+
+  .album-card-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 10px;
+    background: var(--surface);
+    box-shadow: 0 10px 22px -10px rgba(0, 0, 0, 0.8);
+    transition: transform 0.2s var(--ease-out);
+  }
+
+  .album-card:active .album-card-img { transform: scale(0.96); }
+
+  .album-card-name {
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .album-card-sub {
+    font-size: 12px;
+    color: var(--secondary-label);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     ЭКРАН АЛЬБОМА
+     ══════════════════════════════════════════════════════════════ */
+  .navbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: calc(var(--safe-t) + 6px) 8px 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .nav-btn {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--accent);
+  }
+
+  .nav-btn:active { background: var(--surface-3); }
+
+  .nav-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .album-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 4px 16px 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  #albumCover {
+    width: min(60vw, 250px);
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: 0 22px 44px -12px rgba(0, 0, 0, 0.85);
+  }
+
+  .album-hero-name {
+    margin-top: 16px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  .album-hero-sub {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--secondary-label);
+  }
+
+  .play-album {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    margin-top: 14px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .play-album:active { opacity: 0.8; }
+
+  /* ══════════════════════════════════════════════════════════════
+     СЛОЙ 2: настройки + плеер
+     ══════════════════════════════════════════════════════════════ */
+  .layer {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+  }
+
+  .layer > .screen { pointer-events: none; }
+
+  #scrSettings {
+    z-index: 3;
+    transform: translateX(100%);
+    transition: transform 0.42s var(--ease-ios);
+  }
+
+  #scrSettings.open {
+    transform: none;
+    pointer-events: auto;
+  }
+
+  /* ── настройки: inset grouped list ────────────────────────── */
+  .set-group {
+    margin: 0 16px 22px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .set-group-title {
+    padding: 14px 16px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--secondary-label);
+  }
+
+  .set-row {
+    position: relative;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
+    min-height: 50px;
+    padding: 10px 16px;
+  }
+
+  .set-row::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    right: 0;
+    bottom: 0;
+    height: 0.5px;
+    background: var(--separator);
+  }
+
+  .set-row:last-child::after { display: none; }
+  .set-row.column { flex-direction: column; align-items: stretch; gap: 0; }
+
+  .set-label {
+    font-size: 16px;
+    line-height: 1.3;
+    color: var(--label);
+  }
+
+  .set-hint {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--secondary-label);
+  }
+
+  .set-value {
+    margin-left: 8px;
     font-size: 13px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--line);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--secondary-label);
   }
-  .stat-line:last-child { border-bottom: none; }
-  .stat-line i { font-style: normal; color: var(--sub); font-variant-numeric: tabular-nums; }
 
-  /* история поиска */
-  .search-history {
+  .set-chev { flex: none; color: var(--tertiary-label); }
+  .set-row.action { cursor: pointer; }
+  .set-row.action:active { background: var(--surface-3); }
+  .set-row.action .set-label { color: var(--label); }
+  .set-row.action .set-chev { color: var(--accent); }
+  .set-row.danger .set-label { color: var(--red); }
+
+  .set-foot {
+    padding: 6px 16px calc(var(--safe-b) + 40px);
+    text-align: center;
+    font-size: 12px;
+    color: var(--tertiary-label);
+  }
+
+  /* переключатель iOS */
+  .switch {
+    position: relative;
+    flex: none;
+    width: 51px;
+    height: 31px;
+    border-radius: 16px;
+    background: #39393d;
+    transition: background 0.25s var(--ease-ios);
+  }
+
+  .switch.on { background: var(--green); }
+
+  .switch-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+    transition: transform 0.25s var(--ease-ios), width 0.2s var(--ease-out);
+  }
+
+  .switch.on .switch-knob { transform: translateX(20px); }
+  .switch.pressing .switch-knob { width: 31px; }
+  .switch.on.pressing .switch-knob { transform: translateX(16px); }
+
+  /* слайдер яркости */
+  .set-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    margin: 14px 0 6px;
+    border-radius: 2px;
+    background: linear-gradient(to right,
+      #fff var(--fill, 40%),
+      rgba(255, 255, 255, 0.15) var(--fill, 40%));
+  }
+
+  .set-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  }
+
+  .set-range::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     ПОЛНОЭКРАННЫЙ ПЛЕЕР — модальный sheet снизу
+     ══════════════════════════════════════════════════════════════ */
+  #scrPlayer {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
     display: flex;
-    gap: 7px;
-    flex-wrap: wrap;
-    margin-top: 10px;
+    flex-direction: column;
+    background: #000;
+    border-radius: 38px 38px 0 0;
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform 0.5s var(--ease-ios);
+    will-change: transform;
   }
-  .search-history .chip { height: 26px; font-size: 11.5px; padding: 0 10px; }
 
+  #scrPlayer.open {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  #scrPlayer.dragging { transition: none; }
+
+  /* ── верхняя зона (она же ручка свайпа) ───────────────────── */
+  .player-top {
+    position: relative;
+    z-index: 6;
+    flex: none;
+    padding-top: calc(var(--safe-t) + 4px);
+    touch-action: pan-x;
+  }
+
+  .grabber {
+    width: 36px;
+    height: 5px;
+    margin: 0 auto 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .ptop-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    height: 44px;
+    padding: 0 10px;
+  }
+
+  .ptop-right {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .player-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--secondary-label);
+    white-space: nowrap;
+  }
+
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--label);
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .icon-btn:active { background: rgba(255, 255, 255, 0.1); }
+  .icon-btn svg { width: 21px; height: 21px; }
+
+  .icon-btn.fav.on { color: var(--accent); }
+  .icon-btn.fav.on svg { fill: currentColor; }
+
+  .speed-btn {
+    min-width: 44px;
+    height: 44px;
+    padding: 0 6px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--secondary-label);
+  }
+
+  .speed-btn.on { color: var(--accent); }
+  .speed-btn:active { background: rgba(255, 255, 255, 0.1); }
+
+  .icon-btn.on { color: var(--accent); }
+
+  /* меню таймера сна */
+  .timer-menu {
+    position: absolute;
+    top: 100%;
+    right: 12px;
+    z-index: 30;
+    min-width: 210px;
+    padding: 5px;
+    background: rgba(44, 44, 46, 0.95);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 0.5px solid var(--glass-border);
+    border-radius: 13px;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+    transform-origin: top right;
+    pointer-events: none;
+    transition: opacity 0.16s, transform 0.16s var(--ease-ios);
+  }
+
+  .timer-menu.open {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  .timer-item span { font-size: 15px; }
+
+  /* ── тело плеера ──────────────────────────────────────────── */
+  .player-body {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0 24px calc(var(--safe-b) + 10px);
+  }
+
+  .cover-wrap {
+    flex: 0 1 auto;
+    align-self: center;
+    width: 100%;
+    max-width: min(100%, 360px);
+    max-height: 44vh;
+    aspect-ratio: 1 / 1;
+    margin: auto auto 0;
+    border-radius: 20px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
+    transform: scale(0.85);
+    transition: transform 0.55s var(--ease-spring), opacity 0.3s ease;
+  }
+
+  /* играет — карточка «дышит» на полный размер, пауза — мягко сжимается */
+  body:not(.paused) .cover-wrap { transform: scale(1); }
+
+  .cover-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .cover-wrap.dim { opacity: 0.55; }
+  body.scrubbing .cover-wrap { transform: scale(0.94); }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 0;
+  }
+
+  .meta-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    color: var(--label);
+  }
+
+  .artist {
+    margin-top: 2px;
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--secondary-label);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  /* бегущая строка для длинных названий */
+  .t-inner {
+    display: inline-block;
+    white-space: nowrap;
+    will-change: transform;
+  }
+
+  .marquee .t-inner {
+    animation: marquee var(--marq-dur, 12s) ease-in-out infinite alternate;
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(calc(-1 * var(--marq, 0px))); }
+  }
+
+  .meta-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+  }
+
+  /* ── скруббер ─────────────────────────────────────────────── */
+  .scrub {
+    position: relative;
+    height: 28px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    touch-action: none;
+    cursor: pointer;
+  }
+
+  /* увеличиваем зону попадания до 44px, не трогая вид */
+  .scrub::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+
+  .scrub-track {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+  }
+
+  .scrub-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 2px;
+    background: #fff;
+  }
+
+  .scrub-knob {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    transform: scale(1);
+    transition: transform 0.18s var(--ease-out);
+    pointer-events: none;
+  }
+
+  .scrub.dragging .scrub-knob,
+  body.scrubbing .scrub-knob { transform: scale(1.7); }
+
+  .time-bubble {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%) scale(0.9);
+    padding: 4px 9px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.14s, transform 0.14s var(--ease-out);
+  }
+
+  .time-bubble.show { opacity: 1; transform: translateX(-50%) scale(1); }
+
+  .times {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--secondary-label);
+  }
+
+  /* ── транспорт ────────────────────────────────────────────── */
   .controls {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 16px;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding: 0 2px;
   }
+
   .btn {
-    background: none;
-    border: none;
-    color: var(--text);
-    cursor: pointer;
     display: grid;
     place-items: center;
-    padding: 0;
-    transition: transform 150ms var(--ease-out), color 200ms ease;
+    width: 44px;
+    height: 44px;
+    color: var(--label);
+    border-radius: 50%;
+    transition: color 0.15s, transform 0.12s;
   }
-  .btn:active { transform: scale(0.88); }
-  .btn svg { display: block; }
-  .btn-side { width: 44px; height: 44px; color: rgba(244, 247, 250, 0.62); }
-  .btn-sm { width: 38px; height: 38px; color: rgba(244, 247, 250, 0.34); position: relative; }
+
+  .btn:active { transform: scale(0.9); }
+
+  .btn-sm { color: rgba(255, 255, 255, 0.55); }
+  .btn-sm svg { width: 19px; height: 19px; }
   .btn-sm.on { color: var(--accent); }
-  .btn-sm.on::after {
-    content: "";
-    position: absolute;
-    bottom: 2px;
-    left: 50%;
-    margin-left: -1.5px;
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background: currentColor;
-  }
+
+  .btn-side svg { width: 28px; height: 28px; }
+
   .btn-play {
-    width: 62px;
-    height: 62px;
-    border-radius: 50%;
-    background: #fff;
-    color: #08090b;
-    margin: 0 10px;
-    box-shadow: 0 8px 26px -6px rgba(0, 0, 0, 0.7);
-    transition: transform 160ms var(--ease-out), background 200ms ease;
+    width: 64px;
+    height: 64px;
+  }
+
+  .btn-play svg { width: 48px; height: 48px; }
+
+  /* переключение play / pause */
+  .icon-swap {
     position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
   }
-  .btn-play:active { transform: scale(0.93); background: #e9edf2; }
 
-  .icon-swap { position: relative; width: 26px; height: 26px; }
   .icon-swap svg {
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    transition: opacity 140ms var(--ease-out), transform 220ms var(--ease-spring);
+    grid-area: 1 / 1;
+    transition: opacity 0.16s, transform 0.16s var(--ease-spring);
   }
-  .icon-swap .i-pause { opacity: 0; transform: scale(0.55); }
-  .playing .icon-swap .i-play { opacity: 0; transform: scale(0.55); }
-  .playing .icon-swap .i-pause { opacity: 1; transform: scale(1); }
 
+  .icon-swap .i-pause { opacity: 0; transform: scale(0.6); }
+  .playing .icon-swap .i-play { opacity: 0; transform: scale(0.6); }
+  .playing .icon-swap .i-pause { opacity: 1; transform: none; }
+
+  /* ── громкость ────────────────────────────────────────────── */
   .volume {
     display: flex;
     align-items: center;
-    gap: 11px;
-    padding: 8px 4px 0;
-    min-height: 24px;
-    margin-top: 16px;   /* было auto: на высоких экранах получалась дыра посередине */
+    gap: 8px;
+    margin-top: 10px;
   }
 
-  /* низкий экран (телефон в горизонтали) — не центрируем, иначе обрежет верх */
-  @media (max-height: 720px) {
-    .player-body { justify-content: flex-start; }
+  #muteBtn {
+    width: 34px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    color: var(--secondary-label);
   }
-  .volume .btn { color: rgba(244, 247, 250, 0.55); width: 22px; height: 22px; flex-shrink: 0; }
+
+  #volIcon { width: 16px; height: 16px; }
+
+  .vol-max {
+    width: 22px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    color: var(--tertiary-label);
+  }
+
+  .vol-max svg { width: 18px; height: 18px; }
+
   .vslider {
     position: relative;
     flex: 1;
-    height: 26px;
+    height: 28px;
     display: flex;
     align-items: center;
-    cursor: pointer;
     touch-action: none;
   }
-  .vslider-track {
+
+  .vslider::before {
+    content: '';
     position: absolute;
-    left: 0; right: 0;
-    height: 5px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.1);
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+
+  .vslider-track {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.15);
     overflow: hidden;
   }
+
   .vslider-fill {
     height: 100%;
     width: 100%;
-    background: rgba(244, 247, 250, 0.55);
-    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.9);
   }
+
   .vslider-knob {
     position: absolute;
     top: 50%;
     left: 100%;
-    width: 3px;
-    height: 11px;
-    margin-left: -1.5px;
-    border-radius: 1.5px;
-    background: rgba(244, 247, 250, 0.9);
-    transform: translateY(-50%);
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    transform: scale(1);
+    transition: transform 0.18s var(--ease-out);
     pointer-events: none;
   }
-  .volume-hint { flex: 1; font-size: 11px; color: var(--faint); }
 
-  /* ══ лист «О треке» ════════════════════════════════════ */
+  .vslider.dragging .vslider-knob { transform: scale(1.7); }
+
+  .volume-hint {
+    font-size: 13px;
+    color: var(--secondary-label);
+  }
+
+  /* ── нижний сервисный ряд ─────────────────────────────────── */
+  .service-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin-top: 4px;
+  }
+
+  .service-row button {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.65);
+    border-radius: 50%;
+  }
+
+  .service-row button:active { background: rgba(255, 255, 255, 0.1); }
+  .service-row svg { width: 20px; height: 20px; }
+  .service-row button.on { color: var(--accent); }
+
+  /* вспышки двойного тапа −10 / +10 */
+  .seek-flash {
+    position: absolute;
+    top: 22%;
+    bottom: 22%;
+    width: 34%;
+    z-index: 7;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    border-radius: 24px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent 70%);
+  }
+
+  .seek-flash.left { left: 2%; }
+  .seek-flash.right { right: 2%; }
+  .seek-flash.show { opacity: 1; }
+  .seek-flash svg { width: 30px; height: 30px; }
+  .seek-flash.right svg { transform: scaleX(-1); }
+
+  /* ══════════════════════════════════════════════════════════════
+     ДОК: мини-плеер + таб-бар (два независимых элемента)
+     ══════════════════════════════════════════════════════════════ */
+  .dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    pointer-events: none;
+    transition: transform 0.42s var(--ease-ios), opacity 0.3s;
+  }
+
+  .dock.hide {
+    transform: translateY(130%);
+    opacity: 0;
+  }
+
+  .mini-slot {
+    padding: 0 12px 8px;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.3s ease, transform 0.35s var(--ease-ios);
+  }
+
+  .dock.has-track .mini-slot {
+    opacity: 1;
+    transform: none;
+  }
+
+  .mini {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: var(--mini-h);
+    padding: 0 4px 0 8px;
+    border-radius: 14px;
+    background: var(--glass);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 0.5px solid var(--glass-border);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+    pointer-events: auto;
+  }
+
+  .mini-cover {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--surface-3);
+  }
+
+  .mini-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    line-height: 1.2;
+    animation: none;
+  }
+
+  .mini-info.swap { animation: miniSwap 0.3s var(--ease-ios); }
+
+  @keyframes miniSwap {
+    from { opacity: 0; transform: translateX(var(--swap-x, 12px)); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .mini-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--label);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  .mini-dot {
+    flex: none;
+    color: var(--tertiary-label);
+    font-weight: 700;
+  }
+
+  .mini-sub {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--secondary-label);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .mini-btn {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    color: var(--label);
+    border-radius: 12px;
+  }
+
+  .mini-btn:active { background: rgba(255, 255, 255, 0.1); }
+  .mini-btn svg { width: 22px; height: 22px; }
+
+  .mini-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .mini-progress i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: #fff;
+  }
+
+  /* кнопки старого дизайна: логика осталась, вид — нет */
+  #miniPrev,
+  #miniClose { display: none; }
+
+  /* ── таб-бар ──────────────────────────────────────────────── */
+  .tabbar {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    height: var(--tabbar-h);
+    padding-bottom: var(--safe-b);
+    background: rgba(18, 18, 20, 0.82);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border-top: 0.5px solid var(--separator);
+    pointer-events: auto;
+    box-sizing: content-box;
+  }
+
+  .tabbar-pill { display: none; }
+
+  .tabbar-btn {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 2px 0 3px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: rgba(235, 235, 245, 0.4);
+    transition: color 0.18s;
+  }
+
+  .tabbar-btn svg {
+    width: 25px;
+    height: 25px;
+    stroke-width: 1.9;
+  }
+
+  .tabbar-btn.active { color: var(--accent); }
+  .tabbar-btn:active { opacity: 0.7; }
+
+  .tab-icon {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 25px;
+    height: 25px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body.engine-on .tab-icon { display: flex; }
+  body.engine-on .tabbar-btn > svg { visibility: hidden; }
+
+  /* ══════════════════════════════════════════════════════════════
+     ЛИСТЫ: о треке / очередь / статистика
+     ══════════════════════════════════════════════════════════════ */
   .sheet-scrim {
     position: fixed;
     inset: 0;
-    z-index: 60;
-    background: rgba(0, 0, 0, 0.55);
+    z-index: 70;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 320ms var(--ease-out);
+    transition: opacity 0.3s ease;
   }
+
   .sheet-scrim.open { opacity: 1; pointer-events: auto; }
 
   .sheet {
@@ -1749,584 +1663,360 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 61;
-    background: #14171c;
-    border-radius: 22px 22px 0 0;
-    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    padding: 8px 22px calc(24px + env(safe-area-inset-bottom));
-    max-height: 78vh;
-    overflow-y: auto;
+    z-index: 71;
+    display: flex;
+    flex-direction: column;
+    max-height: 86vh;
+    padding-bottom: var(--safe-b);
+    background: #1c1c1e;
+    border-radius: 20px 20px 0 0;
     transform: translateY(100%);
-    transition: transform 380ms var(--ease-drawer);
-    will-change: transform;
+    transition: transform 0.42s var(--ease-ios);
+    box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.6);
   }
-  .sheet.open { transform: translateY(0); transition: transform 460ms cubic-bezier(0.2, 1.06, 0.3, 1); }
-  .sheet.dragging { transition: none; }
+
+  .sheet.open { transform: none; }
 
   .sheet-grab {
     width: 36px;
-    height: 4px;
+    height: 5px;
+    margin: 8px auto 2px;
+    flex: none;
     border-radius: 3px;
-    background: rgba(255, 255, 255, 0.16);
-    margin: 0 auto 14px;
-    position: relative;
+    background: rgba(255, 255, 255, 0.25);
     touch-action: none;
-    cursor: grab;
   }
-  /* увеличиваем зону захвата, не увеличивая саму полоску */
-  .sheet-grab::after {
-    content: "";
-    position: absolute;
-    left: -70px;
-    right: -70px;
-    top: -16px;
-    bottom: -16px;
-  }
+
   .sheet-head {
-    font-size: 18px;
+    flex: none;
+    padding: 8px 20px 8px;
+    font-size: 20px;
     font-weight: 700;
-    letter-spacing: -0.02em;
-    margin-bottom: 6px;
+    letter-spacing: -0.01em;
   }
+
+  .sheet-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 0 20px 28px;
+  }
+
   .sheet-sub {
-    font-size: 13px;
-    color: var(--sub);
-    margin-bottom: 10px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    padding-bottom: 10px;
+    font-size: 14px;
+    color: var(--secondary-label);
+  }
+
+  .sheet-actions {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0 16px;
   }
 
   .info-row {
     display: flex;
-    gap: 14px;
-    padding: 11px 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .info-row:last-child { border-bottom: none; }
-  .info-k {
-    width: 92px;
-    flex-shrink: 0;
-    font-size: 12px;
-    color: var(--sub);
-    padding-top: 1px;
-  }
-  .info-v {
-    flex: 1;
-    font-size: 13.5px;
-    line-height: 1.45;
-    color: var(--text);
-  }
-
-  /* обложка во весь экран */
-  .cover-full {
-    position: fixed;
-    inset: 0;
-    z-index: 70;
-    background: rgba(0, 0, 0, 0.95);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 260ms var(--ease-out);
-  }
-  .cover-full.open { opacity: 1; pointer-events: auto; }
-  .cover-full img {
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 16px;
-    object-fit: contain;
-    transform: scale(0.94);
-    transition: transform 320ms var(--ease-spring);
-  }
-  .cover-full.open img { transform: scale(1); }
-
-  /* настройки */
-  .set-row {
-    display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 14px;
-    padding: 11px 0;
-    border-bottom: 1px solid var(--line);
+    gap: 18px;
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--separator);
   }
-  .set-row:last-child { border-bottom: none; }
-  .set-label { font-size: 13.5px; color: var(--text); }
-  .set-row.action { cursor: pointer; transition: opacity 150ms ease; }
-  .set-row.action:active { opacity: 0.55; }
-  .set-row.action .set-label { color: var(--sub); }
-  .set-row.danger .set-label { color: #ff6b6b; }
 
-  /* переключатель по Material 3: выключен — маленький кружок, включён — большой */
-  .switch {
-    width: 46px;
-    height: 28px;
-    border: 2px solid rgba(255, 255, 255, 0.22);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.06);
-    position: relative;
-    cursor: pointer;
-    flex-shrink: 0;
-    padding: 0;
-    transition: background-color 200ms ease, border-color 200ms ease;
-  }
-  .switch-knob {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 20px;
-    height: 20px;
-    margin-top: -10px;
-    transform: translateX(2px);
-    transition: transform 260ms var(--ease-drawer);
-    will-change: transform;
-  }
-  .switch-knob::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.62);
-    transform: scale(0.7);
-    transition: transform 220ms var(--ease-out), background-color 200ms ease;
-  }
-  .switch.on {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-  .switch.on .switch-knob { transform: translateX(18px); }
-  .switch.on .switch-knob::before { transform: scale(1); background: #fff; }
+  .info-row:last-child { border-bottom: 0; }
 
-  /* нажатие — кружок чуть больше своего размера в обоих состояниях */
-  .switch:active .switch-knob::before,
-  .switch.pressing .switch-knob::before { transform: scale(0.8); }
-  .switch.on:active .switch-knob::before,
-  .switch.on.pressing .switch-knob::before { transform: scale(1.06); }
+  .info-k {
+    flex: none;
+    font-size: 15px;
+    color: var(--secondary-label);
+  }
 
-  .switch:disabled { opacity: 0.5; cursor: default; }
-
-  /* иконки, которые рисует React-движок */
-  .tab-icon { display: none; width: 21px; height: 21px; }
-  body.engine-on .tab-icon { display: block; }
-  body.engine-on .tabbar-btn > svg { display: none; }
-  body.engine-on .tabbar-pill { transition: none; }
+  .info-v {
+    font-size: 15px;
+    text-align: right;
+    color: var(--label);
+  }
 
   /* очередь */
   .q-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 11px 0;
-    border-bottom: 1px solid var(--line);
-    cursor: pointer;
-    transition: opacity 150ms ease;
+    padding: 9px 0;
+    border-bottom: 0.5px solid var(--separator);
+    background: #1c1c1e;
   }
-  .q-row:last-child { border-bottom: none; }
-  .q-row:active { opacity: 0.55; }
+
+  .q-row.dragging {
+    z-index: 3;
+    border-radius: 10px;
+    background: var(--surface-3);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+  }
+
   .q-num {
-    width: 16px;
-    flex-shrink: 0;
-    font-size: 11.5px;
-    color: var(--faint);
+    width: 18px;
+    flex: none;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--secondary-label);
+    text-align: center;
+  }
+
+  .q-info { flex: 1; min-width: 0; }
+
+  .q-title {
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .q-sub {
+    font-size: 13px;
+    color: var(--secondary-label);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .q-grip {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    color: var(--tertiary-label);
+    touch-action: none;
+  }
+
+  /* статистика */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-bottom: 6px;
+  }
+
+  .stat-card {
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--surface-3);
+  }
+
+  .stat-card b {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
   }
-  .q-info { flex: 1; min-width: 0; }
-  .q-title {
-    font-size: 13.5px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .q-sub {
-    font-size: 11.5px;
-    color: var(--sub);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+
+  .stat-card span {
+    display: block;
     margin-top: 2px;
+    font-size: 12px;
+    color: var(--secondary-label);
   }
 
-  /* ══════════════════════════════════════════════════════════
-     АДАПТИВ: телефон → планшет → ПК → телевизор
-     Контент растёт вместе с экраном: сначала становится шире,
-     потом список и альбомы расходятся в несколько столбцов.
-     ══════════════════════════════════════════════════════════ */
-  :root {
-    --content-w: 100%;   /* максимальная ширина колонки контента */
-    --gutter: 18px;      /* боковые отступы */
+  .stat-list-title {
+    margin: 20px 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--secondary-label);
   }
 
-  .lib-head,
-  .scroll,
-  .navbar {
-    width: 100%;
-    max-width: var(--content-w);
-    margin-left: auto;
-    margin-right: auto;
+  .stat-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 9px 0;
+    border-bottom: 0.5px solid var(--separator);
+    font-size: 15px;
   }
 
-  /* ── планшет (портрет) ─────────────────────────────────── */
-  @media (min-width: 600px) {
-    :root { --content-w: 680px; --gutter: 24px; }
-
-    .lib-head { padding-left: var(--gutter); padding-right: var(--gutter); }
-    .scroll { padding-left: var(--gutter); padding-right: var(--gutter); }
-
-    .album-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 16px; }
-    .row-cover { width: 50px; height: 50px; }
-
-    /* док больше не липнет к краям и совпадает по ширине со списком */
-    .dock {
-      left: 0;
-      right: 0;
-      width: calc(min(100%, var(--content-w)) - 48px);
-      margin-left: auto;
-      margin-right: auto;
-    }
+  .stat-line span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  /* ── планшет (ландшафт) / ноутбук ──────────────────────── */
-  @media (min-width: 900px) {
-    :root { --content-w: min(100% - 64px, 1040px); --gutter: 28px; }
-
-    /* список в два столбца */
-    .panel.active {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      column-gap: 14px;
-      align-content: start;
-    }
-    .panel.active > .empty,
-    .panel.active > .list-actions,
-    .panel.active > .album-grid { grid-column: 1 / -1; }
-
-    .album-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-
-    /* док сжимается под кнопки, а не растягивается на всю ширину экрана */
-    .dock { width: min(560px, calc(100% - 48px)); }
-
-    /* плеер: обложка слева, управление справа (а не всё в столбик) */
-    .player-body {
-      display: grid;
-      grid-template-columns: auto minmax(340px, 430px);
-      grid-template-areas:
-        "cover meta"
-        "cover scrub"
-        "cover times"
-        "cover controls"
-        "cover volume";
-      align-content: center;
-      align-items: center;
-      justify-content: center;
-      column-gap: 56px;
-      padding: 24px 40px 32px;
-    }
-    .cover-wrap { grid-area: cover; width: min(340px, 40vh); margin: 0; }
-    .meta { grid-area: meta; text-align: left; margin-bottom: 26px; }
-    .scrub { grid-area: scrub; }
-    .times { grid-area: times; }
-    .controls { grid-area: controls; }
-    .volume { grid-area: volume; }
-
-    /* шапка альбома: обложка слева, текст справа */
-    .album-hero {
-      display: grid;
-      grid-template-columns: 176px minmax(0, 1fr);
-      grid-template-areas:
-        "cover name"
-        "cover sub"
-        "cover btn";
-      align-content: center;
-      align-items: start;
-      column-gap: 26px;
-      text-align: left;
-      padding: 16px 4px 26px;
-    }
-    .album-hero img { grid-area: cover; width: 176px; margin: 0; align-self: center; }
-    .album-hero-name { grid-area: name; align-self: end; font-size: 24px; }
-    .album-hero-sub { grid-area: sub; }
-    .play-album { grid-area: btn; justify-self: start; align-self: start; margin-top: 6px; }
+  .stat-line i {
+    flex: none;
+    font-style: normal;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--secondary-label);
   }
 
-  /* ── большой ноутбук / монитор ─────────────────────────── */
-  @media (min-width: 1200px) {
-    :root { --content-w: min(100% - 80px, 1240px); --gutter: 30px; }
-
-    .album-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-
-    /* настройки: две колонки — слева короткие блоки, справа длинный «Данные» */
-    #scrSettings .navbar,
-    #scrSettings .scroll { max-width: 1180px; }
-
-    #scrSettings .scroll {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      align-content: center;
-      align-items: start;
-      gap: 16px;
-      padding-bottom: 40px;
-    }
-    #scrSettings .set-group { margin: 0; }
-    #setGroup1 { grid-column: 1; grid-row: 1; }
-    #setGroup2 { grid-column: 1; grid-row: 2; }
-    #setGroup3 { grid-column: 2; grid-row: 1 / span 2; }
-    #scrSettings .set-foot { grid-column: 1 / -1; }
-  }
-
-  /* ── большой монитор / телевизор ───────────────────────── */
-  @media (min-width: 1500px) {
-    :root { --content-w: min(100% - 96px, 1560px); --gutter: 32px; }
-
-    /* список в три столбца */
-    .panel.active { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 16px; }
-
-    .row { padding: 12px 14px; gap: 16px; border-radius: 16px; }
-    .row-cover { width: 56px; height: 56px; border-radius: 11px; }
-    .row-title { font-size: 15.5px; }
-    .row-sub { font-size: 13.5px; }
-    .row-fav { width: 40px; height: 40px; }
-
-    .brand { font-size: 11.5px; }
-    .search-wrap,
-    .sort-btn { height: 44px; }
-    .search-wrap input { font-size: 15px; }
-    .sort-btn { font-size: 13px; }
-
-    .tabbar { height: 76px; }
-    .tabbar-btn { font-size: 11.5px; }
-    .tabbar-btn svg { width: 24px; height: 24px; }
-
-    .mini { height: 78px; }
-    .dock.has-track .mini-slot { max-height: 78px; }
-    .mini-cover { width: 54px; height: 54px; border-radius: 12px; }
-    .mini-title { font-size: 15px; }
-    .mini-sub { font-size: 13px; }
-    .mini-btn { width: 44px; height: 44px; }
-    .mini-btn svg { width: 26px; height: 26px; }
-
-    .dock {
-      width: min(660px, calc(100% - 64px));
-      border-radius: 26px;
-    }
-
-    .album-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 22px 18px; }
-    .album-card-name { font-size: 15px; }
-    .album-card-sub { font-size: 13px; }
-
-    .title { font-size: 26px; }
-    .artist { font-size: 16px; }
-    .cover-wrap { width: min(420px, 44vh); }
-    .btn-play { width: 68px; height: 68px; }
-    .btn-side { width: 50px; height: 50px; }
-    .scroll { padding-bottom: 210px; }
-
-    /* настройки — воздух внутри карточек */
-    .set-group { padding: 6px 20px; }
-    .set-row { padding: 15px 0; }
-    .set-label { font-size: 14.5px; }
-    .set-group-title { font-size: 11.5px; padding: 18px 2px 6px; }
-  }
-
-  /* ── 4К / очень широкий экран ──────────────────────────── */
-  @media (min-width: 1900px) {
-    :root { --content-w: min(100% - 120px, 1820px); }
-
-    .panel.active { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .album-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-    .row-cover { width: 62px; height: 62px; }
-    .row-title { font-size: 16.5px; }
-    .row-sub { font-size: 14px; }
-    .title { font-size: 30px; }
-  }
-
-  /* ══ появление списков ═════════════════════════════════ */
-  /* панель въезжает с той стороны, куда переключили вкладку */
-  .panel.active { animation: panelIn 260ms var(--ease-out); }
-  @keyframes panelIn {
-    from { opacity: 0; transform: translateX(var(--in-x, 0px)); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-
-  /* ══ сборка плеера: части приезжают по очереди ═════════ */
-  #scrPlayer.open .meta,
-  #scrPlayer.open .scrub,
-  #scrPlayer.open .times,
-  #scrPlayer.open .controls,
-  #scrPlayer.open .volume {
-    animation: partIn 460ms var(--ease-out) backwards;
-  }
-  #scrPlayer.open .meta     { animation-delay: 70ms; }
-  #scrPlayer.open .scrub    { animation-delay: 120ms; }
-  #scrPlayer.open .times    { animation-delay: 140ms; }
-  #scrPlayer.open .controls { animation-delay: 180ms; }
-  #scrPlayer.open .volume   { animation-delay: 230ms; }
-
-  @keyframes partIn {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* обложка альбома «проявляется» размером */
-  #scrAlbum.open .album-hero img { animation: coverPop 620ms var(--ease-out) backwards; }
-  @keyframes coverPop {
-    from { opacity: 0; transform: scale(0.88); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-  #scrAlbum.open .album-hero-name { animation: partIn 460ms var(--ease-out) 120ms backwards; }
-  #scrAlbum.open .album-hero-sub  { animation: partIn 460ms var(--ease-out) 160ms backwards; }
-  #scrAlbum.open .play-album      { animation: partIn 460ms var(--ease-out) 200ms backwards; }
-
-  /* строки альбома — лесенкой */
-  #albumTracks .row { animation: rowIn 380ms var(--ease-out) backwards; }
-  @keyframes rowIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* выпадающие меню */
-  .timer-menu.open { animation: menuIn 200ms var(--ease-out); }
-  .sort-menu.open { animation: menuIn 180ms var(--ease-out); }
-  @keyframes menuIn {
-    from { opacity: 0; transform: scale(0.95) translateY(-6px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  /* карточки статистики */
-  .stat-card { animation: partIn 420ms var(--ease-out) backwards; }
-  .stat-card:nth-child(1) { animation-delay: 40ms; }
-  .stat-card:nth-child(2) { animation-delay: 90ms; }
-  .stat-card:nth-child(3) { animation-delay: 140ms; }
-  .stat-card:nth-child(4) { animation-delay: 190ms; }
-
-  /* мини-плеер: смена трека — текст уезжает и приезжает с другой стороны */
-  .mini-info.swap { animation: miniSwap 380ms var(--ease-out); }
-  @keyframes miniSwap {
-    from { opacity: 0; transform: translateX(var(--swap-x, 12px)); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-
-  /* фокус в поиске */
-  .search-wrap {
-    transition: background-color 200ms ease, box-shadow 260ms ease;
-  }
-  .search-wrap:focus-within {
-    background: var(--surface-hi);
-    box-shadow: 0 0 0 1px rgba(59, 157, 255, 0.28);
-  }
-
-  /* строки-действия в настройках */
-  .set-row.action { transition: opacity 150ms ease, transform 160ms var(--ease-out); }
-  .set-row.action:active { transform: scale(0.985); }
-
-  /* сетка альбомов — лесенкой */
-  .album-card { animation: partIn 420ms var(--ease-out) backwards; }
-  .album-card:nth-child(1) { animation-delay: 0ms; }
-  .album-card:nth-child(2) { animation-delay: 30ms; }
-  .album-card:nth-child(3) { animation-delay: 60ms; }
-  .album-card:nth-child(4) { animation-delay: 90ms; }
-  .album-card:nth-child(5) { animation-delay: 120ms; }
-  .album-card:nth-child(6) { animation-delay: 150ms; }
-  .album-card:nth-child(n+7) { animation-delay: 180ms; }
-
-  /* активная вкладка подпрыгивает */
-  .tabbar-btn.active { animation: tabPop 320ms var(--ease-spring); }
-  @keyframes tabPop {
-    0%   { transform: scale(0.92); }
-    55%  { transform: scale(1.06); }
-    100% { transform: scale(1); }
-  }
-
-  /* кнопка play мягко «толкает» при старте */
-  .btn-play.playing { animation: playPulse 460ms var(--ease-out); }
-  @keyframes playPulse {
-    0%   { transform: scale(0.9); }
-    45%  { transform: scale(1.06); }
-    100% { transform: scale(1); }
-  }
-
-  /* лёгкий свет сверху на тёмных экранах — чтобы фон не выглядел плоским */
-  #scrSettings::before {
-    content: "";
-    position: absolute;
+  /* полноэкранная обложка */
+  .cover-full {
+    position: fixed;
     inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    background: #000;
+    opacity: 0;
     pointer-events: none;
-    background: radial-gradient(120% 55% at 50% 0%, rgba(255, 255, 255, 0.045), transparent 62%);
-  }
-  #scrSettings > * { position: relative; }
-
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 1ms !important;
-      transition-duration: 1ms !important;
-    }
-    .panel.active { animation: none; }
-    /* бесконечные анимации при 1ms крутились бы как бешеные — гасим совсем */
-    .mesh-blob,
-    .edge-glow,
-    .mesh.pulse { animation: none !important; }
+    transition: opacity 0.26s ease;
   }
 
-  /* всплывающая подсказка (тост) */
+  .cover-full.open { opacity: 1; pointer-events: auto; }
+
+  .cover-full img {
+    width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     КОНТЕКСТНОЕ МЕНЮ (долгое нажатие)
+     ══════════════════════════════════════════════════════════════ */
+  .ctx-menu {
+    position: fixed;
+    z-index: 90;
+    min-width: 226px;
+    padding: 5px;
+    background: rgba(44, 44, 46, 0.93);
+    backdrop-filter: blur(26px) saturate(180%);
+    -webkit-backdrop-filter: blur(26px) saturate(180%);
+    border: 0.5px solid var(--glass-border);
+    border-radius: 14px;
+    box-shadow: 0 26px 60px rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transform: scale(0.94);
+    transform-origin: var(--ox, 20px) var(--oy, 20px);
+    pointer-events: none;
+    transition: opacity 0.16s, transform 0.16s var(--ease-ios);
+  }
+
+  .ctx-menu.open {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  .ctx-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 44px;
+    padding: 0 10px;
+    border-radius: 9px;
+    font-size: 16px;
+    color: var(--label);
+    text-align: left;
+  }
+
+  .ctx-item:active { background: rgba(255, 255, 255, 0.1); }
+  .ctx-item svg { width: 19px; height: 19px; flex: none; color: var(--secondary-label); }
+  .ctx-item.on { color: var(--accent); }
+  .ctx-item.on svg { color: var(--accent); fill: rgba(250, 35, 59, 0.2); }
+
+  /* ── тост ─────────────────────────────────────────────────── */
   .toast {
     position: fixed;
     left: 50%;
-    bottom: calc(92px + env(safe-area-inset-bottom));
-    z-index: 90;
-    max-width: 78vw;
+    bottom: calc(var(--dock-space) + 18px);
+    z-index: 95;
+    max-width: 86vw;
     padding: 10px 16px;
-    border-radius: 12px;
-    background: rgba(30, 33, 38, 0.94);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
+    border-radius: 20px;
+    background: rgba(44, 44, 46, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 0.5px solid var(--glass-border);
+    font-size: 14px;
+    font-weight: 500;
     text-align: center;
+    color: var(--label);
     opacity: 0;
-    transform: translate(-50%, 12px) scale(0.94);
+    transform: translate(-50%, 10px);
     pointer-events: none;
-    transition: opacity 200ms ease, transform 320ms cubic-bezier(0.2, 1.1, 0.3, 1);
+    transition: opacity 0.22s, transform 0.22s var(--ease-ios);
   }
-  .toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
 
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-  /* плашка с ошибкой — чтобы экран не оставался пустым молча */
+  /* ── фатальная ошибка ─────────────────────────────────────── */
   .fatal {
     position: fixed;
     left: 12px;
     right: 12px;
-    bottom: calc(96px + env(safe-area-inset-bottom));
-    z-index: 95;
+    bottom: calc(var(--safe-b) + 12px);
+    z-index: 99;
     padding: 12px 14px;
-    border-radius: 12px;
-    background: rgba(58, 22, 26, 0.96);
-    border: 1px solid rgba(255, 90, 100, 0.35);
-    color: #ffd7da;
-    font-size: 12px;
-    line-height: 1.4;
-    word-break: break-word;
+    border-radius: 14px;
+    background: rgba(255, 69, 58, 0.16);
+    border: 0.5px solid rgba(255, 69, 58, 0.4);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.35;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
-  .fatal b { display: block; margin-bottom: 4px; color: #ff8b94; }
 
+  .fatal b {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 13px;
+    color: var(--red);
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     АДАПТИВ
+     ══════════════════════════════════════════════════════════════ */
+  @media (min-width: 500px) {
+    .album-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (min-width: 700px) {
+    .album-grid { grid-template-columns: repeat(4, 1fr); }
+    .lib-head, .scroll { max-width: 720px; margin-left: auto; margin-right: auto; width: 100%; }
+    .cover-wrap { max-width: 380px; }
+  }
+
+  @media (max-height: 700px) {
+    .cover-wrap { max-width: 250px; }
+    .title { font-size: 20px; }
+    .controls { margin-top: 8px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 </style>
 </head>
+
 <body>
 
-<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""><div class="mesh"><span class="mesh-blob blob-1"></span><span class="mesh-blob blob-2"></span><span class="mesh-blob blob-3"></span></div></div>
-<div class="edge-glow"></div>
-
-<!-- ══════════ STAGE ══════════ -->
+<!-- ══════════ КОНТЕНТ: библиотека + альбом ══════════ -->
 <div class="stage" id="stage">
 
   <!-- ── экран 1: библиотека ── -->
   <section class="screen" id="scrLibrary">
     <div class="lib-head">
-      <div class="brand-row">
-        <header class="brand"><b>JT</b><i>·</i><span>без мата</span></header>
+      <div class="lib-title-row">
+        <div>
+          <div class="brand-eyebrow"><b>JT</b> · без мата</div>
+          <h1 class="large-title" id="libTitle">Слушать</h1>
+        </div>
+        <button class="gear-btn" id="settingsBtn" aria-label="Настройки">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
       </div>
 
       <div class="search-row">
@@ -2340,6 +2030,7 @@
         <button class="sort-btn" id="sortBtn">Новые</button>
         <div class="sort-menu" id="sortMenu"></div>
       </div>
+
       <div class="search-history" id="searchHistory"></div>
     </div>
 
@@ -2350,23 +2041,22 @@
     </div>
 
     <div class="list-fade"></div>
-
   </section>
 
   <!-- ── экран 2: альбом ── -->
   <section class="screen" id="scrAlbum">
     <div class="navbar">
       <button class="nav-btn" id="albumBack" aria-label="Назад в библиотеку">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></svg>
       </button>
     </div>
-    <div class="scroll" style="padding-top:0">
+    <div class="scroll" style="padding-bottom:calc(var(--dock-space) + 24px)">
       <div class="album-hero">
         <img id="albumCover" alt="">
         <div class="album-hero-name" id="albumName"></div>
         <div class="album-hero-sub" id="albumSub"></div>
         <button class="play-album" id="albumPlay">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
           Слушать
         </button>
       </div>
@@ -2374,74 +2064,70 @@
     </div>
   </section>
 
-  <!-- ── мини-плеер ── -->
-  <div class="dock" id="dock">
-    <div class="mini-slot">
-  <div class="mini" id="mini">
-    <img class="mini-cover" id="miniCover" alt="">
-    <div class="mini-info" id="miniInfo">
-      <div class="mini-title" id="miniTitle"></div>
-      <div class="mini-sub" id="miniSub"></div>
-    </div>
-    <button class="mini-skip" id="miniPrev" aria-label="Предыдущий трек">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1Zm11.7.4a1 1 0 0 1 .3.7v11a1 1 0 0 1-1.55.83l-8.2-5.5a1 1 0 0 1 0-1.66l8.2-5.5a1 1 0 0 1 1.25.13Z"/></svg>
-    </button>
-    <button class="mini-skip" id="miniNext" aria-label="Следующий трек">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1ZM5.8 5.9a1 1 0 0 1 1.25-.13l8.2 5.5a1 1 0 0 1 0 1.66l-8.2 5.5A1 1 0 0 1 5.5 17.6V6.6a1 1 0 0 1 .3-.7Z"/></svg>
-    </button>
-    <button class="mini-btn" id="miniPlay" aria-label="Играть">
-      <span class="icon-swap">
-        <svg class="i-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8.2 4.6a1 1 0 0 1 1.02.05l10 6.9a1 1 0 0 1 0 1.65l-10 6.9A1 1 0 0 1 7.7 19.3V5.7a1 1 0 0 1 .5-.1Z"/></svg>
-        <svg class="i-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="4.5" width="4" height="15" rx="1.4"/><rect x="13.5" y="4.5" width="4" height="15" rx="1.4"/></svg>
-      </span>
-    </button>
-    <button class="mini-close" id="miniClose" aria-label="Остановить">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-      </svg>
-    </button>
-    <div class="mini-progress"><i id="miniFill"></i></div>
-  </div>
-    </div>
-    <nav class="tabbar">
-      <div class="tabbar-pill" id="tabPill"></div>
-      <button class="tabbar-btn active" data-tab="all">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-        <span class="tab-icon" data-icon="all"></span>
-        <span>Все</span>
-      </button>
-      <button class="tabbar-btn" data-tab="albums">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2.5"/></svg>
-        <span class="tab-icon" data-icon="albums"></span>
-        <span>Альбомы</span>
-      </button>
-      <button class="tabbar-btn" data-tab="fav">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-        <span class="tab-icon" data-icon="fav"></span>
-        <span>Избранное</span>
-      </button>
-      <button class="tabbar-btn" id="settingsBtn">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        <span class="tab-icon" data-icon="settings"></span>
-        <span>Настройки</span>
-      </button>
-    </nav>
-  </div>
-
 </div>
 
-<!-- ══════════ ЭКРАН 4: НАСТРОЙКИ ══════════ -->
+<!-- ══════════ ДОК: мини-плеер + таб-бар ══════════ -->
+<div class="dock" id="dock">
+  <div class="mini-slot">
+    <div class="mini" id="mini">
+      <img class="mini-cover" id="miniCover" alt="">
+      <div class="mini-info" id="miniInfo">
+        <span class="mini-title" id="miniTitle"></span>
+        <span class="mini-dot">·</span>
+        <span class="mini-sub" id="miniSub"></span>
+      </div>
+      <button class="mini-btn" id="miniPlay" aria-label="Играть">
+        <span class="icon-swap">
+          <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8.2 4.6a1 1 0 0 1 1.02.05l10 6.9a1 1 0 0 1 0 1.65l-10 6.9A1 1 0 0 1 7.7 19.3V5.7a1 1 0 0 1 .5-.1Z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="4.5" width="4" height="15" rx="1.4"/><rect x="13.5" y="4.5" width="4" height="15" rx="1.4"/></svg>
+        </span>
+      </button>
+      <button class="mini-btn" id="miniNext" aria-label="Следующий трек">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1ZM5.8 5.9a1 1 0 0 1 1.25-.13l8.2 5.5a1 1 0 0 1 0 1.66l-8.2 5.5A1 1 0 0 1 5.5 17.6V6.6a1 1 0 0 1 .3-.7Z"/></svg>
+      </button>
+      <!-- скрыты: логика осталась, в новом дизайне кнопок только две -->
+      <button class="mini-btn" id="miniPrev" aria-label="Предыдущий трек" aria-hidden="true" tabindex="-1"></button>
+      <button class="mini-btn" id="miniClose" aria-label="Остановить" aria-hidden="true" tabindex="-1"></button>
+      <div class="mini-progress"><i id="miniFill"></i></div>
+    </div>
+  </div>
+
+  <nav class="tabbar">
+    <div class="tabbar-pill" id="tabPill"></div>
+    <button class="tabbar-btn active" data-tab="all">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M10.2 8.5 16 12l-5.8 3.5z" fill="currentColor" stroke="none"/></svg>
+      <span class="tab-icon" data-icon="all"></span>
+      <span>Слушать</span>
+    </button>
+    <button class="tabbar-btn" data-tab="albums">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="3.2" width="7.4" height="7.4" rx="2"/><rect x="13.4" y="3.2" width="7.4" height="7.4" rx="2"/><rect x="3.2" y="13.4" width="7.4" height="7.4" rx="2"/><rect x="13.4" y="13.4" width="7.4" height="7.4" rx="2"/></svg>
+      <span class="tab-icon" data-icon="albums"></span>
+      <span>Обзор</span>
+    </button>
+    <button class="tabbar-btn" data-tab="fav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18V5.5l10-1.7V16"/><circle cx="5.6" cy="18" r="2.6"/><circle cx="15.6" cy="16.2" r="2.6"/></svg>
+      <span class="tab-icon" data-icon="fav"></span>
+      <span>Медиатека</span>
+    </button>
+    <button class="tabbar-btn" id="tabSearch" aria-label="Поиск">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.2"/><path d="m20 20-3.6-3.6"/></svg>
+      <span class="tab-icon" data-icon="search"></span>
+      <span>Поиск</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════ ЭКРАН: НАСТРОЙКИ ══════════ -->
 <div class="layer">
 <section class="screen" id="scrSettings">
   <div class="navbar">
     <button class="nav-btn" id="settingsBack" aria-label="Назад">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></svg>
     </button>
     <span class="nav-title">Настройки</span>
   </div>
 
-  <div class="scroll" style="padding-top:0">
+  <div class="scroll" style="padding-bottom:0">
     <div class="set-group" id="setGroup1">
       <div class="set-group-title">Воспроизведение</div>
       <div class="set-row">
@@ -2522,29 +2208,31 @@
   </div>
 </section>
 
-<!-- ══════════ ЭКРАН 3: ПЛЕЕР ══════════ -->
+<!-- ══════════ ЭКРАН: ПОЛНОЭКРАННЫЙ ПЛЕЕР ══════════ -->
 <section class="screen" id="scrPlayer">
+
+  <!-- фон: Mesh Aurora из цветов обложки -->
+  <div class="ambient">
+    <img id="ambA" alt=""><img id="ambB" alt="">
+    <div class="mesh"><span class="mesh-blob blob-1"></span><span class="mesh-blob blob-2"></span><span class="mesh-blob blob-3"></span></div>
+    <div class="noise"></div>
+    <div class="veil"></div>
+  </div>
+  <div class="edge-glow"></div>
+
   <div class="player-top" id="playerTop">
-    <div class="top-left">
+    <div class="grabber"></div>
+    <div class="ptop-row">
       <button class="icon-btn" id="closePlayer" aria-label="Свернуть">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
       </button>
-      <button class="speed-btn" id="speedBtn" aria-label="Скорость">1×</button>
-      <button class="icon-btn" id="sleepBtn" aria-label="Таймер сна">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4"/><path d="M12 14v-4"/><circle cx="12" cy="14" r="8"/></svg>
-      </button>
-    </div>
-    <span class="player-label">Сейчас играет</span>
-    <div class="top-right">
-      <button class="icon-btn" id="queueBtn" aria-label="Очередь">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h12"/><path d="M3 12h12"/><path d="M3 18h8"/><path d="m16 14 5 3-5 3z"/></svg>
-      </button>
-      <button class="icon-btn" id="infoBtn" aria-label="О треке">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-      </button>
-      <button class="icon-btn" id="favBtn" aria-label="В избранное">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-      </button>
+      <span class="player-label">Сейчас играет</span>
+      <div class="ptop-right">
+        <button class="speed-btn" id="speedBtn" aria-label="Скорость">1×</button>
+        <button class="icon-btn" id="sleepBtn" aria-label="Таймер сна">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10.5V14"/><path d="M9.5 3.2h5"/><path d="M12 3.2V6"/></svg>
+        </button>
+      </div>
     </div>
     <div class="timer-menu" id="timerMenu"></div>
   </div>
@@ -2555,8 +2243,18 @@
     </div>
 
     <div class="meta">
-      <div class="title" id="title">Загрузка</div>
-      <div class="artist" id="artist">подождите</div>
+      <div class="meta-text">
+        <div class="title" id="title">Загрузка</div>
+        <div class="artist" id="artist">подождите</div>
+      </div>
+      <div class="meta-actions">
+        <button class="icon-btn fav" id="favBtn" aria-label="В избранное">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        </button>
+        <button class="icon-btn" id="infoBtn" aria-label="О треке">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><circle cx="6.6" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="17.4" cy="12" r="1.15" fill="currentColor" stroke="none"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="scrub" id="scrub">
@@ -2568,33 +2266,48 @@
 
     <div class="controls">
       <button class="btn btn-sm" id="shuffleBtn" aria-label="Перемешать">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.8-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.8-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
       </button>
       <button class="btn btn-side" id="prevBtn" aria-label="Назад">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1Zm11.7.4a1 1 0 0 1 .3.7v11a1 1 0 0 1-1.55.83l-8.2-5.5a1 1 0 0 1 0-1.66l8.2-5.5a1 1 0 0 1 1.25.13Z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1Zm11.7.4a1 1 0 0 1 .3.7v11a1 1 0 0 1-1.55.83l-8.2-5.5a1 1 0 0 1 0-1.66l8.2-5.5a1 1 0 0 1 1.25.13Z"/></svg>
       </button>
       <button class="btn btn-play" id="playBtn" aria-label="Играть">
         <span class="icon-swap">
-          <svg class="i-play" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8.2 4.6a1 1 0 0 1 1.02.05l10 6.9a1 1 0 0 1 0 1.65l-10 6.9A1 1 0 0 1 7.7 19.3V5.7a1 1 0 0 1 .5-.1Z"/></svg>
-          <svg class="i-pause" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="4.5" width="4" height="15" rx="1.4"/><rect x="13.5" y="4.5" width="4" height="15" rx="1.4"/></svg>
+          <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8.2 4.6a1 1 0 0 1 1.02.05l10 6.9a1 1 0 0 1 0 1.65l-10 6.9A1 1 0 0 1 7.7 19.3V5.7a1 1 0 0 1 .5-.1Z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="4.5" width="4" height="15" rx="1.4"/><rect x="13.5" y="4.5" width="4" height="15" rx="1.4"/></svg>
         </span>
       </button>
       <button class="btn btn-side" id="nextBtn" aria-label="Далее">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1ZM5.8 5.9a1 1 0 0 1 1.25-.13l8.2 5.5a1 1 0 0 1 0 1.66l-8.2 5.5A1 1 0 0 1 5.5 17.6V6.6a1 1 0 0 1 .3-.7Z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1ZM5.8 5.9a1 1 0 0 1 1.25-.13l8.2 5.5a1 1 0 0 1 0 1.66l-8.2 5.5A1 1 0 0 1 5.5 17.6V6.6a1 1 0 0 1 .3-.7Z"/></svg>
       </button>
       <button class="btn btn-sm" id="repeatBtn" aria-label="Повтор выкл">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
       </button>
     </div>
 
     <div class="volume" id="volumeRow">
       <button class="btn" id="muteBtn" aria-label="Звук">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" id="volIcon"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor" id="volIcon"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
       </button>
-    <div class="vslider" id="volSlider">
-      <div class="vslider-track"><div class="vslider-fill" id="volFill"></div></div>
-      <div class="vslider-knob" id="volKnob"></div>
+      <div class="vslider" id="volSlider">
+        <div class="vslider-track"><div class="vslider-fill" id="volFill"></div></div>
+        <div class="vslider-knob" id="volKnob"></div>
+      </div>
+      <span class="vol-max" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </span>
     </div>
+
+    <div class="service-row">
+      <button id="lyricsBtn" aria-label="Текст песни">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 4.6h13.6a2.2 2.2 0 0 1 2.2 2.2v8a2.2 2.2 0 0 1-2.2 2.2h-7.4L6.3 20.8V17H5.2A2.2 2.2 0 0 1 3 14.8v-8a2.2 2.2 0 0 1 2.2-2.2Z"/><path d="M9.3 9.6v2.6"/><path d="M12.7 9.6v2.6"/></svg>
+      </button>
+      <button id="airplayBtn" aria-label="AirPlay">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17.5H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1"/><path d="m12 14.5 5.5 6h-11z" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <button id="queueBtn" aria-label="Очередь">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5h12"/><path d="M3.5 12h12"/><path d="M3.5 17.5h7"/><path d="m16.5 13.5 5 3.5-5 3.5z" fill="currentColor" stroke="none"/></svg>
+      </button>
     </div>
   </div>
 
@@ -2682,7 +2395,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '2.0.0';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -6228,6 +5941,69 @@ document.addEventListener('pointerdown', (e) => {
 
 document.addEventListener('scroll', () => closeCtxMenu(), true);
 window.addEventListener('resize', () => closeCtxMenu());
+
+/* ══════════════════════════════════════════════════════════
+   ОБВЯЗКА НОВОГО ДИЗАЙНА
+   Только добавления: бизнес-логика выше не меняется
+   ══════════════════════════════════════════════════════════ */
+
+/* крупный заголовок следует за активной вкладкой */
+const LIB_TITLES = { all: 'Слушать', albums: 'Обзор', fav: 'Медиатека' };
+const libTitle = $('libTitle');
+const tabSearch = $('tabSearch');
+
+tabBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const name = btn.dataset.tab;
+    if (libTitle && LIB_TITLES[name]) libTitle.textContent = LIB_TITLES[name];
+    if (tabSearch) tabSearch.classList.remove('active');
+    const scroller = scrLibrary.querySelector('.scroll');
+    if (scroller) scroller.scrollTop = 0;
+  });
+});
+
+/* вкладка «Поиск»: поднимает список наверх и ставит курсор в поле */
+if (tabSearch) {
+  tabSearch.addEventListener('click', () => {
+    if (libTitle) libTitle.textContent = 'Поиск';
+    tabBtns.forEach((b) => b.classList.remove('active'));
+    tabSearch.classList.add('active');
+    const scroller = scrLibrary.querySelector('.scroll');
+    if (scroller) scroller.scrollTop = 0;
+    try { searchInput.focus(); } catch (e) {}
+    if (tg && tg.HapticFeedback) {
+      try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
+    }
+  });
+}
+
+/* оставшееся время со знаком минус — как в iOS.
+   Слушатель добавлен последним, поэтому перекрывает запись общей длительности */
+audio.addEventListener('timeupdate', () => {
+  if (!audio.duration || !isFinite(audio.duration)) return;
+  const left = Math.max(0, audio.duration - audio.currentTime);
+  tDur.textContent = '-' + fmt(left);
+});
+
+/* сервисный ряд: честно говорим, что функция недоступна в вебе */
+const lyricsBtn = $('lyricsBtn');
+if (lyricsBtn) {
+  lyricsBtn.addEventListener('click', () => {
+    toast('Текста песни для этого трека нет');
+    hapticTap();
+  });
+}
+
+const airplayBtn = $('airplayBtn');
+if (airplayBtn) {
+  airplayBtn.addEventListener('click', () => {
+    toast('AirPlay работает только в нативном приложении');
+    hapticTap();
+  });
+}
+
+/* стартовое состояние обложки: пока ничего не играет — она сжата */
+document.body.classList.add('paused');
 
 /* ══════════════════════════════════════════════════════════
    Старт
