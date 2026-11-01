@@ -26,8 +26,8 @@
     /* ── текст ── */
     --label: #ffffff;
     --secondary-label: rgba(235, 235, 245, 0.6);
-    --tertiary-label: rgba(235, 235, 245, 0.3);
-    --faint: rgba(235, 235, 245, 0.3);   /* используется в JS */
+    --tertiary-label: rgba(235, 235, 245, 0.42);
+    --faint: rgba(235, 235, 245, 0.42);  /* используется в JS */
 
     /* ── линии и акцент ── */
     --separator: rgba(84, 84, 88, 0.36);
@@ -84,7 +84,7 @@
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", -apple-system-subheadline, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
     color: var(--label);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -386,6 +386,7 @@
   .search-wrap input::-webkit-search-cancel-button { display: none; }
 
   .search-clear {
+    position: relative;
     display: none;
     width: 26px;
     height: 26px;
@@ -397,6 +398,16 @@
   }
 
   .search-wrap.filled .search-clear { display: grid; }
+
+  .search-clear::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
 
 
 
@@ -612,6 +623,14 @@
 
   .row:active,
   .row.pressing { background: var(--surface-3); }
+
+  .row,
+  .album-card,
+  .mini {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 
   /* разделитель начинается строго от текстового блока, не под обложкой */
   .row::after {
@@ -1180,6 +1199,23 @@
     display: block;
   }
 
+  .cover-wrap.swipe-next { animation: coverNext 0.34s var(--ease-ios); }
+  .cover-wrap.swipe-prev { animation: coverPrev 0.34s var(--ease-ios); }
+
+  @keyframes coverNext {
+    0%   { transform: translateX(0) scale(1); opacity: 1; }
+    45%  { transform: translateX(-26%) scale(0.92); opacity: 0; }
+    55%  { transform: translateX(26%) scale(0.92); opacity: 0; }
+    100% { transform: translateX(0) scale(1); opacity: 1; }
+  }
+
+  @keyframes coverPrev {
+    0%   { transform: translateX(0) scale(1); opacity: 1; }
+    45%  { transform: translateX(26%) scale(0.92); opacity: 0; }
+    55%  { transform: translateX(-26%) scale(0.92); opacity: 0; }
+    100% { transform: translateX(0) scale(1); opacity: 1; }
+  }
+
   .cover-wrap.dim { opacity: 0.55; }
   body.scrubbing .cover-wrap { transform: scale(0.94); }
 
@@ -1663,7 +1699,7 @@
   #miniPrev { display: none; }
 
   #miniClose {
-    width: 38px;
+    width: 44px;
     color: var(--tertiary-label);
   }
 
@@ -1698,7 +1734,7 @@
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.01em;
-    color: rgba(235, 235, 245, 0.4);
+    color: rgba(235, 235, 245, 0.46);
     transition: color 0.18s;
   }
 
@@ -1769,6 +1805,7 @@
   }
 
   .sheet.open { transform: none; }
+  .sheet.dragging { transition: none; }
 
   .sheet-grab {
     width: 36px;
@@ -1843,6 +1880,7 @@
   }
 
   .sheet-ctl-pill {
+    position: relative;
     height: 34px;
     padding: 0 14px;
     border-radius: 17px;
@@ -1855,6 +1893,17 @@
   .sheet-ctl-pill.on {
     background: rgba(250, 35, 59, 0.16);
     color: var(--accent);
+  }
+
+  /* визуально 34px, зона нажатия 44px */
+  .sheet-ctl-pill::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
   }
 
   .info-row {
@@ -2088,12 +2137,15 @@
 
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+  /* в плеере док скрыт — считаем отступ от его нижних контролов */
+  body.player-open .toast { bottom: calc(var(--safe-b) + 96px); }
+
   /* ── фатальная ошибка ─────────────────────────────────────── */
   .fatal {
     position: fixed;
     left: 12px;
     right: 12px;
-    bottom: calc(var(--safe-b) + 12px);
+    bottom: calc(var(--dock-space) + 12px);
     z-index: 99;
     padding: 12px 14px;
     border-radius: 14px;
@@ -2112,6 +2164,29 @@
     font-size: 13px;
     color: var(--red);
   }
+
+  .fatal span { display: block; }
+
+  .fatal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .fatal-actions button {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .fatal-actions button:first-child { background: var(--accent); }
+
+  /* плашка уже всё сказала — пустое состояние не дублируем */
+  body.has-fatal .empty { display: none; }
 
   /* ══════════════════════════════════════════════════════════════
      АДАПТИВ
@@ -2264,7 +2339,7 @@
       <svg class="ico-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18V5.5l10-1.7V16"/><circle cx="5.6" cy="18" r="2.6"/><circle cx="15.6" cy="16.2" r="2.6"/></svg>
       <svg class="ico-fill" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 18V5.6l10-1.7V16" stroke-width="2.6"/><circle cx="5.8" cy="18" r="2.9" fill="currentColor" stroke="none"/><circle cx="15.8" cy="16.2" r="2.9" fill="currentColor" stroke="none"/></svg>
       <span class="tab-icon" data-icon="fav"></span>
-      <span>Медиатека</span>
+      <span>Избранное</span>
     </button>
     <button class="tabbar-btn" id="tabSearch" aria-label="Поиск">
       <svg class="ico-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.2"/><path d="m20 20-3.6-3.6"/></svg>
@@ -2315,10 +2390,6 @@
           <span class="switch-knob"></span>
         </button>
       </div>
-    </div>
-
-    <div class="set-group" id="setGroup3">
-      <div class="set-group-title">Данные</div>
       <div class="set-row">
         <div class="set-label">Анимация свечения</div>
         <button class="switch" data-key="glow" aria-label="Анимация свечения">
@@ -2338,6 +2409,10 @@
           <span class="switch-knob"></span>
         </button>
       </div>
+    </div>
+
+    <div class="set-group" id="setGroup3">
+      <div class="set-group-title">Данные</div>
       <div class="set-row">
         <div class="set-label">Кэшировать треки офлайн</div>
         <button class="switch" data-key="offline" aria-label="Офлайн-кэш">
@@ -2464,8 +2539,8 @@
       <button id="lyricsBtn" aria-label="Текст песни">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 4.6h13.6a2.2 2.2 0 0 1 2.2 2.2v8a2.2 2.2 0 0 1-2.2 2.2h-7.4L6.3 20.8V17H5.2A2.2 2.2 0 0 1 3 14.8v-8a2.2 2.2 0 0 1 2.2-2.2Z"/><path d="M9.3 9.6v2.6"/><path d="M12.7 9.6v2.6"/></svg>
       </button>
-      <button id="airplayBtn" aria-label="AirPlay">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17.5H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1"/><path d="m12 14.5 5.5 6h-11z" fill="currentColor" stroke="none"/></svg>
+      <button id="airplayBtn" aria-label="Поделиться треком">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5.2" r="2.8"/><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="18.8" r="2.8"/><path d="m8.5 10.6 7 5.6"/><path d="m15.5 7.8-7 5.6"/></svg>
       </button>
       <button id="queueBtn" aria-label="Очередь">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5h12"/><path d="M3.5 12h12"/><path d="M3.5 17.5h7"/><path d="m16.5 13.5 5 3.5-5 3.5z" fill="currentColor" stroke="none"/></svg>
@@ -2476,11 +2551,11 @@
   <!-- вспышки двойного тапа: −10 / +10 секунд -->
   <div class="seek-flash left" id="seekFlashLeft" aria-hidden="true">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7 7"/><path d="M12 5v14"/><path d="m5 5 7 7-7 7"/></svg>
-    <span>10 с</span>
+    <span>−10 с</span>
   </div>
   <div class="seek-flash right" id="seekFlashRight" aria-hidden="true">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7 7"/><path d="M12 5v14"/><path d="m5 5 7 7-7 7"/></svg>
-    <span>10 с</span>
+    <span>+10 с</span>
   </div>
 </section>
 </div>
@@ -2513,7 +2588,7 @@ const VOL_KEY = 'jt_volume_v1';
 
 const PLACEHOLDER = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300">' +
-  '<rect width="300" height="300" fill="#15181d"/>' +
+  '<rect width="300" height="300" fill="#1c1c1e"/>' +
   '<circle cx="150" cy="150" r="34" fill="none" stroke="#2a3038" stroke-width="6"/>' +
   '<circle cx="150" cy="150" r="7" fill="#2a3038"/>' +
   '</svg>'
@@ -2533,8 +2608,8 @@ if (tg) {
     if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
 
     // цвет шторки Telegram под фон приложения (иначе сверху светлая полоса)
-    if (tg.setHeaderColor) tg.setHeaderColor('#08090b');
-    if (tg.setBackgroundColor) tg.setBackgroundColor('#08090b');
+    if (tg.setHeaderColor) tg.setHeaderColor('#000000');
+    if (tg.setBackgroundColor) tg.setBackgroundColor('#000000');
   } catch (e) {}
 }
 
@@ -2740,7 +2815,31 @@ function showFatal(text) {
       el.className = 'fatal';
       document.body.appendChild(el);
     }
-    el.innerHTML = '<b>Ошибка</b>' + String(text || '').slice(0, 220);
+    el.innerHTML = '<b>Ошибка</b><span></span>';
+    el.querySelector('span').textContent = String(text || '').slice(0, 220);
+
+    if (!el.querySelector('.fatal-actions')) {
+      const bar = document.createElement('div');
+      bar.className = 'fatal-actions';
+
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.textContent = 'Повторить';
+      retry.addEventListener('click', () => location.reload());
+
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.textContent = 'Закрыть';
+      close.addEventListener('click', () => {
+        el.remove();
+        document.body.classList.remove('has-fatal');
+      });
+
+      bar.append(retry, close);
+      el.appendChild(bar);
+    }
+
+    document.body.classList.add('has-fatal');
   } catch (e) {}
 }
 
@@ -2801,11 +2900,15 @@ function splitArtists(raw) {
   let depth = 0;
   let buf = '';
 
-  for (const ch of text) {
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
     if (ch === '(' || ch === '[') depth += 1;
     if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1);
 
-    const sep = depth === 0 && (ch === ',' || (ch === '&' && hasFeat));
+    /* запятая перед «The …» — часть имени (Tyler, The Creator), а не разделитель */
+    const isTheName = ch === ',' && /^\s+the\s/i.test(text.slice(i + 1));
+    const sep = depth === 0 && !isTheName && (ch === ',' || (ch === '&' && hasFeat));
+
     if (sep) { parts.push(buf); buf = ''; continue; }
     buf += ch;
   }
@@ -2883,7 +2986,7 @@ function isPlaceholder(url) {
 
 function albumKeyOf(t) {
   const a = (t.album || '').trim();
-  return a && a.toLowerCase() !== 'сингл' ? a : '';
+  return a && ['сингл', 'single'].indexOf(a.toLowerCase()) === -1 ? a : '';
 }
 
 function buildAlbumCovers() {
@@ -3216,7 +3319,7 @@ function renderAll() {
     return;
   }
   const frag = document.createDocumentFragment();
-  idx.forEach((i, n) => frag.appendChild(makeRow(i, n * 24)));
+  idx.forEach((i, n) => frag.appendChild(makeRow(i, Math.min(n, 12) * 16)));
   panels.all.appendChild(frag);
   syncPlayingRow();
 }
@@ -3227,7 +3330,7 @@ function renderFav() {
   if (!idx.length) {
     panels.fav.innerHTML = searchQuery
       ? emptyState()
-      : '<div class="empty"><b>В избранном пусто</b>Нажми ♥ у трека, чтобы сохранить</div>';
+      : '<div class="empty"><b>В избранном пусто</b>Долгое нажатие на трек → «В избранное»</div>';
     return;
   }
   const frag = document.createDocumentFragment();
@@ -3236,12 +3339,14 @@ function renderFav() {
   bar.className = 'list-actions';
   const playAll = document.createElement('button');
   playAll.className = 'chip';
-  playAll.textContent = '▶ Играть всё';
+  playAll.innerHTML =
+    '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">' +
+    '<path d="M8 5v14l11-7z"/></svg> Играть всё';
   playAll.addEventListener('click', () => playList(idx.slice()));
   bar.appendChild(playAll);
   frag.appendChild(bar);
 
-  idx.forEach((i, n) => frag.appendChild(makeRow(i, n * 24)));
+  idx.forEach((i, n) => frag.appendChild(makeRow(i, Math.min(n, 12) * 16)));
   panels.fav.appendChild(frag);
   syncPlayingRow();
 }
@@ -3267,12 +3372,16 @@ function renderAlbums() {
   if (searchQuery) {
     names = names.filter((name) => groups.get(name).some((i) => matches(tracks[i])));
   }
-  if (sortMode === 'new') names = names.reverse();
+  if (sortMode === 'new') {
+    // «новые» для альбома — по самому свежему треку внутри
+    const newest = (name) => Math.max.apply(null, groups.get(name));
+    names.sort((a, b) => newest(b) - newest(a));
+  }
 
   if (!names.length) {
     panels.albums.innerHTML = searchQuery
       ? emptyState()
-      : '<div class="empty"><b>Альбомов нет</b>Все треки пока синглы — они в «Все»</div>';
+      : '<div class="empty"><b>Альбомов нет</b>Все треки пока синглы — они во вкладке «Слушать»</div>';
     return;
   }
 
@@ -3334,9 +3443,8 @@ function renderActive() {
    ══════════════════════════════════════════════════════════ */
 function renderAlbumPage(name) {
   const groups = groupByAlbum();
-  const idxs = (groups.get(name) || []).slice().sort((a, b) =>
-    tracks[a].title.localeCompare(tracks[b].title, 'ru')
-  );
+  // порядок добавления = порядок треклиста; алфавит ломал задуманный порядок
+  const idxs = (groups.get(name) || []).slice().sort((a, b) => a - b);
 
   $('albumName').textContent = name;
   const yrs = [...new Set(idxs.map((i) => tracks[i].year).filter(Boolean))].sort();
@@ -3352,7 +3460,7 @@ function renderAlbumPage(name) {
 
   const box = $('albumTracks');
   box.innerHTML = '';
-  idxs.forEach((i, k) => box.appendChild(makeRow(i, k * 24)));
+  idxs.forEach((i, k) => box.appendChild(makeRow(i, Math.min(k, 12) * 16)));
   syncPlayingRow();
 
   $('albumPlay').onclick = () => {
@@ -3864,7 +3972,7 @@ function play() {
   const fail = () => {
     audio.volume = volume;      // иначе останется на нуле и будет тишина
     setPlayingUI(false);
-    artistEl.textContent = 'Нажми ▶ чтобы играть';
+    setMarquee(artistEl, 'Нажми play, чтобы играть');
   };
 
   if (p && p.then) p.then(ok).catch(fail);
@@ -3950,6 +4058,11 @@ function updateMediaSession(t) {
     navigator.mediaSession.setActionHandler('pause', () => audio.pause());
     navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
     navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack(false));
+    navigator.mediaSession.setActionHandler('seekto', (d) => {
+      if (d && typeof d.seekTime === 'number') audio.currentTime = d.seekTime;
+    });
+    navigator.mediaSession.setActionHandler('seekbackward', (d) => seekBy(-((d && d.seekOffset) || 10)));
+    navigator.mediaSession.setActionHandler('seekforward', (d) => seekBy((d && d.seekOffset) || 10));
   } catch (e) {}
 }
 
@@ -4046,6 +4159,18 @@ function setupVolume() {
   lastVolume = volume > 0 ? volume : 1;
   applyVolume();
 
+  muteBtn.addEventListener('click', () => {
+    if (volume > 0.001) {
+      lastVolume = volume;
+      volume = 0;
+    } else {
+      volume = lastVolume || 1;
+    }
+    applyVolume();
+    saveVolume(volume);
+    hapticTap();
+  });
+
   if (IS_IOS) {
     // iOS не отдаёт системную громкость вебу: ползунок прячем классом,
     // ноды volFill/volKnob остаются в DOM и paintVolume работает как раньше
@@ -4059,17 +4184,6 @@ function setupVolume() {
   }, () => {
     saveVolume(volume);
     if (volume > 0) lastVolume = volume;
-  });
-
-  muteBtn.addEventListener('click', () => {
-    if (volume > 0.001) {
-      lastVolume = volume;
-      volume = 0;
-    } else {
-      volume = lastVolume || 1;
-    }
-    applyVolume();
-    saveVolume(volume);
   });
 }
 
@@ -4237,7 +4351,7 @@ function openQueue() {
   sheetHead.textContent = 'Далее';
   infoBody.innerHTML = '';
 
-  const up = queue.slice(queuePos + 1, queuePos + 11);
+  const up = queue.slice(queuePos + 1);
 
   if (!up.length) {
     const d = document.createElement('div');
@@ -4724,6 +4838,7 @@ $('settingsBack').addEventListener('click', closeSettings);
 $('resetState').addEventListener('click', () => {
   clearState();
   pendingSeek = null;
+  toast('Позиция забыта');
   if (tg && tg.HapticFeedback) {
     try { tg.HapticFeedback.notificationOccurred('success'); } catch (e) {}
   }
@@ -4895,9 +5010,14 @@ $('miniNext').addEventListener('click', (e) => {
   miniSwipe(1);
 });
 
+/* закрытие мини-плеера — не разрушительное: пауза и скрытие карточки.
+   Очередь и позиция остаются, трек можно вернуть из «Далее» или перезапуском */
 $('miniClose').addEventListener('click', (e) => {
   e.stopPropagation();
-  stopPlayback();
+  audio.pause();
+  dock.classList.remove('has-track');
+  setPlayingUI(false);
+  hapticTap();
 });
 
 miniPlay.addEventListener('click', (e) => {
@@ -4916,7 +5036,22 @@ favBtn.addEventListener('click', () => {
 shuffleBtn.addEventListener('click', () => {
   shuffle = !shuffle;
   shuffleBtn.classList.toggle('on', shuffle);
-  buildQueue(currentIndex >= 0 ? currentIndex : 0);
+
+  if (shuffle && queue.length && queuePos >= 0) {
+    // перемешиваем только будущее: текущий трек и «играть следующим» на месте
+    const head = queue.slice(0, queuePos + 1);
+    const tail = queue.slice(queuePos + 1);
+    for (let i = tail.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = tail[i];
+      tail[i] = tail[j];
+      tail[j] = tmp;
+    }
+    queue = head.concat(tail);
+    saveQueue();
+  } else {
+    buildQueue(currentIndex >= 0 ? currentIndex : 0);
+  }
   if (tg && tg.HapticFeedback) {
     try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
   }
@@ -4941,7 +5076,7 @@ repeatBtn.addEventListener('click', () => {
 
 audio.addEventListener('play', () => {
   setPlayingUI(true);
-  if (currentIndex >= 0) artistEl.textContent = artistLine(tracks[currentIndex]);
+  if (currentIndex >= 0) setMarquee(artistEl, artistLine(tracks[currentIndex]));
 });
 
 audio.addEventListener('pause', () => {
@@ -4951,7 +5086,8 @@ audio.addEventListener('pause', () => {
   /* остановились — таймер сна больше не нужен. Проверяем audio.paused:
      при смене трека плеер тоже кидает pause, но там мы уже запускаем
      следующий и глушить таймер нельзя */
-  if (audio.paused && sleepMode !== 'off') {
+  /* на конце трека pause приходит раньше ended — не гасим режим «в конце трека» */
+  if (audio.paused && !audio.ended && sleepMode !== 'off') {
     clearTimeout(sleepTimerId);
     sleepTimerId = 0;
     sleepMode = 'off';
@@ -4977,6 +5113,21 @@ audio.addEventListener('timeupdate', () => {
   // остаток со знаком минус — считаем в том же тике, без второго слушателя
   tDur.textContent = '-' + fmt(Math.max(0, audio.duration - audio.currentTime));
 
+  // прогресс на экране блокировки (не чаще раза в секунду)
+  if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+    const now = Date.now();
+    if (now - mediaPosAt > 900) {
+      mediaPosAt = now;
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration,
+          position: Math.min(audio.currentTime, audio.duration),
+          playbackRate: audio.playbackRate || 1
+        });
+      } catch (e) {}
+    }
+  }
+
   // пока тянем ползунок — не перебиваем его позицию
   if (!scrub.classList.contains('dragging')) {
     scrubFill.style.width = p + '%';
@@ -4995,15 +5146,15 @@ audio.addEventListener('ended', () => {
 
 audio.addEventListener('error', () => {
   setPlayingUI(false);
-  if (currentIndex >= 0) artistEl.textContent = '⚠️ Не удалось загрузить аудио';
+  if (currentIndex >= 0) setMarquee(artistEl, 'Не удалось загрузить аудио');
 });
 
 audio.addEventListener('waiting', () => {
-  if (currentIndex >= 0) artistEl.textContent = 'буферизация…';
+  if (currentIndex >= 0) setMarquee(artistEl, 'буферизация…');
 });
 
 audio.addEventListener('playing', () => {
-  if (currentIndex >= 0) artistEl.textContent = artistLine(tracks[currentIndex]);
+  if (currentIndex >= 0) setMarquee(artistEl, artistLine(tracks[currentIndex]));
 });
 
 /* во время перетаскивания только двигаем ползунок,
@@ -5370,7 +5521,10 @@ function countPlay() {
   const a = t.artist || '—';
   myStats.artists[a] = (myStats.artists[a] || 0) + 1;
 
-  const day = new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const day = d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
   myStats.days[day] = (myStats.days[day] || 0) + 1;
 
   statsDirty = true;
@@ -5549,7 +5703,7 @@ function renderSearchHistory() {
 searchInput.addEventListener('focus', renderSearchHistory);
 searchInput.addEventListener('click', renderSearchHistory);
 searchInput.addEventListener('blur', () => {
-  setTimeout(renderSearchHistory, 120);
+  setTimeout(renderSearchHistory, 260);
 });
 
 /* ══════════════════════════════════════════════════════════
@@ -5577,6 +5731,10 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+  /* вне открытого плеера стрелки и пробел отдаём странице:
+     иначе список нельзя пролистать с клавиатуры */
+  if (!playerOpen) return;
 
   switch (e.key) {
     case ' ':
@@ -5625,6 +5783,7 @@ document.addEventListener('keydown', (e) => {
    ══════════════════════════════════════════════════════════ */
 let lastAudioTime = 0;
 let lastStatsSave = 0;
+let mediaPosAt = 0;
 
 audio.addEventListener('playing', () => {
   countPlay();
@@ -5787,6 +5946,8 @@ let lastTapY = 0;
 
 function flashSeek(side) {
   const el = side === 'left' ? seekFlashL : seekFlashR;
+  const lbl = el.querySelector('span');
+  if (lbl) lbl.textContent = (side === 'left' ? '−10' : '+10') + ' с';
   el.classList.remove('show');
   void el.offsetWidth;
   el.classList.add('show');
@@ -6079,7 +6240,7 @@ function openCtxMenu(index, x, y) {
   mk(fav ? 'Убрать из избранного' : 'В избранное', CTX_ICONS.heart, fav ? 'on' : '',
     () => toggleFavorite(index, null));
 
-  if ((t.album || '').trim()) {
+  if (albumKeyOf(t)) {
     mk('Перейти к альбому', CTX_ICONS.album, '', () => {
       if (playerOpen) closePlayer();
       setTimeout(() => openAlbum(t.album), 220);
@@ -6122,7 +6283,7 @@ window.addEventListener('resize', () => closeCtxMenu());
    ══════════════════════════════════════════════════════════ */
 
 /* крупный заголовок следует за активной вкладкой */
-const LIB_TITLES = { all: 'Слушать', albums: 'Обзор', fav: 'Медиатека' };
+const LIB_TITLES = { all: 'Слушать', albums: 'Обзор', fav: 'Избранное' };
 const libTitle = $('libTitle');
 const tabSearch = $('tabSearch');
 
@@ -6161,6 +6322,13 @@ if (tabSearch) {
     tabBtns.forEach((b) => b.classList.remove('active'));
     tabSearch.classList.add('active');
     document.body.classList.add('search-mode');
+
+    // поиск ищет везде, а не только в открытой вкладке
+    if (activeTab !== 'all') {
+      activeTab = 'all';
+      Object.keys(panels).forEach((k) => panels[k].classList.toggle('active', k === 'all'));
+      renderAll();
+    }
 
     const scroller = scrLibrary.querySelector('.scroll');
     if (scroller) scroller.scrollTop = 0;
@@ -6265,10 +6433,11 @@ if (lyricsBtn) {
   });
 }
 
-const airplayBtn = $('airplayBtn');
-if (airplayBtn) {
-  airplayBtn.addEventListener('click', () => {
-    toast('AirPlay работает только в нативном приложении');
+const shareBtn = $('airplayBtn');
+if (shareBtn) {
+  shareBtn.addEventListener('click', () => {
+    if (currentIndex < 0) { toast('Сначала выбери трек'); return; }
+    shareTrack(tracks[currentIndex]);
     hapticTap();
   });
 }
@@ -6320,7 +6489,7 @@ document.body.classList.add('paused');
   const saved = loadState();
   if (saved && SORT_LABELS[saved.sort]) {
     sortMode = saved.sort;
-    sortBtn.textContent = SORT_LABELS[sortMode];
+    sortBtn.setAttribute('aria-label', 'Сортировка: ' + SORT_LABELS[sortMode]);
     sortBtn.classList.toggle('active', sortMode !== 'default');
   }
 
@@ -6369,7 +6538,7 @@ document.body.classList.add('paused');
     pendingSeek = Math.max(0, Number(saved.time) || 0);
   } else {
     titleEl.textContent = 'Ничего не играет';
-    artistEl.textContent = 'Выбери трек из списка';
+    setMarquee(artistEl, 'Выбери трек из списка');
     setCover(PLACEHOLDER);
   }
 })().catch((e) => showFatal('Запуск: ' + (e && e.message ? e.message : e)));
