@@ -1520,5 +1520,27 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c24c02112d544202b958470608706072.mp3",
     "cover": "https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png",
     "duration": 120
+  },
+  {
+    "title": "GLO",
+    "artist": "Scally Milano",
+    "album": "Пропаганда денег",
+    "year": "2022",
+    "release": "2022-04-15",
+    "featuring": [],
+    "producer": [
+      "FONFORINO",
+      "babyswishh1"
+    ],
+    "writers": [
+      "Scally Milano",
+      "FONFORINO",
+      "babyswishh1"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5bc40fdc67ae4c1a95c5a92cd07073c0.mp3",
+    "cover": "https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png",
+    "duration": 136
   }
 ]
