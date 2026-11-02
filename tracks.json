@@ -1476,5 +1476,29 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c71bcd2912bd48c4b742e1f1710c4b57.mp3",
     "cover": "https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png",
     "duration": 114
+  },
+  {
+    "title": "днями и ночами (days and nights)",
+    "artist": "BUSHIDO ZHO, Scally Milano & Полка (polkapretty)",
+    "album": "sweet and tearz",
+    "year": "2025",
+    "release": "2025-12-03",
+    "featuring": [],
+    "producer": [
+      "Wex",
+      "riileybeatz"
+    ],
+    "writers": [
+      "BUSHIDO ZHO",
+      "Scally Milano",
+      "Полка (polkapretty)",
+      "Wex",
+      "riileybeatz"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/f28834455e5c40f7b4098eac5e60ca62.mp3",
+    "cover": "https://images.genius.com/9a17ee0480a3623dfef7f154e6b83dc9.1000x1000x1.png",
+    "duration": 142
   }
 ]
