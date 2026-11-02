@@ -1500,5 +1500,25 @@
     "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/f28834455e5c40f7b4098eac5e60ca62.mp3",
     "cover": "https://images.genius.com/9a17ee0480a3623dfef7f154e6b83dc9.1000x1000x1.png",
     "duration": 142
+  },
+  {
+    "title": "Недоволен",
+    "artist": "Scally Milano",
+    "album": "Пропаганда денег",
+    "year": "2022",
+    "release": "2022-04-15",
+    "featuring": [],
+    "producer": [
+      "KILLHEEN"
+    ],
+    "writers": [
+      "KILLHEEN",
+      "Scally Milano"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c24c02112d544202b958470608706072.mp3",
+    "cover": "https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png",
+    "duration": 120
   }
 ]
