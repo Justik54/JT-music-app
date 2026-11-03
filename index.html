@@ -16,7 +16,10 @@
     --text: #f4f7fa;
     --sub: rgba(244, 247, 250, 0.46);
     --faint: rgba(244, 247, 250, 0.2);
-    --accent: #3b9dff;
+    /* акцент живёт на доминирующем цвете обложки (ставит setPalette).
+       Храним именно тройку RGB — из неё собираются и цвет, и прозрачности */
+    --accent-rgb: 59, 157, 255;
+    --accent: rgb(var(--accent-rgb));
 
     /* цвета, вытащенные из обложки текущего трека (ставит JS).
        Значения — тройки RGB, чтобы работало rgba(var(--c1-rgb), 0.5) */
@@ -75,6 +78,14 @@
        браузер не пересчитывает остальную страницу */
     contain: strict;
   }
+  /* обёртка для «дыхания» света: трансформ живёт на отдельном слое и НЕ
+     спорит с transform паузы (scale 0.86) на самих картинках — иначе при
+     каждом resume свет прыгал бы без перехода. Слои складываются, стыков нет */
+  .amb-drift {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+  }
   .ambient img {
     position: absolute;
     inset: -45%;
@@ -85,7 +96,9 @@
        поэтому вместо blur(105px) хватает 16px. Радиус больше 40px заставляет
        GPU пересчитывать размытие каждый кадр — это и грело телефон */
     filter: blur(16px) saturate(190%) brightness(0.32);
-    opacity: 0;
+    /* яркость живёт в переменной: в библиотеке слой приглушён, а на экране
+       плеера гасится в ноль — фон там рисует только аврора (см. ниже) */
+    opacity: var(--amb-o, 0);
     transform: scale(1.15) translate3d(0, 0, 0);
     transition: opacity 700ms var(--ease-out), filter 900ms ease, transform 900ms var(--ease-out);
     will-change: opacity, transform;
@@ -98,6 +111,13 @@
     filter: blur(16px) saturate(150%) brightness(0.28);
     transform: scale(0.86) translate3d(0, 0, 0);
   }
+
+  /* ── фон плеера — ТОЛЬКО аврора ──
+     Размытую обложку на экране плеера гасим в ноль: у фона должен быть
+     один источник цвета, иначе «свечение от обложки» спорит с авророй
+     и получается каша (оранжевые волосы заливали экран поверх зелёной
+     авроры). В библиотеке приглушённая обложка остаётся как была */
+  body.player-open .ambient img { opacity: 0; }
 
   /* ── дизеринг ──────────────────────────────────────────
      На глубоком чёрном 8-битный градиент разбивается на концентрические
@@ -130,178 +150,44 @@
       rgba(8, 9, 11, 0.72) 86%,
       rgba(8, 9, 11, 0.88) 100%);
   }
-
-  /* слабый свет по кромкам экрана. По умолчанию выключен —
-     включается тумблером «Свечение у кромки» в настройках.
-     Не рамка, а мягкий «залив» от краёв: четыре градиента + радиальная
-     маска, которая гасит середину и скругляет углы. Резкой линии 1px нет —
-     именно она читалась как дешёвая обводка */
-  .edge-glow {
-    position: fixed;
-    inset: 0;
-    z-index: 4;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 600ms ease;
-    background:
-      linear-gradient(to right,  rgba(var(--c1-rgb), 0.26), rgba(var(--c1-rgb), 0) 9%),
-      linear-gradient(to left,   rgba(var(--c1-rgb), 0.26), rgba(var(--c1-rgb), 0) 9%),
-      linear-gradient(to top,    rgba(var(--c2-rgb), 0.18), rgba(var(--c2-rgb), 0) 8%),
-      /* сверху уже светит основное свечение — тут только лёгкая поддержка,
-         тем же цветом, чтобы не спорить с ним оттенком */
-      linear-gradient(to bottom, rgba(var(--c1-rgb), 0.12), rgba(var(--c1-rgb), 0) 8%);
-  }
-  body.edge-on .edge-glow { opacity: calc(0.35 + var(--glow-opacity, 0.2) * 2.2); }
-
-  /* пока играет — свет у кромки дышит в такт (удар + затухание),
-     на паузе замирает на нижнем уровне */
-  body.edge-on:not(.paused) .edge-glow {
-    animation: edgePulse 1.05s cubic-bezier(0.33, 0, 0.35, 1) infinite;
-  }
-  @keyframes edgePulse {
-    0%   { opacity: calc(0.26 + var(--glow-opacity, 0.2) * 1.7); }
-    9%   { opacity: calc(0.35 + var(--glow-opacity, 0.2) * 2.2); }
-    28%  { opacity: calc(0.29 + var(--glow-opacity, 0.2) * 1.9); }
-    50%  { opacity: calc(0.32 + var(--glow-opacity, 0.2) * 2.1); }
-    76%  { opacity: calc(0.28 + var(--glow-opacity, 0.2) * 1.8); }
-    100% { opacity: calc(0.26 + var(--glow-opacity, 0.2) * 1.7); }
+  /* в плеере вуаль почти не нужна: цвет должен заливать ВЕСЬ экран
+     (как в Apple Music), текст читается за счёт фона самого плеера */
+  body.player-open .ambient::after {
+    background: linear-gradient(180deg,
+      rgba(8, 9, 11, 0) 0%,
+      rgba(8, 9, 11, 0.02) 38%,
+      rgba(8, 9, 11, 0.1) 70%,
+      rgba(8, 9, 11, 0.3) 100%);
   }
 
-  /* ══ fluid mesh: цветные волны по всему экрану ══
-     Ключевая идея: радиальный градиент САМ ПО СЕБЕ гладкий — filter: blur()
-     ему не нужен. Без размытия пятна можно растянуть на весь экран, и это
-     всё равно дешевле трёх маленьких пятен с blur(28px): GPU не считает
-     ядро размытия вообще, только композитит слой.
-     Дрейф по фигурам Лиссажу: X и Y с разными частотами, поэтому цвет
-     перетекает волной, а не вращается по кругу. */
-  .mesh {
+  /* ── Аврора — WebGL-шейдер (порт ReactBits Aurora на чистый WebGL) ──
+     Один прозрачный фуллскрин-холст: «шёлковые» занавесы из многослойного
+     шума симплекс текут от верхнего края по ВСЕЙ ширине экрана — движение
+     заметно сразу и не замирает (медленные CSS-пятна и вращающиеся лучи
+     ушли вместе с mesh/edge-glow). Цвет — СЕМЕЙСТВО ОДНОГО оттенка трека
+     (тёмная глубина / ключевой / светлый отлив) в Oklab: занавес читается
+     как «цвет трека», а не радуга. При смене трека JS плавно ведёт
+     uniform'ы — старый цвет тает в новом без грязи и скачков.
+     Живёт аврора ТОЛЬКО в плеере; в библиотеке холст прозрачен и спит */
+  .aurora {
     position: absolute;
     inset: 0;
     z-index: 2;
+    display: block;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-    /* блендим группу целиком: одна операция screen вместо трёх */
-    mix-blend-mode: screen;
-    transform: scale(var(--mesh-scale, 1));
-    transition: transform 900ms var(--ease-out), opacity 700ms ease;
-  }
-  .mesh-blob {
-    position: absolute;
-    border-radius: 50%;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
+    /* мастер-прозрачность — чистый композитор. Аврора живёт ТОЛЬКО в
+       плеере — это часть экрана, как в Apple Music. В библиотеке холст
+       прозрачен и не рендерится: там спокойный фон с размытой обложкой */
     opacity: 0;
-    will-change: transform, opacity;
-    pointer-events: none;
-    backface-visibility: hidden;
+    transition: opacity 900ms ease;
   }
-  /* пятно 1 — доминирующий цвет обложки, верх-слева */
-  .mesh-blob.blob-1 {
-    left: -32%;
-    top: -20%;
-    width: 130%;
-    height: 80%;
-    background-image: radial-gradient(closest-side,
-      rgba(var(--c1-rgb), 0.62) 0%,
-      rgba(var(--c1-rgb), 0.34) 34%,
-      rgba(var(--c1-rgb), 0.11) 62%,
-      rgba(var(--c1-rgb), 0) 88%);
-  }
-  /* пятно 2 — второй цвет, верх-справа. Оно же вспыхивает при смене трека */
-  .mesh-blob.blob-2 {
-    left: 16%;
-    top: -26%;
-    width: 122%;
-    height: 76%;
-    background-image: radial-gradient(closest-side,
-      rgba(var(--c2-rgb), 0.5) 0%,
-      rgba(var(--c2-rgb), 0.27) 36%,
-      rgba(var(--c2-rgb), 0.09) 64%,
-      rgba(var(--c2-rgb), 0) 90%);
-  }
-  /* пятно 3 — третий цвет, низ-слева: даёт «волну» в нижней половине экрана */
-  .mesh-blob.blob-3 {
-    left: -26%;
-    top: 32%;
-    width: 140%;
-    height: 88%;
-    background-image: radial-gradient(closest-side,
-      rgba(var(--c3-rgb), 0.46) 0%,
-      rgba(var(--c3-rgb), 0.24) 38%,
-      rgba(var(--c3-rgb), 0.08) 66%,
-      rgba(var(--c3-rgb), 0) 90%);
-  }
-
-  /* тумблер «Анимация свечения»: выключили — волн нет совсем */
-  body.glow-on .mesh-blob { opacity: calc(var(--glow-opacity, 0.2) * 1.15); }
-  /* базовая непрозрачность выше нужна на случай prefers-reduced-motion:
-     там анимация выключена и keyframes не задают opacity */
-  body.glow-on .mesh-blob.blob-1 { animation: meshDrift1 26s linear infinite; }
-  body.glow-on .mesh-blob.blob-2 { animation: meshDrift2 34s linear infinite; }
-  body.glow-on .mesh-blob.blob-3 { animation: meshDrift3 43s linear infinite; }
-
-  /* ── дрейф ─────────────────────────────────────────────
-     Пятно ходит по замкнутой кривой: по X одна частота, по Y другая.
-     Круга нет, «прожектор» не вращается — цвет перетекает волной.
-     Периоды 41 / 53 / 67 s — простые числа: общий рисунок не совпадёт
-     никогда, глазу не за что зацепиться как за цикл. */
-  @keyframes meshDrift1 {
-    0%    { transform: translate3d(0, 4%, 0) scale(1);        opacity: calc(var(--glow-opacity, 0.2) * 1.15); }
-    12.5% { transform: translate3d(9%, 7%, 0) scale(1.08);    opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
-    25%   { transform: translate3d(14%, -4%, 0) scale(1.15);  opacity: calc(var(--glow-opacity, 0.2) * 0.95); }
-    37.5% { transform: translate3d(9%, -8%, 0) scale(1.05);   opacity: calc(var(--glow-opacity, 0.2) * 0.8); }
-    50%   { transform: translate3d(0, 4%, 0) scale(0.94);     opacity: calc(var(--glow-opacity, 0.2) * 1.2); }
-    62.5% { transform: translate3d(-9%, 7%, 0) scale(1.03);   opacity: calc(var(--glow-opacity, 0.2) * 1.5); }
-    75%   { transform: translate3d(-14%, -4%, 0) scale(1.12); opacity: calc(var(--glow-opacity, 0.2) * 1.05); }
-    87.5% { transform: translate3d(-9%, -8%, 0) scale(1.04);  opacity: calc(var(--glow-opacity, 0.2) * 0.9); }
-    100%  { transform: translate3d(0, 4%, 0) scale(1);        opacity: calc(var(--glow-opacity, 0.2) * 1.15); }
-  }
-  @keyframes meshDrift2 {
-    0%    { transform: translate3d(0, 6%, 0) scale(1.05);     opacity: calc(var(--glow-opacity, 0.2) * 0.95); }
-    12.5% { transform: translate3d(-11%, 2%, 0) scale(0.95);  opacity: calc(var(--glow-opacity, 0.2) * 1.25); }
-    25%   { transform: translate3d(0, -5%, 0) scale(1.12);    opacity: calc(var(--glow-opacity, 0.2) * 1.45); }
-    37.5% { transform: translate3d(12%, 8%, 0) scale(1);      opacity: calc(var(--glow-opacity, 0.2) * 0.85); }
-    50%   { transform: translate3d(0, -6%, 0) scale(0.96);    opacity: calc(var(--glow-opacity, 0.2) * 1.1); }
-    62.5% { transform: translate3d(-12%, 2%, 0) scale(1.09);  opacity: calc(var(--glow-opacity, 0.2) * 0.8); }
-    75%   { transform: translate3d(0, 5%, 0) scale(0.93);     opacity: calc(var(--glow-opacity, 0.2) * 1.3); }
-    87.5% { transform: translate3d(12%, -8%, 0) scale(1.02);  opacity: calc(var(--glow-opacity, 0.2) * 1); }
-    100%  { transform: translate3d(0, 6%, 0) scale(1.05);     opacity: calc(var(--glow-opacity, 0.2) * 0.95); }
-  }
-  @keyframes meshDrift3 {
-    0%    { transform: translate3d(3%, 0, 0) scale(1);        opacity: calc(var(--glow-opacity, 0.2) * 1.1); }
-    12.5% { transform: translate3d(8%, 5%, 0) scale(1.06);    opacity: calc(var(--glow-opacity, 0.2) * 0.85); }
-    25%   { transform: translate3d(-4%, 8%, 0) scale(0.96);   opacity: calc(var(--glow-opacity, 0.2) * 1.35); }
-    37.5% { transform: translate3d(-10%, 5%, 0) scale(1.03);  opacity: calc(var(--glow-opacity, 0.2) * 1.5); }
-    50%   { transform: translate3d(3%, 0, 0) scale(1.1);      opacity: calc(var(--glow-opacity, 0.2) * 1); }
-    62.5% { transform: translate3d(8%, -5%, 0) scale(0.98);   opacity: calc(var(--glow-opacity, 0.2) * 1.25); }
-    75%   { transform: translate3d(-4%, -8%, 0) scale(1.05);  opacity: calc(var(--glow-opacity, 0.2) * 0.9); }
-    87.5% { transform: translate3d(-10%, -5%, 0) scale(1);    opacity: calc(var(--glow-opacity, 0.2) * 1.4); }
-    100%  { transform: translate3d(3%, 0, 0) scale(1);        opacity: calc(var(--glow-opacity, 0.2) * 1.1); }
-  }
-
-  }
-
-  /* ── пауза: в серый не выключаем (экран выглядел «сломанным») —
-     сжимаем сетку и гасим на 40%, цвет трека остаётся */
-  body.glow-on.paused .mesh {
-    --mesh-scale: 0.9;
-    opacity: 0.62;
-  }
-  body.glow-on.paused .mesh-blob { animation-play-state: paused; }
-
-  /* раньше сетка замирала при свёрнутом плеере — экономили GPU на скролле.
-     Но библиотека это главный экран, и «мёртвый» фон там смотрелся плохо.
-     Теперь волны идут всегда, пока включён тумблер свечения */
-
-  /* ── импульс при смене трека ──────────────────────────
-     Вспышка масштаба всей сетки: 600ms, быстрый подъём и мягкое затухание.
-     Масштаб считается на композиторе — градиент не перерисовывается,
-     поэтому вспышка не стоит ни одного лишнего кадра */
-  .mesh.pulse { animation: meshPulse 600ms cubic-bezier(0.22, 1, 0.36, 1); }
-  @keyframes meshPulse {
-    0%   { transform: scale(var(--mesh-scale, 1)); }
-    22%  { transform: scale(calc(var(--mesh-scale, 1) * 1.14)); }
-    100% { transform: scale(var(--mesh-scale, 1)); }
-  }
+  /* слайдер «Яркость авроры» ведёт --glow-opacity от 0 до 1: 0% — тихий
+     полумрак, 100% — полный свет, разница между краями сразу видна.
+     Дефолт (40%) — ощутимо темнее прежнего: 0.58 вместо 0.73 */
+  body.player-open .aurora { opacity: calc(0.3 + var(--glow-opacity, 0.4) * 0.7); }
+  body.player-open.paused .aurora { opacity: calc(0.22 + var(--glow-opacity, 0.4) * 0.48); }
 
   /* ползунок в настройках */
   .set-row.column {
@@ -446,7 +332,7 @@
     color: rgba(244, 247, 250, 0.15);
   }
   .brand b { font-weight: 700; color: rgba(244, 247, 250, 0.3); letter-spacing: 0.5em; }
-  .brand i { font-style: normal; color: rgba(59, 157, 255, 0.42); letter-spacing: 0; }
+  .brand i { font-style: normal; color: rgba(var(--accent-rgb), 0.42); letter-spacing: 0; }
 
   .tabbar {
     position: relative;
@@ -483,7 +369,7 @@
     gap: 4px;
     border: none;
     background: none;
-    color: rgba(244, 247, 250, 0.32);
+    color: rgba(244, 247, 250, 0.42);
     font-family: inherit;
     font-size: 9.5px;
     font-weight: 600;
@@ -536,7 +422,7 @@
   .sort-item:active { background: rgba(255, 255, 255, 0.06); }
   .sort-item.active {
     color: var(--accent);
-    background: rgba(59, 157, 255, 0.12);
+    background: rgba(var(--accent-rgb), 0.12);
   }
 
   /* таймер сна — маленькое меню под верхней панелью плеера */
@@ -657,7 +543,7 @@
     transition: transform 140ms var(--ease-out), background-color 160ms ease;
   }
   .search-wrap.filled .search-clear { display: grid; }
-  .search-clear:active { transform: scale(0.85); background: rgba(255, 255, 255, 0.2); }
+  .search-clear:active { transform: scale(0.85); }
 
   .sort-btn {
     flex-shrink: 0;
@@ -741,9 +627,9 @@
     text-overflow: ellipsis;
     margin-bottom: 2px;
   }
-  .row.playing .row-title { color: var(--accent); }
+  .row.playing .row-title { color: #fff; }   /* белый — цвет обложки в названиях не используем */
   .row-title mark {
-    background: rgba(59, 157, 255, 0.22);
+    background: rgba(var(--accent-rgb), 0.22);
     color: var(--accent);
     border-radius: 3px;
     padding: 0 1px;
@@ -770,11 +656,14 @@
   }
   .row-fav:active { transform: scale(0.85); }
   .row-fav.on { color: #ff5c8a; }
-  .row-fav.on svg { fill: currentColor; animation: heartPop 300ms var(--ease-out); }
+  .row-fav.on svg { fill: currentColor; animation: heartBeat 460ms var(--ease-out); }
 
-  @keyframes heartPop {
-    0% { transform: scale(0.82); }
-    55% { transform: scale(1.14); }
+  /* двойной удар сердца: пик, провал, добивка — читается как «туг-туг» */
+  @keyframes heartBeat {
+    0%   { transform: scale(0.8); }
+    28%  { transform: scale(1.32); }
+    44%  { transform: scale(0.94); }
+    62%  { transform: scale(1.16); }
     100% { transform: scale(1); }
   }
 
@@ -959,9 +848,9 @@
     cursor: pointer;
     flex-shrink: 0;
     border-radius: 50%;
-    transition: transform 150ms var(--ease-out), background 200ms ease;
+    transition: transform 150ms var(--ease-out), filter 160ms ease;
   }
-  .mini-btn:active { transform: scale(0.88); background: rgba(255, 255, 255, 0.06); }
+  .mini-btn:active { transform: scale(0.88); }
 
   /* переключение трека кнопками — только там, где есть мышка:
      на телефоне листают свайпом, на ПК это неудобно */
@@ -971,14 +860,14 @@
     height: 34px;
     border: none;
     background: none;
-    color: rgba(244, 247, 250, 0.6);
+    color: rgba(244, 247, 250, 0.72);
     place-items: center;
     border-radius: 50%;
     flex-shrink: 0;
     cursor: pointer;
-    transition: transform 150ms var(--ease-out), color 160ms ease, background-color 160ms ease;
+    transition: transform 150ms var(--ease-out), color 160ms ease, filter 160ms ease;
   }
-  .mini-skip:active { transform: scale(0.86); background: rgba(255, 255, 255, 0.07); }
+  .mini-skip:active { transform: scale(0.86); }
   @media (hover: hover) and (pointer: fine) {
     .mini-skip { display: grid; }
   }
@@ -988,13 +877,13 @@
     height: 30px;
     border: none;
     background: none;
-    color: rgba(244, 247, 250, 0.4);
+    color: rgba(244, 247, 250, 0.55);
     display: grid;
     place-items: center;
     flex-shrink: 0;
     border-radius: 50%;
     cursor: pointer;
-    transition: color 160ms ease, transform 140ms var(--ease-out);
+    transition: color 160ms ease, transform 140ms var(--ease-out), filter 160ms ease;
   }
   .mini-close:active { transform: scale(0.86); color: rgba(244, 247, 250, 0.85); }
 
@@ -1079,13 +968,14 @@
     .mini,
     .sheet,
     .tabbar-pill,
-    .scrub-knob,
     .tabbar-btn,
     .icon-btn {
       transition-duration: 1ms;
     }
     #scrSettings.open .set-group { animation: none; }
-    .eq line { animation: none; }
+    .eq line, .eq path { animation: none; }
+    /* бегущая строка — бесконечная: при 1ms она стробила бы */
+    .title .t-inner, .artist .t-inner { animation: none; }
   }
 
   /* строки настроек проявляются лесенкой */
@@ -1203,14 +1093,15 @@
   /* ══ экран: плеер ══════════════════════════════════════ */
   #scrPlayer {
     z-index: 5;
-    /* раньше тут было почти в ноль — волны на плеере не читались.
-       Теперь фон пропускает цвет, но низ притемнён под кнопки */
+    /* фон пропускает цвет по всему экрану (как в Apple Music), низ
+       притемнён под кнопки, но не до чёрного: аврора-шейдер должен
+       просвечивать по всей высоте, текст читают тени и контраст */
     background: linear-gradient(
       180deg,
-      rgba(8, 9, 11, 0.06) 0%,
-      rgba(8, 9, 11, 0.22) 34%,
-      rgba(8, 9, 11, 0.5) 66%,
-      rgba(8, 9, 11, 0.78) 100%
+      rgba(8, 9, 11, 0.03) 0%,
+      rgba(8, 9, 11, 0.1) 34%,
+      rgba(8, 9, 11, 0.24) 66%,
+      rgba(8, 9, 11, 0.46) 100%
     );
     transform: translateY(100%);
     transition: transform 460ms var(--ease-drawer);
@@ -1266,12 +1157,12 @@
     height: 44px;
     border: none;
     background: none;
-    color: rgba(244, 247, 250, 0.72);
+    color: rgba(244, 247, 250, 0.82);
     display: grid;
     place-items: center;
     cursor: pointer;
     border-radius: 50%;
-    transition: transform 150ms var(--ease-out), color 200ms ease;
+    transition: transform 150ms var(--ease-out), color 200ms ease, filter 160ms ease;
   }
   .icon-btn:active { transform: scale(0.88); }
 
@@ -1295,8 +1186,8 @@
   .speed-btn:active { transform: scale(0.94); }
   .speed-btn.on {
     color: var(--accent);
-    border-color: rgba(59, 157, 255, 0.4);
-    background: rgba(59, 157, 255, 0.14);
+    border-color: rgba(var(--accent-rgb), 0.4);
+    background: rgba(var(--accent-rgb), 0.14);
   }
   .icon-btn.on { color: #ff5c8a; }
   .icon-btn.on svg { fill: currentColor; }
@@ -1377,6 +1268,7 @@
     margin-bottom: 7px;
     overflow: hidden;
     white-space: nowrap;
+    color: #fff;   /* просто белый — без градиентов от палитры */
   }
   /* длинное название не режем троеточием — оно плавно уезжает и возвращается */
   .title .t-inner,
@@ -1416,48 +1308,41 @@
   }
 
   /* прогресс — тонкий слайдер */
+  /* ══ упругая полоса перемотки (порт ReactBits Elastic Slider) ══
+     Значение едет к пальцу на пружине (чуть недобирает и доводит),
+     у краёв дорожка тянется как резина и отпружинивает назад,
+     под пальцем полоса становится толще и ярче */
   .scrub {
     position: relative;
-    height: 24px;
+    height: 32px;
+    margin: -4px 0 -2px;
     display: flex;
     align-items: center;
     cursor: pointer;
     touch-action: none;
-    margin-bottom: 4px;
+    opacity: 0.72;                 /* в покое полоса тише, под пальцем оживает */
+    transition: opacity 240ms ease;
   }
-  .scrub-track {
-    position: absolute;
-    left: 0; right: 0;
+  .scrub:hover,
+  .scrub.dragging { opacity: 1; }
+  .etrack {
+    position: relative;
+    width: 100%;
     height: 5px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.13);
     overflow: hidden;
+    will-change: transform, height;
+    transform-origin: 0% 50%;   /* JS ставит по стороне натяжения резины */
   }
-  .scrub-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: 3px;
-    background: var(--text);
-    transition: width 120ms linear;
-  }
-  .scrub.dragging .scrub-fill { transition: none; }
-  .scrub-knob {
+  .efill {
     position: absolute;
-    top: 50%;
-    left: 0;
-    width: 3px;
-    height: 11px;
-    margin-left: -1.5px;
-    border-radius: 1.5px;
-    background: var(--text);
-    transform: translateY(-50%);
-    /* left едет синхронно с width у .scrub-fill — иначе бегунок дёргается */
-    transition: left 120ms linear, width 180ms var(--ease-spring), margin-left 180ms var(--ease-spring);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
+    inset: 0;
+    border-radius: inherit;
+    background: #fff;   /* просто белый — без градиентов от палитры */
+    clip-path: inset(0 100% 0 0 round 999px);
+    will-change: clip-path;
   }
-  .scrub.dragging .scrub-knob { width: 5px; margin-left: -2.5px; transition: none; }
-
   /* всплывающая плашка со временем — палец закрывает полоску и цифры */
   .time-bubble {
     position: absolute;
@@ -1542,8 +1427,8 @@
   .chip svg { width: 15px; height: 15px; flex-shrink: 0; }
   .chip:active { transform: scale(0.95); }
   .chip.on {
-    background: rgba(59, 157, 255, 0.16);
-    border-color: rgba(59, 157, 255, 0.38);
+    background: rgba(var(--accent-rgb), 0.16);
+    border-color: rgba(var(--accent-rgb), 0.38);
     color: var(--accent);
   }
 
@@ -1638,12 +1523,12 @@
     display: grid;
     place-items: center;
     padding: 0;
-    transition: transform 150ms var(--ease-out), color 200ms ease;
+    transition: transform 150ms var(--ease-out), color 200ms ease, filter 160ms ease;
   }
   .btn:active { transform: scale(0.88); }
   .btn svg { display: block; }
   .btn-side { width: 44px; height: 44px; color: rgba(244, 247, 250, 0.62); }
-  .btn-sm { width: 38px; height: 38px; color: rgba(244, 247, 250, 0.34); position: relative; }
+  .btn-sm { width: 38px; height: 38px; color: rgba(244, 247, 250, 0.5); position: relative; }
   .btn-sm.on { color: var(--accent); }
   .btn-sm.on::after {
     content: "";
@@ -1676,9 +1561,11 @@
     margin: auto;
     transition: opacity 140ms var(--ease-out), transform 220ms var(--ease-spring);
   }
-  .icon-swap .i-pause { opacity: 0; transform: scale(0.55); }
-  .playing .icon-swap .i-play { opacity: 0; transform: scale(0.55); }
-  .playing .icon-swap .i-pause { opacity: 1; transform: scale(1); }
+  /* пауза «накручивается» с поворотом — смена состояния читается телом,
+     а не просто кроссфейдится */
+  .icon-swap .i-pause { opacity: 0; transform: scale(0.55) rotate(-75deg); }
+  .playing .icon-swap .i-play { opacity: 0; transform: scale(0.55) rotate(75deg); }
+  .playing .icon-swap .i-pause { opacity: 1; transform: scale(1) rotate(0deg); }
 
   .volume {
     display: flex;
@@ -1693,42 +1580,48 @@
   @media (max-height: 720px) {
     .player-body { justify-content: flex-start; }
   }
-  .volume .btn { color: rgba(244, 247, 250, 0.55); width: 22px; height: 22px; flex-shrink: 0; }
-  .vslider {
+  .volume .btn { color: rgba(244, 247, 250, 0.68); width: 22px; height: 22px; flex-shrink: 0; }
+  /* ══ слайдер громкости «Wake» (порт ReactBits Wake Slider) ══
+     Без бегунка: дорожка из тонких полосок. Чем быстрее тянешь,
+     тем выше взлетает «след» за пальцем — косинусный горб позади,
+     короче впереди. Зажигаются полоски слева от значения */
+  .wake {
     position: relative;
     flex: 1;
-    height: 26px;
+    height: 30px;
     display: flex;
     align-items: center;
+    gap: 2.5px;
     cursor: pointer;
     touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
   }
-  .vslider-track {
-    position: absolute;
-    left: 0; right: 0;
-    height: 5px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.1);
-    overflow: hidden;
+  .wake:focus-visible {
+    border-radius: 8px;
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.55);
   }
-  .vslider-fill {
+  .wake .wbar {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
     height: 100%;
-    width: 100%;
-    background: rgba(244, 247, 250, 0.55);
-    border-radius: 3px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.13);
+    transform: scaleY(0.233);
+    transition: background-color 140ms ease;
+    will-change: transform;
   }
-  .vslider-knob {
+  .wake .wbar[data-on="1"] { background: rgba(244, 247, 250, 0.92); }
+  /* гребень следа: подсвечивает поднятые полоски цветом трека */
+  .wake .wbar .wcrest {
     position: absolute;
-    top: 50%;
-    left: 100%;
-    width: 3px;
-    height: 11px;
-    margin-left: -1.5px;
-    border-radius: 1.5px;
-    background: rgba(244, 247, 250, 0.9);
-    transform: translateY(-50%);
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
-    pointer-events: none;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(var(--accent-rgb), 0.85);
+    opacity: 0;
   }
   .volume-hint { flex: 1; font-size: 11px; color: var(--faint); }
 
@@ -2214,7 +2107,7 @@
   }
   .search-wrap:focus-within {
     background: var(--surface-hi);
-    box-shadow: 0 0 0 1px rgba(59, 157, 255, 0.28);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.28);
   }
 
   /* строки-действия в настройках */
@@ -2263,10 +2156,13 @@
       transition-duration: 1ms !important;
     }
     .panel.active { animation: none; }
-    /* бесконечные анимации при 1ms крутились бы как бешеные — гасим совсем */
-    .mesh-blob,
-    .edge-glow,
-    .mesh.pulse { animation: none !important; }
+    /* бесконечные анимации при 1ms крутились бы как бешеные — гасим совсем.
+       Аврора не в списке: WebGL-цикл сам читает prefers-reduced-motion
+       и вместо анимации рисует один статичный кадр */
+    .amb-drift,
+    .empty-ico,
+    .sk-row { animation: none !important; }
+    .sk-row { opacity: 0.55; }
   }
 
   /* всплывающая подсказка (тост) */
@@ -2312,12 +2208,153 @@
   }
   .fatal b { display: block; margin-bottom: 4px; color: #ff8b94; }
 
+  /* ══════════════════════════════════════════════════════
+     ПОЛИШ v1.10 — живые иконки и микро-отклик.
+     Всё на transform/opacity: композитор, без layout и paint.
+     ══════════════════════════════════════════════════════ */
+
+  /* shuffle: стрелки встряхиваются — состояние «перемешано» видно телом */
+  #shuffleBtn.on svg { animation: iconWiggle 460ms var(--ease-out); }
+
+  /* repeat: один оборот — «цикл пошёл» */
+  #repeatBtn.on svg { animation: iconSpin 520ms var(--ease-out); }
+
+  /* mute: динамик «мотает головой» — отрицательное действие видно */
+  #muteBtn.shake svg { animation: volShake 420ms var(--ease-out); }
+
+  /* таймер сна включился — короткий «пуск», как у секундомера */
+  #sleepBtn.on svg { animation: iconPop 380ms var(--ease-out); }
+
+  /* лайк из плеера: тот же heartBeat, что и в списке */
+  #favBtn.on svg { animation: heartBeat 460ms var(--ease-out); }
+
+  @keyframes iconWiggle {
+    0%   { transform: rotate(0deg) translateX(0); }
+    30%  { transform: rotate(-14deg) translateX(-1px); }
+    65%  { transform: rotate(9deg) translateX(1px); }
+    100% { transform: rotate(0deg) translateX(0); }
+  }
+  @keyframes iconSpin {
+    from { transform: rotate(-360deg); }
+    to   { transform: rotate(0deg); }
+  }
+  @keyframes volShake {
+    0%   { transform: rotate(0deg); }
+    25%  { transform: rotate(-13deg); }
+    55%  { transform: rotate(9deg); }
+    80%  { transform: rotate(-4deg); }
+    100% { transform: rotate(0deg); }
+  }
+  @keyframes iconPop {
+    0%   { transform: scale(0.86); }
+    55%  { transform: scale(1.14); }
+    100% { transform: scale(1); }
+  }
+
+  /* ── подсказка направления жеста: кнопка «смотрит» куда поведёт ── */
+  #closePlayer svg { transition: transform 150ms var(--ease-out); }
+  #closePlayer:active svg { transform: translateY(2.5px); }
+  #nextBtn svg, #miniNext svg, #prevBtn svg, #miniPrev svg { transition: transform 150ms var(--ease-out); }
+  #nextBtn:active svg, #miniNext:active svg { transform: translateX(2px); }
+  #prevBtn:active svg, #miniPrev:active svg { transform: translateX(-2px); }
+  .search-clear svg { transition: transform 200ms var(--ease-out); }
+  .search-clear:active svg { transform: rotate(90deg); }
+
+  /* ── меню вырастают из своей кнопки, а не из воздуха ── */
+  .sort-menu  { transform-origin: calc(100% - 20px) 0; }
+  .timer-menu { transform-origin: 26px 0; }
+
+  /* ── пункты меню отвечают на нажатие масштабом, как все кнопки ── */
+  .sort-item { transition: background 160ms ease, color 160ms ease, transform 140ms var(--ease-out); }
+  .sort-item:active { transform: scale(0.97); }
+
+  /* ── play-кнопка подсвечивается цветом трека, пока играет ── */
+  .btn-play {
+    transition: transform 160ms var(--ease-out), background 200ms ease,
+                box-shadow 460ms var(--ease-out);
+  }
+  body:not(.paused) .btn-play {
+    box-shadow: 0 8px 26px -6px rgba(0, 0, 0, 0.7),
+                0 0 24px -8px rgba(var(--accent-rgb), 0.55);
+  }
+
+  /* ── скелетон списка, пока грузится tracks.json: экран не молчит ── */
+  .sk-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 10px;
+    animation: skPulse 1.15s ease-in-out infinite alternate;
+  }
+  .sk-row:nth-child(2n) { animation-delay: 160ms; }
+  .sk-row:nth-child(3n) { animation-delay: 300ms; }
+  .sk-cover {
+    width: 46px;
+    height: 46px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+  }
+  .sk-lines { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+  .sk-line { height: 11px; border-radius: 5px; background: rgba(255, 255, 255, 0.06); }
+  .sk-line.w60 { width: 62%; }
+  .sk-line.w40 { width: 40%; }
+  @keyframes skPulse {
+    from { opacity: 0.45; }
+    to   { opacity: 0.95; }
+  }
+
+  /* ── пустые состояния: тихо дышащий диск вместо голого текста ── */
+  .empty-ico {
+    display: block;
+    width: 34px;
+    height: 34px;
+    margin: 0 auto 12px;
+    opacity: 0.5;
+    color: var(--sub);
+    animation: emptyFloat 3.4s ease-in-out infinite alternate;
+  }
+  @keyframes emptyFloat {
+    from { transform: translateY(-2px); }
+    to   { transform: translateY(3px); }
+  }
+
+  /* ── клавиатура: фокус видно только с клавиатуры ── */
+  :focus-visible { outline: 2px solid rgba(var(--accent-rgb), 0.75); outline-offset: 3px; border-radius: 6px; }
+  :focus:not(:focus-visible) { outline: none; }
+
+  /* ── ховер только там, где есть курсор (тачок не мигает) ── */
+  @media (hover: hover) and (pointer: fine) {
+    /* курсор подсвечивает САМ ЗНАЧОК, а не рисует серую плашку под ним:
+       плашка читалась как «у иконок есть фон» — так не делаем.
+       brightness трогает только глиф, фон не появляется вовсе */
+    .icon-btn:hover, .mini-btn:hover, .mini-close:hover, .mini-skip:hover,
+    .btn:not(.btn-play):hover, .search-clear:hover {
+      filter: brightness(1.45);
+    }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.12); }
+    .chip:hover { background: rgba(255, 255, 255, 0.09); }
+    .sort-item:hover { background: rgba(255, 255, 255, 0.06); }
+    .row-fav:hover { color: rgba(244, 247, 250, 0.55); }
+  }
+
+  /* ── «меньше прозрачности»: стекло становится твердым, blur уходит ── */
+  @media (prefers-reduced-transparency: reduce) {
+    .dock, .toast, .sort-menu, .timer-menu, .ctx-menu, .time-bubble {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+    .dock { background: #14171c; }
+    .toast, .time-bubble { background: #22252b; }
+    .sort-menu, .timer-menu { background: #1a1c21; }
+    .ctx-menu { background: #1b1d22; }
+  }
+
 </style>
 </head>
 <body>
 
-<div class="ambient"><img id="ambA" alt=""><img id="ambB" alt=""><div class="mesh"><span class="mesh-blob blob-1"></span><span class="mesh-blob blob-2"></span><span class="mesh-blob blob-3"></span></div></div>
-<div class="edge-glow"></div>
+<div class="ambient"><div class="amb-drift"><img id="ambA" alt=""><img id="ambB" alt=""></div><canvas class="aurora" id="auroraCanvas" aria-hidden="true"></canvas></div>
 
 <!-- ══════════ STAGE ══════════ -->
 <div class="stage" id="stage">
@@ -2331,7 +2368,7 @@
 
       <div class="search-row">
         <div class="search-wrap" id="searchWrap">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input id="searchInput" type="search" placeholder="Поиск" autocomplete="off" spellcheck="false">
           <button class="search-clear" id="searchClear" aria-label="Очистить поиск">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -2357,7 +2394,7 @@
   <section class="screen" id="scrAlbum">
     <div class="navbar">
       <button class="nav-btn" id="albumBack" aria-label="Назад в библиотеку">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
       </button>
     </div>
     <div class="scroll" style="padding-top:0">
@@ -2397,7 +2434,7 @@
     </button>
     <button class="mini-close" id="miniClose" aria-label="Остановить">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+           stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
       </svg>
     </button>
@@ -2407,22 +2444,22 @@
     <nav class="tabbar">
       <div class="tabbar-pill" id="tabPill"></div>
       <button class="tabbar-btn active" data-tab="all">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
         <span class="tab-icon" data-icon="all"></span>
         <span>Все</span>
       </button>
       <button class="tabbar-btn" data-tab="albums">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2.5"/></svg>
         <span class="tab-icon" data-icon="albums"></span>
         <span>Альбомы</span>
       </button>
       <button class="tabbar-btn" data-tab="fav">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
         <span class="tab-icon" data-icon="fav"></span>
         <span>Избранное</span>
       </button>
       <button class="tabbar-btn" id="settingsBtn">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
         <span class="tab-icon" data-icon="settings"></span>
         <span>Настройки</span>
       </button>
@@ -2436,7 +2473,7 @@
 <section class="screen" id="scrSettings">
   <div class="navbar">
     <button class="nav-btn" id="settingsBack" aria-label="Назад">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
     </button>
     <span class="nav-title">Настройки</span>
   </div>
@@ -2475,24 +2512,12 @@
 
     <div class="set-group" id="setGroup3">
       <div class="set-group-title">Данные</div>
-      <div class="set-row">
-        <div class="set-label">Анимация свечения</div>
-        <button class="switch" data-key="glow" aria-label="Анимация свечения">
-          <span class="switch-knob"></span>
-        </button>
-      </div>
       <div class="set-row column">
         <div class="set-label">
-          Яркость свечения
+          Яркость авроры в плеере
           <span class="set-value" id="glowVal">40%</span>
         </div>
         <input class="set-range" id="glowLevel" type="range" min="0" max="100" step="1">
-      </div>
-      <div class="set-row">
-        <div class="set-label">Свечение у кромки</div>
-        <button class="switch" data-key="glowEdge" aria-label="Свечение у кромки">
-          <span class="switch-knob"></span>
-        </button>
       </div>
       <div class="set-row">
         <div class="set-label">Кэшировать треки офлайн</div>
@@ -2502,19 +2527,19 @@
       </div>
       <div class="set-row action" id="openStats">
         <div class="set-label">Моя статистика</div>
-        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </div>
       <div class="set-row action" id="clearCache">
         <div class="set-label">Очистить кэш</div>
-        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </div>
       <div class="set-row action" id="resetState">
         <div class="set-label">Сбросить память позиции</div>
-        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </div>
       <div class="set-row action danger" id="clearFavs">
         <div class="set-label">Очистить избранное</div>
-        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        <svg class="set-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </div>
     </div>
 
@@ -2531,19 +2556,19 @@
       </button>
       <button class="speed-btn" id="speedBtn" aria-label="Скорость">1×</button>
       <button class="icon-btn" id="sleepBtn" aria-label="Таймер сна">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4"/><path d="M12 14v-4"/><circle cx="12" cy="14" r="8"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4"/><path d="M12 14v-4"/><circle cx="12" cy="14" r="8"/></svg>
       </button>
     </div>
     <span class="player-label">Сейчас играет</span>
     <div class="top-right">
       <button class="icon-btn" id="queueBtn" aria-label="Очередь">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h12"/><path d="M3 12h12"/><path d="M3 18h8"/><path d="m16 14 5 3-5 3z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h12"/><path d="M3 12h12"/><path d="M3 18h8"/><path d="m16 14 5 3-5 3z"/></svg>
       </button>
       <button class="icon-btn" id="infoBtn" aria-label="О треке">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
       </button>
       <button class="icon-btn" id="favBtn" aria-label="В избранное">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
       </button>
     </div>
     <div class="timer-menu" id="timerMenu"></div>
@@ -2559,16 +2584,17 @@
       <div class="artist" id="artist">подождите</div>
     </div>
 
+    <!-- упругая полоса перемотки (порт ReactBits Elastic Slider):
+         пружинная заливка, резина у краёв, утолщение под пальцем -->
     <div class="scrub" id="scrub">
-      <div class="scrub-track"><div class="scrub-fill" id="scrubFill"></div></div>
-      <div class="scrub-knob" id="scrubKnob"></div>
+      <div class="etrack" id="eTrack"><div class="efill" id="eFill"></div></div>
       <div class="time-bubble" id="timeBubble">0:00</div>
     </div>
     <div class="times"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
 
     <div class="controls">
       <button class="btn btn-sm" id="shuffleBtn" aria-label="Перемешать">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.8-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.8-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
       </button>
       <button class="btn btn-side" id="prevBtn" aria-label="Назад">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1Zm11.7.4a1 1 0 0 1 .3.7v11a1 1 0 0 1-1.55.83l-8.2-5.5a1 1 0 0 1 0-1.66l8.2-5.5a1 1 0 0 1 1.25.13Z"/></svg>
@@ -2583,18 +2609,18 @@
         <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 5.5a1 1 0 0 1 1 1v11a1 1 0 1 1-2 0v-11a1 1 0 0 1 1-1ZM5.8 5.9a1 1 0 0 1 1.25-.13l8.2 5.5a1 1 0 0 1 0 1.66l-8.2 5.5A1 1 0 0 1 5.5 17.6V6.6a1 1 0 0 1 .3-.7Z"/></svg>
       </button>
       <button class="btn btn-sm" id="repeatBtn" aria-label="Повтор выкл">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
       </button>
     </div>
 
     <div class="volume" id="volumeRow">
       <button class="btn" id="muteBtn" aria-label="Звук">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" id="volIcon"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="volIcon"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
       </button>
-    <div class="vslider" id="volSlider">
-      <div class="vslider-track"><div class="vslider-fill" id="volFill"></div></div>
-      <div class="vslider-knob" id="volKnob"></div>
-    </div>
+    <!-- слайдер громкости «Wake» (порт ReactBits Wake Slider):
+         дорожка из полосок, высота «следа» зависит от скорости пальца.
+         Полоски генерирует JS -->
+    <div class="wake" id="volSlider"></div>
     </div>
   </div>
 
@@ -2628,10 +2654,20 @@
 /* ══════════════════════════════════════════════════════════
    Конфиг
    ══════════════════════════════════════════════════════════ */
-const TRACKS_URLS = [
-  'tracks.json',
-  'https://raw.githubusercontent.com/Justik54/JT-music-app/main/tracks.json'
-];
+/* При открытии двойным кликом (file://) неудачный fetch относительного
+   пути браузер ПИШЕТ В КОНСОЛЬ как CORS-ошибку, даже если он перехвачен.
+   Поэтому на file:// локальный список не спрашиваем вовсе — сразу GitHub
+   (raw.githubusercontent отдаёт CORS-заголовок), дальше встроенная копия */
+const TRACKS_URLS = (location.protocol === 'file:'
+  ? []
+  : ['tracks.json']
+).concat(['https://raw.githubusercontent.com/Justik54/JT-music-app/main/tracks.json']);
+
+
+/* Встроенная копия tracks.json: если сеть не пустила (файл открыли двойным
+   кликом — браузер запрещает запросы с file://, или GitHub недоступен),
+   плеер всё равно поднимется на этом списке. Обновляется перезаписью блока */
+const EMBEDDED_TRACKS = [{"title":"Лилия","artist":"MAYOT","album":"GHETTO GARDEN","year":"2020","lyrics":"","src":"https://pomf2.lain.la/f/rkgi4o7h.mp3","cover":"https://images.genius.com/eaf1162509e8a8aad157ff8576daa9fc.1000x1000x1.png","duration":107,"featuring":[],"producer":["DooMee","Александр Рудич (Alexandr Rudich)","Даниил Александров (Daniil Alexandrov)"],"writers":["DooMee","MAYOT"],"label":"MELON MUSIC, CPLUS","release":"2020-09-04"},{"title":"Минус текст","artist":"SEEMEE","album":"TXC","year":"2021","lyrics":"","src":"https://pomf2.lain.la/f/r9jepmho.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":116,"featuring":[],"producer":["DooMee","Why $kidd"],"writers":["Why $kidd","DooMee","SEEMEE"],"label":"MELON MUSIC, CPLUS","release":"2021-06-25"},{"title":"На кассе","artist":"SEEMEE","album":"TXC","year":"2021","lyrics":"","src":"https://pomf2.lain.la/f/ah7bysk8.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":123,"featuring":["163ONMYNECK"],"producer":["DooMee"],"writers":["DooMee","163ONMYNECK","SEEMEE"],"label":"MELON MUSIC, CPLUS","release":"2021-06-25"},{"title":"JAX","artist":"SEEMEE","album":"TXC","year":"2021","lyrics":"","src":"https://pomf2.lain.la/f/t1y9qbep.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":163,"featuring":["BUSHIDO ZHO"],"producer":["TonySouljah","DooMee"],"writers":["TonySouljah","SEEMEE","BUSHIDO ZHO"],"label":"MELON MUSIC, CPLUS","release":"2021-06-25"},{"title":"Большие Бабки","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","lyrics":"","src":"https://pomf2.lain.la/f/kdn1vbe1.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":140,"featuring":[],"producer":["saintracks","wygo01"],"writers":["Scally Milano","OG Buda","saintracks","wygo01"],"label":"","release":"2022-04-15"},{"title":"КОГДА Я","artist":"CMH","album":"**** THIS ALBUM","year":"2025","lyrics":"","src":"https://pomf2.lain.la/f/r9x3dysc.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":119,"featuring":[],"producer":["spbwaves"],"writers":["CMH","МУККА (MUKKA)","spbwaves"],"label":"KOALA MUSIC","release":"2025-01-24"},{"title":"xDDD","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"KOALA MUSIC","lyrics":"","src":"https://pomf2.lain.la/f/0uq1nhxu.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":90},{"title":"На кассе","artist":"OG Buda","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["163ONMYNECK"],"producer":["Wex","RNDM CREW"],"writers":["OG Buda","163ONMYNECK","Wex"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://pomf2.lain.la/f/zrz6l21f.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":143},{"title":"А МОЖЕТ ДА","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["BEATCASTER","spbwaves"],"writers":["CMH","BEATCASTER","spbwaves"],"label":"KOALA MUSIC","lyrics":"","src":"https://pomf2.lain.la/f/zjpmd138.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":118},{"title":"АУТБРЭЙК","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["spbwaves"],"writers":["CMH","Слава КПСС (Slava KPSS)","spbwaves"],"label":"KOALA MUSIC, Антихайп (Antihype)","lyrics":"","src":"https://pomf2.lain.la/f/51ph9nhe.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":158},{"title":"ADRENALINE","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["BEATCASTER","spbwaves"],"writers":["CMH","Антон Лиссов (Anton Lissov)","BEATCASTER","spbwaves"],"label":"KOALA MUSIC","lyrics":"","src":"https://pomf2.lain.la/f/31xij0m5.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":141},{"title":"Битбокс","artist":"SEEMEE","album":"TXC","year":"2021","release":"2021-06-25","featuring":["OG Buda"],"producer":["chronic"],"writers":["chronic","OG Buda","SEEMEE"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://pomf2.lain.la/f/5z8l97k0.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":124},{"title":"S**** TAPE","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["spbwaves"],"writers":["CMH"],"label":"KOALA MUSIC","lyrics":"","src":"https://pomf2.lain.la/f/aqvzh7v5.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":135},{"title":"Кроссики","artist":"SEEMEE","album":"TXC","year":"2021","release":"2021-06-25","featuring":["LOVV66"],"producer":["DARK THE PRODUCER","DooMee","mirice"],"writers":["mirice","DooMee","DARK THE PRODUCER","SEEMEE","LOVV66"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a9165bb72ce648a1b1a3f1e67dc63d79.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":168},{"title":"PSP-FLOW","artist":"Слава КПСС","album":"ЕДИНСТВЕННЫЙ РЭПЕР","year":"2026","release":"2026-07-31","featuring":[],"producer":["SLAJIDI"],"writers":["Слава КПСС (Slava KPSS)","163ONMYNECK","SLAJIDI"],"label":"Антихайп (Antihype), The Fence","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e042474dab644b66bd757c072b279983.mp3","cover":"https://images.genius.com/1b14cc4ef940f906ec94b713f785c8fb.1000x1000x1.png","duration":168},{"title":"Дерьмо","artist":"MAYOT","album":"ЗАПРАВКА КИД","year":"2020","release":"2020-12-25","featuring":[],"producer":["Sqweezey","manyice"],"writers":["MAYOT","Sqweezey","manyice"],"label":"CPLUS, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4ea5570202e848e6a9d07637c05cba11.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg","duration":73},{"title":"Телеграм","artist":"Scally Milano","album":"Really Rich","year":"2022","release":"2022-12-16","featuring":[],"producer":["lakes (prod)"],"writers":["Scally Milano","lakes (prod)"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/768a850455b04b66a0ab988e8262bc13.mp3","cover":"https://images.genius.com/e51316fc932db27fc3e8541aa3548592.1000x1000x1.png","duration":131},{"title":"ЯЛРС","artist":"SODA LUV","album":"НИЧЕГО ЛИЧНОГО 2","year":"2022","release":"2022-11-25","featuring":[],"producer":["YG Woods","8keey"],"writers":["SODA LUV","YG Woods"],"label":"CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/9443e0d476ba4957a685b13b05c687d4.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c6f64127b7c14300b8c99f8deffc3149.jpg","duration":130},{"title":"Биполярный","artist":"Scally Milano","album":"ONION","year":"2021","release":"2021-06-18","featuring":[],"producer":["Heronwater Beats"],"writers":["Scally Milano","Heronwater Beats"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/367a43010b6b4deabbe7b2a8e3ed22a5.mp3","cover":"https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png","duration":130},{"title":"Добро Пожаловать","artist":"OG Buda & MAYOT","album":"Сингл","year":"2021","release":"2021-04-28","featuring":[],"producer":["Wex","TREEPSIDE"],"writers":["OG Buda","MAYOT","Wex","TREEPSIDE"],"label":"CPLUS, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5f3d439b174a4f979425fe572f31e6c1.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c601efdd906b4e809cb9fa1088ae4c3a.jpg","duration":109},{"title":"Дабстэп","artist":"OG Buda (Ft. Scally Milano)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["Scally Milano"],"producer":["Heronwater Beats"],"writers":["OG Buda","Scally Milano","Heronwater Beats"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e4eda2b4fc014839819215ecd9c5e5f5.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":136},{"title":"Бэньг Бэньг","artist":"Scally Milano","album":"ONION","year":"2021","release":"2021-06-18","featuring":[],"producer":["Wex","oqumeh"],"writers":["Scally Milano","Wex","oqumeh"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/d50a5ab9e6c24c13963047ec20366d8a.mp3","cover":"https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png","duration":126},{"title":"Дзагоев","artist":"OG Buda","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":[],"producer":["Nest","Gredy","Wex"],"writers":["OG Buda","Nest","Gredy","Wex"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7a854a26491c451e8fd180beef965483.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":121},{"title":"Подкован","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","release":"2022-04-12","featuring":[],"producer":["Senk","thirdfen"],"writers":["Scally Milano","Senk","thirdfen"],"label":"amc music","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/53adcbf1873d4da783aef32bd1a13f1e.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":133},{"title":"VIP","artist":"unki (Ft. BUSHIDO ZHO)","album":"JERK SHIT HAPPENS 2","year":"2024","release":"2024-06-07","featuring":["BUSHIDO ZHO"],"producer":["blickyhomeboy","yuko (Producer)","Wex","DIsshhhh"],"writers":["unki","BUSHIDO ZHO","blickyhomeboy","Wex"],"label":"#neWWave (RUS)","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/dafd13497c8c433bba9583eb659deb27.mp3","cover":"https://images.genius.com/6d506d3c2e96922d2cab3a99f7be8974.1000x1000x1.png","duration":97},{"title":"hu3ta (VJLink)","artist":"OG Buda (Ft. SODA LUV)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["SODA LUV"],"producer":["Heronwater Beats"],"writers":["OG Buda","SODA LUV","Heronwater Beats"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/b3afedbc2b914513a086f53d64dd78e3.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":121},{"title":"Колян","artist":"Scally Milano","album":"ONION","year":"2021","release":"2021-06-18","featuring":[],"producer":["Wex","Matake"],"writers":["Scally Milano","Wex","Matake"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/bf9245d04ce04739941d574e38d43835.mp3","cover":"https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png","duration":139},{"title":"FACE ID","artist":"MAYOT & SEEMEE (Ft. 163ONMYNECK)","album":"SCUM OFF THE POT 2","year":"2022","release":"2022-06-24","featuring":["163ONMYNECK"],"producer":["CALYKO"],"writers":["CALYKO","163ONMYNECK","MAYOT","SEEMEE"],"label":"CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/16b75103cd994b8f8056935c435ba444.mp3","cover":"https://images.genius.com/6baf7ba3c9643051a2fb8ae9ef8dea80.1000x1000x1.png","duration":143},{"title":"WINDOWS","artist":"SEEMEE (Ft. MAYOT)","album":"TXC","year":"2021","release":"2021-06-25","featuring":["MAYOT"],"producer":["DooMee","TonySouljah","VisaGangBeatz"],"writers":["SEEMEE","MAYOT","VisaGangBeatz","TonySouljah","DooMee"],"label":"CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/d819f91980e44cd5968cbf917c80f52d.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":100},{"title":"Скам","artist":"Scally Milano","album":"ONION","year":"2021","release":"2021-06-18","featuring":[],"producer":["Heronwater Beats"],"writers":["Scally Milano","Heronwater Beats"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4ddcb9deaec44369afffccb089d2f946.mp3","cover":"https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png","duration":153},{"title":"DREDD JUDGE","artist":"SEEMEE","album":"TXC 2","year":"2024","release":"2024-09-13","featuring":[],"producer":["180revs"],"writers":["SEEMEE","180revs"],"label":"KOALA MUSIC, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/03786a44ecd841b2a88597c3140e9cf0.mp3","cover":"https://images.genius.com/5f99590171d32af55c9795acccdc9612.1000x1000x1.png","duration":132},{"title":"Инвестор","artist":"Scally Milano","album":"MONEY COUNTER MUSIC","year":"2021","release":"2021-12-17","featuring":[],"producer":["Kreeshnah"],"writers":["Scally Milano","Kreeshnah"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a244ea31b0d9434a8fe5041a2455acd7.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/524225226e3f48f5b45d31218ef88492.jpg","duration":100},{"title":"Не виноват","artist":"Scally Milano","album":"MONEY COUNTER MUSIC","year":"2021","release":"2021-12-17","featuring":[],"producer":["Heronwater Beats"],"writers":["Scally Milano","Heronwater Beats"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/2896eacc0a754e5291964fafedfcde01.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/524225226e3f48f5b45d31218ef88492.jpg","duration":138},{"title":"Тюрбан","artist":"Scally Milano & uglystephan","album":"MONEY COUNTER MUSIC","year":"2021","release":"2021-12-17","featuring":[],"producer":["spaceboyren"],"writers":["Scally Milano","uglystephan","spaceboyren"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7c4ebb1a52594829a773697007e86ffa.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/524225226e3f48f5b45d31218ef88492.jpg","duration":145},{"title":"ЛЯ ЛЯ ЛЯ","artist":"СТИНТ","album":"чел, тебе 30","year":"2026","release":"2026-08-14","featuring":[],"producer":["Envtn"],"writers":["СТИНТ (THE STINT)","Envtn","реприза (REPRIZZA)"],"label":"The Fence","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/d48954fee2b244d291c14c6f5b3bdec6.mp3","cover":"https://images.genius.com/dc8bab816ca60d34c477eed5f31b2b16.1000x1000x1.png","duration":126},{"title":"ДИНАСТИЯ","artist":"VILLIAN & madk1d","album":"Красивое Зло","year":"2026","release":"2026-07-24","featuring":[],"producer":["youngslashprod","nowaycvv","tainiykick","dexey!","Masha Zubkova","мамэтотолькодляфото (mijfp)"],"writers":["VILLIAN","madk1d","youngslashprod","nowaycvv","tainiykick","dexey!"],"label":"ALIVE (RUS), KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/42d4f68ff7b74838845b5664da4d6ea1.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a9789430f4884b04ad22ee0e22a910f3.jpg","duration":150},{"title":"BIG PUN","artist":"MAYOT & SEEMEE","album":"SCUM OFF THE POT 2","year":"2022","release":"2022-06-24","featuring":[],"producer":["sb220iq","morioh","CALYKO","Даниил Александров (Daniil Alexandrov)"],"writers":["sb220iq","morioh","CALYKO","SEEMEE","MAYOT"],"label":"CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/242518ec1ffc4342b1f6e32ffd864643.mp3","cover":"https://images.genius.com/6baf7ba3c9643051a2fb8ae9ef8dea80.1000x1000x1.png","duration":136},{"title":"Колпак","artist":"MAYOT","album":"ЗАПРАВКА КИД","year":"2020","release":"2020-12-25","featuring":[],"producer":["Sqweezey"],"writers":["Sqweezey","MAYOT"],"label":"CPLUS, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/030a098b13384d7dba9ad9b2960d359f.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg","duration":119},{"title":"Восап","artist":"163ONMYNECK","album":"GROW GUIDE 3","year":"2023","release":"2023-09-01","featuring":[],"producer":["lakes (prod)"],"writers":["163ONMYNECK","lakes (prod)"],"label":"RNDM CREW, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/6f2fcc8ad0e947ebad0a44faed8c0698.mp3","cover":"https://images.genius.com/df60ffed5e7cf7d05e3b43a244a4f0ff.1000x1000x1.png","duration":150},{"title":"Спиттин","artist":"OG Buda (Ft. MAYOT)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["MAYOT"],"producer":["blicky"],"writers":["OG Buda","MAYOT","blicky"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/2ef728bb814e4d94b3babee684323318.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":142},{"title":"САМП","artist":"OG Buda (Ft. BUSHIDO ZHO)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["BUSHIDO ZHO"],"producer":["Heronwater Beats"],"writers":["OG Buda","BUSHIDO ZHO"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/913cf2d21ee84f748193d688df2dd47d.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":139},{"title":"FPV FLOW 2029","artist":"CMH","album":"все группи попадают в рай","year":"2026","release":"2026-02-13","featuring":[],"producer":["Skurt"],"writers":["CMH","Skurt","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/82f7bd2e81544d6bbcaaaba4cb3cd43e.mp3","cover":"https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png","duration":104},{"title":"RAVE MODE","artist":"CMH","album":"BIOHAZARD","year":"2019","release":"2019-08-01","featuring":[],"producer":["FirstFeel"],"writers":["CMH"],"label":"KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/fe7bf94bec6a40d49d7da37007d69fc7.mp3","cover":"https://images.genius.com/3b29f875a2d725ebc467d9e3c0fc0594.1000x1000x1.png","duration":165},{"title":"SKIN$","artist":"CMH","album":"Сингл","year":"2023","release":"2023-09-08","featuring":[],"producer":["spbwaves"],"writers":["CMH"],"label":"KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c2f49f91f1974c2689260abd453febd1.mp3","cover":"https://images.genius.com/734359417981da30b8cdc7d7e10e2457.1000x1000x1.png","duration":104},{"title":"МИКРО","artist":"SEEMEE (Ft. MAYOT)","album":"TXC","year":"2021","release":"2021-06-25","featuring":["MAYOT"],"producer":["DooMee"],"writers":["DooMee","MAYOT","SEEMEE"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5a759a944f8549a3b837b32bcb11edfc.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":138},{"title":"Большие Бабки","artist":"Scally Milano & OG Buda","album":"Пропаганда денег","year":"2022","release":"2022-04-15","featuring":[],"producer":["saintracks","wygo01"],"writers":["Scally Milano","OG Buda","saintracks","wygo01"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a6cfdc85e2ae4e419be94d6e3e21011b.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":140},{"title":"ОРВИ","artist":"Baby Melo","album":"Who Realer?","year":"2024","release":"2024-05-31","featuring":[],"producer":["YGCezar","Иван Комаров (Ivan Komarov)"],"writers":["Baby Melo"],"label":"A+ (A Plus), HOOD2HOOD","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5ee158cdacf645b4b04ea728a48a5083.mp3","cover":"https://images.genius.com/61e9eb92c06c7538f59adc523f2c039c.1000x1000x1.png","duration":142},{"title":"Дерьмо","artist":"SEEMEE","album":"TXC","year":"2021","release":"2021-01-29","featuring":[],"producer":["TonySouljah"],"writers":["TonySouljah","SEEMEE"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/15ac6e39700049c793da84e625031db6.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":110},{"title":"Ашан","artist":"SODA LUV","album":"Ничего личного","year":"2019","release":"2019-12-20","featuring":[],"producer":["Yung Dexn"],"writers":["Yung Dexn","SODA LUV"],"label":"Rhymes Music","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c9f793430c014bec86babe2754cff67a.mp3","cover":"https://images.genius.com/5327fad05f60d4192af895947c54b54e.1000x1000x1.png","duration":103},{"title":"Гоатс милк","artist":"163ONMYNECK","album":"GROW GUIDE 3","year":"2023","release":"2023-09-01","featuring":[],"producer":["Kay Kay","SLAJIDI"],"writers":["163ONMYNECK","Kay Kay","SLAJIDI"],"label":"RNDM CREW, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c19784d1b6f24d1e88d463a3f09e1911.mp3","cover":"https://images.genius.com/df60ffed5e7cf7d05e3b43a244a4f0ff.1000x1000x1.png","duration":112},{"title":"Грачи","artist":"MAYOT (Ft. OG Buda)","album":"GHETTO GARDEN","year":"2020","release":"2020-09-04","featuring":["OG Buda"],"producer":["Sqweezey"],"writers":["Sqweezey","OG Buda","MAYOT"],"label":"MELON MUSIC, RNDM CREW, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c0f40275d4bf4780a8cafb67d3449d1d.mp3","cover":"https://images.genius.com/eaf1162509e8a8aad157ff8576daa9fc.1000x1000x1.png","duration":55},{"title":"Hot Wheels","artist":"SEEMEE (Ft. 163ONMYNECK & Scally Milano)","album":"TXC","year":"2021","release":"2021-06-25","featuring":["Scally Milano","163ONMYNECK"],"producer":["chronic","cardinparis"],"writers":["SEEMEE","Scally Milano","163ONMYNECK","chronic","cardinparis"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/bf418506b7754a3bbfa0523f00b15f57.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":146},{"title":"Аутсайдэр","artist":"CMH","album":"ANTIWRLD","year":"2023","release":"2023-02-17","featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/fdcd832a7de14cb593b324aa1e0b1df3.mp3","cover":"https://images.genius.com/cb0f3e324cce2453101c1309ec3ff901.1000x1000x1.png","duration":129},{"title":"реквием2000","artist":"CMH","album":"все группи попадают в рай","year":"2026","release":"2026-02-13","featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e65c71d94c7c4e33877d8704c24aab20.mp3","cover":"https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png","duration":129},{"title":"Спрайт","artist":"CMH","album":"ANTIWRLD","year":"2023","release":"2023-02-17","featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/33b8b7e649ae491a9fc9286af720f9e6.mp3","cover":"https://images.genius.com/cb0f3e324cce2453101c1309ec3ff901.1000x1000x1.png","duration":132},{"title":"СТИКЕР","artist":"CMH & Lida","album":"PAYDAY","year":"2020","release":"2020-12-11","featuring":[],"producer":["spbwaves"],"writers":["CMH","Lida","spbwaves"],"label":"KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/69d203d71d4d45e2964c97acbb8b61e2.mp3","cover":"https://images.genius.com/7531446c8fc275a286d5819e36f4d1d5.1000x1000x1.png","duration":132},{"title":"Винрар","artist":"OG Buda (Ft. 163ONMYNECK)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["163ONMYNECK"],"producer":["BeatsByKelly","Wex"],"writers":["OG Buda","163ONMYNECK","BeatsByKelly","Wex"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c650401aaf294b4db1173a3d800fc544.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":146},{"title":"Фагаю","artist":"MAYOT","album":"ЗАПРАВКА КИД","year":"2020","release":"2020-12-25","featuring":[],"producer":["Sqweezey","prod. ivy"],"writers":["MAYOT","Sqweezey","prod. ivy"],"label":"CPLUS, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/597a063428fa4fb9b3046c98860bf24b.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg","duration":94},{"title":"Следующий","artist":"OG Buda","album":"FREERIO 2","year":"2022","release":"2022-04-29","featuring":[],"producer":["UraniumSeller","Rallex"],"writers":["OG Buda","UraniumSeller","Rallex"],"label":"RNDM CREW, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5a0239e6c7904e7db45d6023fce72a71.mp3","cover":"https://images.genius.com/b929bdd1ba79cdea4c4c30ed53877eb5.1000x1000x1.png","duration":101},{"title":"Штанги","artist":"Pretty Scream & SEEMEE","album":"Leave Your Bones","year":"2021","release":"2021-06-11","featuring":[],"producer":["Pretty Scream"],"writers":["Pretty Scream","SEEMEE"],"label":"MELON MUSIC, Loyalty Means Everything","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7118110c884f41678c60ebbffa290eb5.mp3","cover":"https://images.genius.com/663619c33497033b1398a709c4d1eb14.1000x1000x1.png","duration":97},{"title":"чайка","artist":"CMH & Пошлая Молли","album":"все группи попадают в рай","year":"2026","release":"2026-02-13","featuring":[],"producer":["Кирилл Бледный (Kirill Bledny)","Константин Пыжов (Konstantin Pyzhov)"],"writers":["CMH","Кирилл Бледный (Kirill Bledny)","Константин Пыжов (Konstantin Pyzhov)","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/ef538116b70742318efc2c0d429c06ab.mp3","cover":"https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png","duration":169},{"title":"даяизсибири","artist":"CMH","album":"все группи попадают в рай","year":"2026","release":"2026-02-13","featuring":[],"producer":["BEATCASTER"],"writers":["CMH","BEATCASTER","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/b1fcda8edd7c47549754abd616920482.mp3","cover":"https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png","duration":140},{"title":"все группи попадают в рай","artist":"CMH","album":"все группи попадают в рай","year":"2026","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/62c80ac0d68343b082b45e20f6883692.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/aaf913a8d1c4420093be2b5d551f7d40.jpg","duration":136,"featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"","release":"2026-02-13"},{"title":"G-SHOKK","artist":"SODA LUV (Ft. OG Buda)","album":"КОТЬ! КОТЬ!","year":"2021","release":"2021-04-02","featuring":["OG Buda"],"producer":["amyp","demarcxx","gob wants nothing","CPLUS","Даниил Александров (Daniil Alexandrov)"],"writers":["gob wants nothing","demarcxx","amyp","OG Buda","SODA LUV"],"label":"MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4fc8997d02af4803b1f5eff2580e8cc9.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/1f85db54165f40feaf6afed80baee15c.jpg","duration":185},{"title":"Dirrt","artist":"Big Baby Tape & kizaru","album":"BANDANA I","year":"2021","release":"2021-10-22","featuring":[],"producer":["Big Baby Tape"],"writers":["Big Baby Tape"],"label":"BENZO RECORDS, HAUNTED FAMILY, KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/eb7a0aab555349fd9777950443a648d0.mp3","cover":"https://images.genius.com/1932d8ea8a964db81269e0857821807d.1000x1000x1.png","duration":161},{"title":"Накипь","artist":"MAYOT","album":"ЗАПРАВКА КИД","year":"2020","release":"2020-12-25","featuring":[],"producer":["blsq","manyice"],"writers":["manyice","blsq","MAYOT"],"label":"CPLUS, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/db3d81c997114459b30b83476554f263.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg","duration":127},{"title":"По Пятам","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","release":"2022-04-15","featuring":[],"producer":["saintracks"],"writers":["saintracks","Scally Milano"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c71bcd2912bd48c4b742e1f1710c4b57.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":114},{"title":"днями и ночами","artist":"BUSHIDO ZHO, Scally Milano & Полка","album":"sweet and tearz","year":"2025","release":"2025-12-03","featuring":[],"producer":["Wex","riileybeatz"],"writers":["BUSHIDO ZHO","Scally Milano","Полка (polkapretty)","Wex","riileybeatz"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/f28834455e5c40f7b4098eac5e60ca62.mp3","cover":"https://images.genius.com/9a17ee0480a3623dfef7f154e6b83dc9.1000x1000x1.png","duration":142},{"title":"Недоволен","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","release":"2022-04-15","featuring":[],"producer":["KILLHEEN"],"writers":["KILLHEEN","Scally Milano"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c24c02112d544202b958470608706072.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":120},{"title":"GLO","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","release":"2022-04-15","featuring":[],"producer":["FONFORINO","babyswishh1"],"writers":["Scally Milano","FONFORINO","babyswishh1"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5bc40fdc67ae4c1a95c5a92cd07073c0.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":136}];
 
 const FAV_KEY = 'jt_favs_v1';
 const VOL_KEY = 'jt_volume_v1';
@@ -2682,7 +2718,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 /* ══════════════════════════════════════════════════════════
    Элементы
    ══════════════════════════════════════════════════════════ */
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '1.11.1';
 
 /* @username бота — из него собираются короткие ссылки на трек */
 const BOT_USERNAME = 'jt_music_app_bot';
@@ -2759,8 +2795,8 @@ const favBtn = $('favBtn');
 const titleEl = $('title');
 const artistEl = $('artist');
 const scrub = $('scrub');
-const scrubFill = $('scrubFill');
-const scrubKnob = $('scrubKnob');
+const eTrack = $('eTrack');
+const eFill = $('eFill');
 const tCur = $('tCur');
 const tDur = $('tDur');
 const playBtn = $('playBtn');
@@ -2770,8 +2806,6 @@ const shuffleBtn = $('shuffleBtn');
 const repeatBtn = $('repeatBtn');
 const volumeRow = $('volumeRow');
 const volSlider = $('volSlider');
-const volFill = $('volFill');
-const volKnob = $('volKnob');
 const muteBtn = $('muteBtn');
 const volIcon = $('volIcon');
 
@@ -2887,6 +2921,13 @@ async function fetchTracks() {
     } catch (e) {
       console.warn('не удалось загрузить', url, e.message);
     }
+  }
+  /* Оба адреса не ответили (файл открыли двойным кликом — браузер запрещает
+     file://-запросы, или GitHub недоступен). Поднимаем встроенную копию
+     списка: она всегда лежит прямо в этом HTML */
+  if (Array.isArray(EMBEDDED_TRACKS) && EMBEDDED_TRACKS.length) {
+    console.warn('tracks.json недоступен — работаем на встроенной копии');
+    return EMBEDDED_TRACKS;
   }
   return null;
 }
@@ -3034,9 +3075,37 @@ function coverOf(t) {
    ══════════════════════════════════════════════════════════ */
 let playerOpen = false;
 
+/* ── «парковка» уехавших экранов ──
+   На iOS/WebKit слой с will-change:transform продолжает участвовать в
+   hit-test по СТАРОМУ месту даже с visibility:hidden — поэтому после
+   сворачивания плеера кнопки меню иногда «не жмутся». Лечим двумя
+   поясами: 1) inert — элемент мгновенно выпадает из обработки касаний
+   (надёжнее pointer-events); 2) через ~полсекунды display:none — слой
+   физически удаляется из дерева рендера. При открытии всё возвращаем. */
+function screenParker(el) {
+  let t = 0;
+  return {
+    open() {
+      clearTimeout(t);
+      el.style.display = '';
+      el.inert = false;
+      void el.offsetWidth;   // reflow: иначе переход с display:none не анимируется
+    },
+    close(ms) {
+      el.inert = true;
+      clearTimeout(t);
+      t = setTimeout(() => { el.style.display = 'none'; }, ms);
+    }
+  };
+}
+const parkPlayer = screenParker(scrPlayer);
+const parkAlbum = screenParker(scrAlbum);
+const parkSettings = screenParker(scrSettings);
+
 function openPlayer() {
   if (currentIndex < 0 || playerOpen) return;
   playerOpen = true;
+  parkPlayer.open();
   scrPlayer.classList.add('open');
   stage.classList.add('shrink');
   dock.classList.add('hide');
@@ -3090,6 +3159,7 @@ function closePlayer() {
      от прерванного свайпа остаются на экране навсегда и убивают библиотеку */
   scrPlayer.style.transform = '';
   scrPlayer.classList.remove('open');
+  parkPlayer.close(520);            // inert сразу, display:none — после анимации уезда
   stage.classList.remove('shrink');
   dock.classList.remove('hide');
   document.body.classList.remove('player-open');
@@ -3106,6 +3176,7 @@ function closePlayer() {
 function openAlbum(name) {
   albumOpenName = name;
   renderAlbumPage(name);
+  parkAlbum.open();
   scrAlbum.classList.add('open');
   showTgBack(true);
   if (tg && tg.HapticFeedback) {
@@ -3116,6 +3187,7 @@ function openAlbum(name) {
 function closeAlbum() {
   albumOpenName = null;
   scrAlbum.classList.remove('open');
+  parkAlbum.close(420);
   showTgBack(playerOpen);
 }
 
@@ -3169,7 +3241,7 @@ function makeRow(index, delay) {
   const row = document.createElement('div');
   row.className = 'row';
   row.dataset.index = index;
-  if (delay) row.style.animationDelay = delay + 'ms';   // лесенка при появлении
+  if (delay) row.style.animationDelay = Math.min(delay, 336) + 'ms';   // лесенка, но не длиннее ~14 строк
 
   const img = document.createElement('img');
   img.className = 'row-cover';
@@ -3196,7 +3268,7 @@ function makeRow(index, delay) {
   const fav = document.createElement('button');
   fav.className = 'row-fav';
   fav.setAttribute('aria-label', 'В избранное');
-  fav.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
+  fav.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
   if (favorites.has(keyOf(t))) fav.classList.add('on');
 
   fav.addEventListener('click', (e) => {
@@ -3324,9 +3396,15 @@ function visibleIndices() {
   return idx;
 }
 
+/* тихая иконка для пустых состояний — геометрия lucide disc-3 */
+const EMPTY_ICON =
+  '<svg class="empty-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<circle cx="12" cy="12" r="10"/><path d="M6 12c0-1.7.7-3.2 1.8-4.2"/><circle cx="12" cy="12" r="2"/></svg>';
+
 function emptyState() {
-  if (searchQuery) return '<div class="empty"><b>Ничего не найдено</b>Попробуй другой запрос</div>';
-  return '<div class="empty"><b>Пока пусто</b>Добавь трек через бота</div>';
+  if (searchQuery) return '<div class="empty">' + EMPTY_ICON + '<b>Ничего не найдено</b>Попробуй другой запрос</div>';
+  return '<div class="empty">' + EMPTY_ICON + '<b>Пока пусто</b>Добавь трек через бота</div>';
 }
 
 function renderAll() {
@@ -3352,7 +3430,7 @@ function renderFav() {
   if (!idx.length) {
     panels.fav.innerHTML = searchQuery
       ? emptyState()
-      : '<div class="empty"><b>В избранном пусто</b>Нажми ♥ у трека, чтобы сохранить</div>';
+      : '<div class="empty">' + EMPTY_ICON + '<b>В избранном пусто</b>Нажми ♥ у трека, чтобы сохранить</div>';
     return;
   }
   const frag = document.createDocumentFragment();
@@ -3397,7 +3475,7 @@ function renderAlbums() {
   if (!names.length) {
     panels.albums.innerHTML = searchQuery
       ? emptyState()
-      : '<div class="empty"><b>Альбомов нет</b>Все треки пока синглы — они в «Все»</div>';
+      : '<div class="empty">' + EMPTY_ICON + '<b>Альбомов нет</b>Все треки пока синглы — они в «Все»</div>';
     return;
   }
 
@@ -3547,14 +3625,10 @@ function toggleFavorite(index, btnEl) {
   if (wasOn) favorites.delete(key); else favorites.add(key);
   saveFavs();
 
+  /* «туг-туг» теперь делает CSS (heartBeat на svg). Прежний дубль на WAAPI
+     гонял кнопку и иконку одновременно — суммарный пик доходил до 1.5× */
   if (btnEl) {
     btnEl.classList.toggle('on', !wasOn);
-    if (!wasOn && btnEl.animate) {
-      btnEl.animate(
-        [{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1)' }],
-        { duration: 320, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }
-      );
-    }
   }
 
   syncFavButtons();
@@ -3584,13 +3658,383 @@ function syncFavButtons() {
    ══════════════════════════════════════════════════════════ */
 let ambFront = 0;
 const ambEls = [$('ambA'), $('ambB')];
-const meshEl = document.querySelector('.mesh');
+
+/* ══════════════════════════════════════════════════════════
+   АВРОРА — WebGL-шейдер (порт ReactBits Aurora, чистый WebGL)
+   Один фуллскрин-квад: многослойные «шёлковые» занавесы с шумом
+   симплекс текут от верхнего края по всей ширине экрана — движение
+   заметно сразу и никогда не замирает целиком.
+   Цвет — градиент по трём стопам в Oklab: при смене трека JS плавно
+   ведёт uniform'ы, и старый цвет ТАЕТ в новом (без «грязи» и без
+   мигания через цветовой круг — оттенок всегда едет по кратчайшей дуге).
+   Экономия батареи: цикл спит, когда фон выключен тумблером, трек на
+   паузе в библиотеке или таб скрыт; на prefers-reduced-motion рисуется
+   один статичный кадр вместо анимации.
+   ══════════════════════════════════════════════════════════ */
+const aurora = (function () {
+  const fail = { setColors() {}, surge() {}, setLevel() {} };
+  const canvas = document.getElementById('auroraCanvas');
+  if (!canvas) return fail;
+
+  const reduce = !!(window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  const GL_OPTS = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false };
+  let gl = null;
+  try {
+    gl = canvas.getContext('webgl2', GL_OPTS) || canvas.getContext('webgl', GL_OPTS);
+  } catch (e) { gl = null; }
+  if (!gl) { canvas.remove(); return fail; }   // WebGL нет — остаётся размытая обложка
+
+  const VERT = 'attribute vec2 aPos; void main() { gl_Position = vec4(aPos, 0.0, 1.0); }';
+
+  const FRAG = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 uResolution;
+uniform float uTime;
+uniform vec3 uStopA;
+uniform vec3 uStopB;
+uniform vec3 uStopC;
+uniform float uAmplitude;
+uniform float uBlend;
+uniform float uHeight;
+uniform float uScale;
+uniform float uGlow;
+uniform float uBrightness;
+uniform vec3 uPointer;
+uniform float uReveal;
+uniform float uOpacity;
+
+vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
+
+float snoise(vec2 v) {
+  const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+  vec2 i = floor(v + dot(v, C.yy));
+  vec2 x0 = v - i + dot(i, C.xx);
+  vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+  vec4 x12 = x0.xyxy + C.xxzz;
+  x12.xy -= i1;
+  i = mod(i, 289.0);
+  vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+  vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+  m = m * m;
+  m = m * m;
+  vec3 x = 2.0 * fract(p * C.www) - 1.0;
+  vec3 h = abs(x) - 0.5;
+  vec3 ox = floor(x + 0.5);
+  vec3 a0 = x - ox;
+  m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
+  vec3 g;
+  g.x = a0.x * x0.x + h.x * x0.y;
+  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+  return 130.0 * dot(m, g);
+}
+
+float smootherstep(float e0, float e1, float x) {
+  float t = clamp((x - e0) / (e1 - e0), 0.0, 1.0);
+  return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
+}
+
+vec3 oklabToLinear(vec3 c) {
+  float l = c.x + 0.3963377774 * c.y + 0.2158037573 * c.z;
+  float m = c.x - 0.1055613458 * c.y - 0.0638541728 * c.z;
+  float s = c.x - 0.0894841775 * c.y - 1.2914855480 * c.z;
+  l = l * l * l;
+  m = m * m * m;
+  s = s * s * s;
+  return vec3(
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
+  );
+}
+
+vec3 toSrgb(vec3 c) {
+  c = clamp(c, 0.0, 1.0);
+  return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c));
+}
+
+/* градиент по трём стопам (Oklab -> sRGB): плавные переливы без «грязи» */
+vec3 ramp(float t) {
+  float x = clamp(t, 0.0, 1.0) * 2.0;
+  float seg = min(floor(x), 1.0);
+  float f = x - seg;
+  f = f * f * (3.0 - 2.0 * f);
+  vec3 lch = seg < 0.5 ? mix(uStopA, uStopB, f) : mix(uStopB, uStopC, f);
+  return toSrgb(oklabToLinear(vec3(lch.x, lch.y * cos(lch.z), lch.y * sin(lch.z))));
+}
+
+float hash(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+
+void main() {
+  vec2 frag = gl_FragCoord.xy;
+  float y = 1.0 - frag.y / uResolution.y;          // 0 у верхнего края
+  float u = frag.x / uResolution.x;
+  float X = (frag.x - uResolution.x * 0.5) / uResolution.y;
+  float t = uTime;
+  float dx = (X - uPointer.x) / 0.38;
+  float reach = uPointer.z * exp(-dx * dx);
+  vec3 glow = vec3(0.0);
+  float cover = 0.0;
+
+  /* два слоя: основной занавес + мягкий эхо-слой чуть выше */
+  for (int k = 0; k < 2; k++) {
+    float layer = float(k);
+    float seed = layer * 13.7;
+    float pace = t * (1.0 - layer * 0.18);
+    float warp = snoise(vec2(X * 0.45 * uScale + pace * 0.02 + seed, pace * 0.05 + seed));
+    float wave = snoise(vec2(X * 0.75 * uScale + warp * 0.35 - pace * 0.03 + seed, pace * 0.07 - seed)) * 0.72
+               + snoise(vec2(X * 1.6 * uScale + warp * 0.5 + pace * 0.04 - seed, pace * 0.1 + seed * 0.5)) * 0.28;
+    float hem = uHeight + layer * 0.07 + wave * 0.15 * uAmplitude;
+    hem += reach * 0.08 * (layer < 0.5 ? 1.0 : 0.4);
+    hem = mix(-0.25, hem, uReveal);
+    float soft = (0.04 + uBlend * 0.16) * (1.0 + layer * 0.9);
+    float rise = hem - y;
+    float low = -soft - uGlow * 0.14;
+    float high = 0.26 + soft * 0.6;
+    float body = pow(smootherstep(low, high, rise), 1.5 + uGlow * 0.6);
+    float lobes = 0.86 + 0.14 * snoise(vec2(X * 0.9 * uScale - pace * 0.025 + seed, y * 0.3 + pace * 0.04));
+    float alpha = body * lobes * (layer < 0.5 ? 1.0 : 0.32);
+    alpha = clamp(alpha * (1.0 + reach * 0.25 * smootherstep(0.9, 0.0, abs(y - hem))), 0.0, 1.0);
+    vec3 tint = ramp(u + 0.05 * sin(pace * 0.08 + layer * 2.3) + layer * 0.1 + max(rise, 0.0) * 0.05);
+    glow = 1.0 - (1.0 - glow) * (1.0 - tint * alpha);
+    cover = 1.0 - (1.0 - cover) * (1.0 - alpha);
+  }
+
+  float fade = smootherstep(0.0, 0.7, uReveal) * uOpacity;
+  float strength = clamp(uBrightness, 0.0, 2.0);
+  glow *= fade * min(strength, 1.0);
+  cover *= fade * min(strength, 1.0);
+  glow = 1.0 - pow(1.0 - glow, vec3(max(strength, 1.0)));
+  float dither = (hash(frag) - 0.5) / 255.0;
+  gl_FragColor = vec4(glow + dither, clamp(cover + dither, 0.0, 1.0));
+}`;
+
+  function compile(type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.warn('[aurora] shader:', gl.getShaderInfoLog(sh) || 'unknown');
+      return null;
+    }
+    return sh;
+  }
+
+  const vs = compile(gl.VERTEX_SHADER, VERT);
+  const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+  const prog = vs && fs && gl.createProgram();
+  if (!prog) { canvas.remove(); return fail; }
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.bindAttribLocation(prog, 0, 'aPos');
+  gl.linkProgram(prog);
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.warn('[aurora] link:', gl.getProgramInfoLog(prog) || 'unknown');
+    canvas.remove();
+    return fail;
+  }
+  gl.useProgram(prog);
+
+  const u = {};
+  const uc = gl.getProgramParameter(prog, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < uc; i++) {
+    const inf = gl.getActiveUniform(prog, i);
+    u[inf.name] = gl.getUniformLocation(prog, inf.name);
+  }
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  /* ── палитра: sRGB -> Oklab, JS плавно ведёт значения ──
+     В Oklab смешивание цветов не даёт грязи, а оттенок ездит по кругу
+     без разрывов — именно поэтому переходы выглядят «дорогими» */
+  function toOklab(rgb) {
+    let r = rgb[0] / 255, g = rgb[1] / 255, b = rgb[2] / 255;
+    r = r <= 0.04045 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+    g = g <= 0.04045 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+    b = b <= 0.04045 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.1073969566 * b);
+    const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+    const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+    const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+    return [L, Math.hypot(A, B), Math.atan2(B, A)];
+  }
+
+  const stopsCur = new Float32Array(9);
+  const stopsTgt = new Float32Array(9);
+  [[58, 96, 214], [64, 158, 255], [120, 200, 255]].forEach((c, i) => {
+    const o = toOklab(c);
+    for (let j = 0; j < 3; j++) {
+      stopsTgt[i * 3 + j] = o[j];
+      stopsCur[i * 3 + j] = o[j];
+    }
+  });
+
+  function setColors(c1, c2, c3) {
+    [c1, c2, c3].forEach((c, i) => {
+      const o = toOklab(c);
+      let h = o[2];
+      const prev = stopsTgt[i * 3 + 2];
+      while (h - prev > Math.PI) h -= Math.PI * 2;   // кратчайшая дуга оттенка
+      while (h - prev < -Math.PI) h += Math.PI * 2;
+      stopsTgt[i * 3] = o[0];
+      stopsTgt[i * 3 + 1] = o[1];
+      stopsTgt[i * 3 + 2] = h;
+    });
+    if (reduce) { stopsCur.set(stopsTgt); render(); }
+  }
+
+  /* ── состояние ── */
+  let raf = 0;
+  let last = 0;
+  let clock = 0;                 // «время» волн
+  let reveal = reduce ? 1 : 0;   // плавное появление при старте (~2.4с)
+  let speedCur = 1;              // на паузе в плеере волны текут медленнее
+  let surgeV = 0;                // всплеск при скипе, тает экспоненциально
+  let levelMul = 1;              // множитель слайдера яркости
+  let active = false;
+  let frames = 0;
+
+  /* курсор: занавесы мягко тянутся к пальцу/мыши (как в оригинале) */
+  let ptx = 0, pty = 0.5, smx = 0, smy = 0.5, reach = 0, inside = false;
+  function onMove(e) {
+    const w = Math.max(1, canvas.clientWidth || window.innerWidth);
+    const h = Math.max(1, canvas.clientHeight || window.innerHeight);
+    ptx = (e.clientX - w / 2) / h;
+    pty = e.clientY / h;
+    inside = e.clientX >= 0 && e.clientY >= 0 && e.clientX <= w && e.clientY <= h;
+    wake();
+  }
+  function onUp(e) { if (e.pointerType !== 'mouse') inside = false; }
+  window.addEventListener('pointermove', onMove, { passive: true });
+  window.addEventListener('pointerdown', onMove, { passive: true });
+  window.addEventListener('pointerup', onUp, { passive: true });
+  window.addEventListener('pointercancel', onUp, { passive: true });
+
+  function render() {
+    frames++;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform2f(u.uResolution, canvas.width, canvas.height);
+    gl.uniform1f(u.uTime, clock);
+    gl.uniform3f(u.uStopA, stopsCur[0], stopsCur[1], stopsCur[2]);
+    gl.uniform3f(u.uStopB, stopsCur[3], stopsCur[4], stopsCur[5]);
+    gl.uniform3f(u.uStopC, stopsCur[6], stopsCur[7], stopsCur[8]);
+    gl.uniform1f(u.uAmplitude, 1.05 * (1 + 0.45 * surgeV));
+    gl.uniform1f(u.uBlend, 0.5);
+    gl.uniform1f(u.uHeight, 0.52);
+    gl.uniform1f(u.uScale, 1.1);
+    gl.uniform1f(u.uGlow, 0.6);
+    gl.uniform1f(u.uBrightness, Math.min(2, (0.95 + 0.4 * surgeV) * levelMul));
+    gl.uniform3f(u.uPointer, smx, smy, reach);
+    gl.uniform1f(u.uReveal, 1 - Math.pow(1 - reveal, 3));
+    gl.uniform1f(u.uOpacity, 1);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  function frame(now) {
+    raf = 0;
+    if (document.hidden || !active) return;
+    const dt = last ? Math.min(0.05, Math.max(0.0005, (now - last) / 1000)) : 1 / 60;
+    last = now;
+
+    const paused = document.body.classList.contains('paused');
+    const speedTgt = paused ? 0.55 : 1;
+    speedCur += (speedTgt - speedCur) * (1 - Math.exp(-dt / 0.9));
+
+    /* «таяние» палитры: постоянная времени 0.45с -> полный переход ~1.4с */
+    const kc = 1 - Math.exp(-dt / 0.45);
+    for (let i = 0; i < 9; i++) stopsCur[i] += (stopsTgt[i] - stopsCur[i]) * kc;
+
+    const reachTgt = inside && !reduce ? 1 : 0;
+    reach += (reachTgt - reach) * (1 - Math.exp(-dt / (reachTgt ? 0.9 : 1.4)));
+    const kf = 1 - Math.exp(-dt / 0.6);
+    smx += (ptx - smx) * kf;
+    smy += (pty - smy) * kf;
+
+    if (surgeV > 0.001) surgeV *= Math.exp(-dt / 0.55); else surgeV = 0;
+
+    if (reveal < 1) reveal = Math.min(1, reveal + dt / 2.4);
+
+    clock += dt * speedCur * (1 + 2.2 * surgeV);
+
+    render();
+    raf = requestAnimationFrame(frame);
+  }
+
+  function wake() {
+    if (reduce) { render(); return; }   // статичный кадр вместо анимации
+    if (!raf && active && !document.hidden) {
+      last = 0;
+      raf = requestAnimationFrame(frame);
+    }
+  }
+
+  /* цикл живёт только пока открыт плеер: аврора — часть его экрана.
+     В библиотеке холст прозрачен и не рендерится — батарея не тратится */
+  function isActive() {
+    return document.body.classList.contains('player-open');
+  }
+  function syncActive() {
+    active = isActive();
+    if (active) wake();
+    else if (raf) { cancelAnimationFrame(raf); raf = 0; last = 0; }
+  }
+  if (window.MutationObserver) {
+    new MutationObserver(syncActive).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+  document.addEventListener('visibilitychange', () => { last = 0; if (!document.hidden) syncActive(); });
+
+  function resize() {
+    const w = Math.max(1, canvas.clientWidth || window.innerWidth);
+    const h = Math.max(1, canvas.clientHeight || window.innerHeight);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const W = Math.round(w * dpr);
+    const H = Math.round(h * dpr);
+    if (canvas.width !== W || canvas.height !== H) {
+      canvas.width = W;
+      canvas.height = H;
+    }
+    render();
+    wake();
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+  window.addEventListener('resize', resize);
+
+  const api = {
+    get frames() { return frames; },
+    setColors,
+    surge(v) { surgeV = Math.max(surgeV, Math.min(1.2, Number(v) || 0)); wake(); },
+    setLevel(frac) { levelMul = 0.6 + 0.7 * Math.max(0, Math.min(1, Number(frac) || 0)); }
+  };
+  window.__aurora = api;   // отладка: __aurora.frames растёт, пока волны текут
+
+  resize();
+  syncActive();
+  return api;
+})();
+
 
 /* ── палитра обложки ───────────────────────────────────────
-   Обложку рисуем в холст 32×32 и вытаскиваем оттуда 3 цвета.
-   32 пикселя достаточно: всё равно всё размывается, а 1МБ
-   картинку в памяти телефона держать незачем. */
-const TINY = 32;
+   Обложку рисуем в холст 48×48 (2304 пикселя — хватает для
+   кластеризации, а большую картинку в памяти телефона держать
+   незачем) и вытаскиваем из неё доминирующий цвет. */
+const TINY = 48;
 
 function rgbToHsl(r, g, b) {
   r /= 255; g /= 255; b /= 255;
@@ -3630,25 +4074,74 @@ function hslToRgb(h, s, l) {
   ];
 }
 
-/* бледный цвет обложки в свечении выглядит грязью — подтягиваем насыщенность */
-function glowColor(rgb) {
-  const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
-  return hslToRgb(
-    hsl[0],
-    Math.max(0.55, Math.min(0.95, hsl[1])),
-    Math.max(0.44, Math.min(0.58, hsl[2]))
-  );
+/* ── цвет авроры = цвет обложки ──
+   Стопы шейдера строятся из РЕАЛЬНОГО доминирующего цвета обложки:
+   readCover кластеризует пиксели (k-means), побеждает крупнейшая
+   область, оттенок уточняется круговой средней внутри кластера —
+   логотипы, кожа и яркий текст не перебивают фон картинки.
+   Семья строго одного оттенка (глубина/ключ/отлив): пёстрые
+   обложки-коллажи не раскрашивают фон радугой — занавес остаётся
+   в цвете трека. Светлоту держим в коридоре: приглушённые обложки
+   не превращаются в серые, тёмные — в чёрные */
+function auroraStops(c1) {
+  const key = rgbToHsl(c1[0], c1[1], c1[2]);
+  const h = key[0];
+  const s = Math.max(0.1, Math.min(0.85, key[1] * 1.12));
+  const l = Math.max(0.3, Math.min(0.6, key[2]));
+  const a = hslToRgb((h + 0.985) % 1, Math.min(0.85, s * 0.9), Math.max(0.16, l * 0.52));
+  const b = hslToRgb(h, s, l);
+  const c = hslToRgb((h + 0.02) % 1, Math.min(0.9, s * 1.05), Math.min(0.72, l * 1.3 + 0.05));
+  return [a, b, c];
 }
 
-function setPalette(c1, c2, c3) {
+function setPalette(c1, c2, c3, alts) {
   const st = document.documentElement.style;
   st.setProperty('--c1-rgb', c1.join(', '));
   st.setProperty('--c2-rgb', c2.join(', '));
   st.setProperty('--c3-rgb', c3.join(', '));
+
+  /* акцент интерфейса едет вместе с треком: берём доминирующий цвет,
+     но держим насыщенность и светлоту в коридоре — иначе на чёрном
+     текст и рамки становятся плохо читаемыми. Ч/б обложка получает
+     стальной акцент: случайный оттенок из серых пикселей — грязь */
+  const hsl = rgbToHsl(c1[0], c1[1], c1[2]);
+  const acc = hsl[1] < 0.15
+    ? [203, 208, 218]
+    : hslToRgb(hsl[0], Math.max(0.6, Math.min(0.95, hsl[1])), 0.64);
+  st.setProperty('--accent-rgb', acc.join(', '));
+
+  /* аврора перетекает в цвет трека: шейдер держит старую палитру, пока
+     интерполяция не догонит, — смена трека выглядит как таяние цвета */
+  const stops = auroraStops(c1);
+  aurora.setColors(stops[0], stops[1], stops[2]);
 }
 
 function resetPalette() {
   setPalette([120, 190, 255], [255, 130, 210], [120, 255, 225]);
+  /* фиксируем классический синий: из серой заглушки «палитра»
+     выходит грязной, а дефолт должен быть фирменным */
+  document.documentElement.style.setProperty('--accent-rgb', '59, 157, 255');
+}
+
+/* ── запасная палитра, когда CDN не отдал пиксели обложки ──
+   Без CORS канвас бросает SecurityError, и раньше плеер тихо
+   возвращался к синему — казалось, что «цвета нет». Теперь цвет
+   честно считаем из имени «исполнитель·трек»: хеш даёт стабильный
+   оттенок, один и тот же для одного и того же трека */
+function trackHue(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return (h % 360) / 360;
+}
+function fallbackPalette(t) {
+  const name = t ? (t.artist || '') + '·' + (t.title || '') : '';
+  const h1 = trackHue(name || String(Date.now()));
+  const h2 = (h1 + 0.32 + (h1 * 7) % 0.18) % 1;
+  return [
+    hslToRgb(h1, 0.72, 0.56),
+    hslToRgb(h2, 0.68, 0.5),
+    hslToRgb((h1 + h2) / 2, 0.6, 0.47)
+  ];
 }
 
 /* разбираем уже загруженную картинку (она CORS-чистая, поэтому читается) */
@@ -3659,90 +4152,182 @@ function readCover(img) {
   ctx.drawImage(img, 0, 0, TINY, TINY);
 
   const data = ctx.getImageData(0, 0, TINY, TINY).data;
-
-  /* 12 секторов по кругу оттенков. Копим «вес» цвета: чем больше таких
-     пикселей и чем они насыщеннее — тем весомее сектор. Так находится
-     ДОМИНИРУЮЩИЙ цвет обложки, а не случайная яркая деталь
-     (раньше у бирюзовой обложки побеждали оранжевые волосы) */
-  const buckets = [];
-  for (let i = 0; i < 12; i++) buckets.push({ w: 0, r: 0, g: 0, b: 0, n: 0 });
-
-  for (let i = 0; i < data.length; i += 4) {
-    if (data[i + 3] < 200) continue;
-
-    const r = data[i], g = data[i + 1], b = data[i + 2];
-
-    const hsl = rgbToHsl(r, g, b);
-    // почти чёрное и почти белое — это фон, а не цвет
-    if (hsl[2] < 0.1 || hsl[2] > 0.94 || hsl[1] < 0.12) continue;
-
-    const bi = Math.min(11, Math.floor(hsl[0] * 12));
-    const bk = buckets[bi];
-    bk.w += 0.3 + hsl[1] * (0.4 + hsl[2]);
-    bk.r += r;
-    bk.g += g;
-    bk.b += b;
-    bk.n++;
-  }
-
   const tiny = canvas.toDataURL('image/jpeg', 0.72);
 
-  const order = buckets
-    .map((b, i) => ({ i, w: b.w, n: b.n, r: b.r, g: b.g, b: b.b }))
-    .filter((b) => b.n > 0)
-    .sort((a, b) => b.w - a.w);
+  const pts = [];
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 200) continue;
+    pts.push([data[i], data[i + 1], data[i + 2]]);
+  }
+  if (pts.length < 64) return { tiny, palette: null, alts: null };   // пустая/прозрачная картинка
 
-  if (!order.length) return { tiny, palette: null };
+  /* ── k-means, k=5: пиксели сходятся к 5 цветовым центрам ──
+     Детерминированно: стартовые центры — пиксели квартилей яркости,
+     10 итераций. Побеждает не самый яркий и не самый «орущий» цвет,
+     а КРУПНЕЙШАЯ область — логотип, текст и кожа не перебивают фон */
+  const K = 5;
+  const byL = pts.slice().sort((p, q) => (p[0] + p[1] + p[2]) - (q[0] + q[1] + q[2]));
+  const cents = [];
+  for (let i = 0; i < K; i++) {
+    const p = byL[Math.min(byL.length - 1, Math.round(((i + 0.5) / K) * byL.length))];
+    cents.push([p[0], p[1], p[2]]);
+  }
+  const assign = new Array(pts.length).fill(0);
+  for (let it = 0; it < 10; it++) {
+    for (let i = 0; i < pts.length; i++) {
+      let best = 0, bd = Infinity;
+      for (let c = 0; c < K; c++) {
+        const dr = pts[i][0] - cents[c][0];
+        const dg = pts[i][1] - cents[c][1];
+        const db = pts[i][2] - cents[c][2];
+        const d = dr * dr + dg * dg + db * db;
+        if (d < bd) { bd = d; best = c; }
+      }
+      assign[i] = best;
+    }
+    const sum = [];
+    for (let c = 0; c < K; c++) sum.push([0, 0, 0, 0]);
+    for (let i = 0; i < pts.length; i++) {
+      const s = sum[assign[i]];
+      s[0] += pts[i][0]; s[1] += pts[i][1]; s[2] += pts[i][2]; s[3]++;
+    }
+    for (let c = 0; c < K; c++) {
+      if (sum[c][3]) {
+        cents[c][0] = sum[c][0] / sum[c][3];
+        cents[c][1] = sum[c][1] / sum[c][3];
+        cents[c][2] = sum[c][2] / sum[c][3];
+      }
+    }
+  }
 
-  const avg = (b) => [Math.round(b.r / b.n), Math.round(b.g / b.n), Math.round(b.b / b.n)];
+  /* скоринг кластера: площадь × насыщенность × форма по светлоте.
+     Яркое и мелкое (лого, текст, кожа) штрафуется — оно не фон */
+  const clusters = cents.map((c, ci) => {
+    const rgb = [Math.round(c[0]), Math.round(c[1]), Math.round(c[2])];
+    const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+    let n = 0;
+    for (let i = 0; i < assign.length; i++) if (assign[i] === ci) n++;
+    const share = n / pts.length;
+    const lf = hsl[2] < 0.5
+      ? 0.78 + hsl[2] * 0.44
+      : Math.max(0.2, 1 - (hsl[2] - 0.5) * 3);
+    const g = 0.35 + 0.65 * Math.min(1, hsl[1] / 0.5);
+    return { ci, rgb, hsl, share, score: share * g * lf };
+  }).sort((a, b) => b.score - a.score);
 
-  // 1) доминирующий оттенок
-  const first = order[0];
+  const win = clusters[0];
 
-  // 2) самый весомый из тех, что далеко по кругу — чтобы аврора не была однотонной
-  const second = order.find((b) => {
-    let d = Math.abs(b.i - first.i);
-    if (d > 6) d = 12 - d;
-    return d >= 3;   // минимум 90 градусов
-  }) || order[1] || first;
+  /* почти серая обложка (ч/б, сепия): сталь с лёгким привкусом победителя
+     вместо случайного синего или хеша от названия */
+  if (win.hsl[1] < 0.28) {
+    const h = win.hsl[0];
+    return {
+      tiny,
+      palette: [
+        hslToRgb(h, 0.07, 0.3),
+        hslToRgb(h, 0.09, 0.42),
+        hslToRgb(h, 0.11, 0.55)
+      ],
+      alts: null
+    };
+  }
 
-  // 3) третий — между ними
-  const midH = ((first.i + second.i) / 2) / 12;
-  const midS = Math.max(0.45, 0.55);
+  /* уточнение оттенка внутри кластера-победителя: круговая средняя
+     хроматических пикселей — «каша» дым+тень гаснет, чистый тон остаётся */
+  let n = 0, sx = 0, sy = 0, sw = 0, sSum = 0, lSum = 0;
+  for (let i = 0; i < pts.length; i++) {
+    if (assign[i] !== win.ci) continue;
+    const hsl = rgbToHsl(pts[i][0], pts[i][1], pts[i][2]);
+    if (hsl[1] < 0.22 || hsl[2] < 0.1) continue;
+    const w = hsl[1] * hsl[1];
+    n++;
+    sx += Math.cos(hsl[0] * 2 * Math.PI) * w;
+    sy += Math.sin(hsl[0] * 2 * Math.PI) * w;
+    sw += w; sSum += hsl[1] * w; lSum += hsl[2] * w;
+  }
+  const key = n >= 8
+    ? hslToRgb((Math.atan2(sy, sx) / (2 * Math.PI) + 1) % 1, sSum / sw, Math.min(0.6, lSum / sw))
+    : win.rgb;
 
-  return {
-    tiny,
-    palette: [
-      glowColor(avg(first)),
-      glowColor(avg(second)),
-      hslToRgb(midH, midS, 0.5)
-    ]
-  };
+  /* второй самостоятельный цвет обложки (другой оттенок ≥40° и заметная
+     площадь) — уходит в левый/правый стоп занавеса: аврора повторяет
+     палитру картинки, а не один случайно выбранный тон */
+  const winH = rgbToHsl(key[0], key[1], key[2])[0];
+  const hueDist = (a, b) => { let d = Math.abs(a - b); return d > 0.5 ? 1 - d : d; };
+  const alts = clusters.slice(1)
+    .filter((c) => c.hsl[1] >= 0.25 && c.score >= 0.3 * win.score && hueDist(c.hsl[0], winH) * 360 >= 40)
+    .slice(0, 2)
+    .map((c) => c.rgb);
+
+  return { tiny, palette: [key, win.rgb, alts[0] || key], alts };
 }
 
-function setAmbient(src, palette) {
+function setAmbient(src, palette, alts) {
   const next = ambEls[1 - ambFront];
   const cur = ambEls[ambFront];
-  next.onerror = () => { next.style.opacity = '0'; };
+  next.onerror = () => { next.style.setProperty('--amb-o', '0'); };
   next.src = src;
-  next.style.opacity = '0.3';
-  cur.style.opacity = '0';
+  /* яркость — в CSS-переменную, а не в inline opacity: в плеере слой
+     гасится в ноль (фон там рисует только аврора), в библиотеке виден */
+  next.style.setProperty('--amb-o', '0.3');
+  cur.style.setProperty('--amb-o', '0');
   ambFront = 1 - ambFront;
 
-  /* Свечение больше не рисуется картинкой: три mesh-пятна берут цвет
-     из CSS-переменных --c1/c2/c3-rgb (их ставит setPalette выше).
-     Меняем только переменные — пятна перекрашиваются сами, без
-     лишнего слоя и без пересчёта размытия. */
-  if (palette) setPalette(palette[0], palette[1], palette[2]);
+  /* Цвет авроры не рисуется картинкой: setPalette (выше) обновляет
+     CSS-переменные --c1/c2/c3-rgb и кормит шейдер новыми цветами
+     (вместе со вторым цветом обложки — alts), которые плавно
+     перетекают в старые */
+  if (palette) setPalette(palette[0], palette[1], palette[2], alts);
 }
 
-function setCover(src) {
+/* ── палитра через прокси ──
+   Некоторые CDNs (например, HuggingFace) не отдают CORS: пиксели обложки
+   не читаются, и раньше цвет брали из хеша названия — получался случайный
+   оттенок, не связанный с обложкой. Теперь для ПАЛИТРЫ прогоняем картинку
+   один раз через wsrv.nl, который отдаёт Access-Control-Allow-Origin: *.
+   Сама обложка на экране грузится напрямую, без посредника */
+function paletteViaProxy(src, track, cb) {
+  let done = false;
+  const fin = (pal, tiny) => {
+    if (done) return;
+    done = true;
+    cb(pal, tiny);
+  };
+  const proxy = new Image();
+  proxy.crossOrigin = 'anonymous';
+  proxy.onload = () => {
+    let pal = null;
+    let tiny = null;
+    try {
+      const res = readCover(proxy);
+      pal = res.palette;
+      tiny = res.tiny;
+    } catch (e) {}
+    fin(pal, tiny);
+  };
+  proxy.onerror = () => fin(track ? fallbackPalette(track) : null, null);
+  /* wsrv.nl отдаёт Access-Control-Allow-Origin: * — цвета достанутся всегда,
+     когда прямое чтение запрещено. Таймаут-страховка на случай, если прокси лёг */
+  proxy.src = 'https://wsrv.nl/?url=' + encodeURIComponent(String(src).replace(/^https?:\/\//, '')) + '&w=96&q=70';
+  setTimeout(() => fin(track ? fallbackPalette(track) : null, null), 9000);
+}
+
+function setCover(src, track) {
   coverWrap.classList.add('dim');
 
-  const finish = (palette, tiny) => {
-    if (palette) setPalette(palette[0], palette[1], palette[2]);
+  /* серая заглушка — не «обложка»: палитру и акцент из неё не выводим,
+     оставляем дефолтные цвета и экономим проход по канвасу */
+  if (src === PLACEHOLDER) {
+    resetPalette();
+    setAmbient(src, null);
+    coverWrap.classList.remove('dim');
+    return;
+  }
+
+  const finish = (palette, tiny, alts) => {
+    if (palette) setPalette(palette[0], palette[1], palette[2], alts);
     else resetPalette();
-    setAmbient(tiny || src, palette);
+    setAmbient(tiny || src, palette, alts);
     coverWrap.classList.remove('dim');
   };
 
@@ -3751,23 +4336,35 @@ function setCover(src) {
   coverEl.onload = () => {
     let palette = null;
     let tiny = null;
+    let alts = null;
+    let taint = false;
     try {
       const res = readCover(coverEl);
       palette = res.palette;
       tiny = res.tiny;
+      alts = res.alts;
     } catch (e) {
-      // CDN не отдал пиксели (нет CORS) — картинка важнее цвета
+      taint = true;   // пиксели чужого origin — читаем их через прокси
     }
-    finish(palette, tiny);
+    if (taint) {
+      paletteViaProxy(src, track, (pal, tiny2) => finish(pal, tiny2 || tiny));
+      return;
+    }
+    finish(palette, tiny, alts);   // palette == null для пустых картинок — честный дефолт
   };
 
   coverEl.onerror = () => {
-    // CORS не разрешили: перезагружаем обычным способом, цвета остаются базовые
+    /* CORS не разрешили: для ЭКРАНА перезагружаем без crossorigin (просто
+       показать), а ПАЛИТРУ берём через прокси — цвет будет от обложки,
+       а не случайный из хеша названия */
     coverEl.removeAttribute('crossorigin');
     coverEl.onerror = () => {
       coverEl.onerror = null;
       coverEl.src = PLACEHOLDER;
       finish(null, null);
+    };
+    coverEl.onload = () => {
+      paletteViaProxy(src, track, (pal, tiny) => finish(pal, tiny));
     };
     coverEl.src = src;
   };
@@ -3796,18 +4393,20 @@ function setMarquee(el, text) {
   });
 }
 
-/* ══ импульс при смене трека ══
-   Короткая вспышка масштаба mesh-сетки: 600ms, плавное затухание.
-   Перезапускаем класс вручную — иначе повторный вызов не сработает,
-   пока висит прошлая анимация */
+/* ══ импульс при старте воспроизведения ══
+   Лёгкий «вдох» авроры: волны на миг ускоряются и приподнимаются,
+   затем плавно оседают. Раньше это была вспышка mesh-сетки */
 function pulseMesh() {
-  if (!document.body.classList.contains('glow-on')) return;
-  if (!meshEl) return;
+  aurora.surge(0.4);
+}
 
-  meshEl.classList.remove('pulse');
-  void meshEl.offsetWidth;          // заставляем браузер «забыть» прошлую анимацию
-  meshEl.classList.add('pulse');
-  meshEl.addEventListener('animationend', () => meshEl.classList.remove('pulse'), { once: true });
+/* ══ переход при скипе трека ══
+   Вместо резкой вспышки — волна-вдох: аврора ускоряется, приподнимается
+   и ярчеет, а палитра (setPalette -> aurora.setColors) в это же время
+   плавно перетекает в цвета нового трека. Выглядит как таяние старого
+   цвета в новом — без обрыва и без дёрганых скачков */
+function mergeGlow() {
+  aurora.surge(1);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -3912,7 +4511,7 @@ function loadTrack(index) {
   setMarquee(titleEl, t.title);
   setMarquee(artistEl, artistLine(t));
 
-  setCover(coverOf(t));
+  setCover(coverOf(t), t);
 
   miniCover.src = coverOf(t);
   miniTitle.textContent = t.title;
@@ -3928,8 +4527,7 @@ function loadTrack(index) {
   miniInfo.classList.add('swap');
   miniSwapX = 12;
 
-  scrubFill.style.width = '0%';
-  scrubKnob.style.left = '0%';
+  elasticScrub.reset();
   miniFill.style.width = '0%';
   tCur.textContent = '0:00';
   tDur.textContent = t.duration ? fmt(t.duration) : '0:00';
@@ -4077,57 +4675,9 @@ function updateMediaSession(t) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Слайдеры
+   Слайдеры (порты ReactBits): Elastic Slider — перемотка, ниже;
+   Wake Slider — громкость, внутри setupVolume().
    ══════════════════════════════════════════════════════════ */
-function makeSlider(el, onChange, onCommit, bubble) {
-  let dragging = false;
-
-  const ratioFromEvent = (e) => {
-    const r = el.getBoundingClientRect();
-    return Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);
-  };
-
-  // плашка со временем над пальцем: полоску и цифры палец закрывает
-  const showBubble = (ratio) => {
-    if (!bubble || !bubble.el) return;
-    bubble.el.style.left = (ratio * 100) + '%';
-    if (bubble.text) bubble.el.textContent = bubble.text(ratio);
-    bubble.el.classList.add('show');
-  };
-
-  el.addEventListener('pointerdown', (e) => {
-    dragging = true;
-    /* скраббинг: аура обложки сжимается и насыщается (см. body.scrubbing в CSS).
-       Вешаем только на полосу перемотки — громкость так не светится.
-       Ставим класс ДО setPointerCapture: если захват упадёт, отклик всё равно будет */
-    if (el.classList.contains('scrub')) document.body.classList.add('scrubbing');
-    el.setPointerCapture(e.pointerId);
-    el.classList.add('dragging');
-    const ratio = ratioFromEvent(e);
-    onChange(ratio);
-    showBubble(ratio);
-  });
-
-  el.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    const ratio = ratioFromEvent(e);
-    onChange(ratio);
-    showBubble(ratio);
-  });
-
-  const end = (e) => {
-    if (!dragging) return;
-    dragging = false;
-    el.classList.remove('dragging');
-    document.body.classList.remove('scrubbing');
-    if (bubble && bubble.el) bubble.el.classList.remove('show');
-    try { el.releasePointerCapture(e.pointerId); } catch (err) {}
-    if (onCommit) onCommit();
-  };
-
-  el.addEventListener('pointerup', end);
-  el.addEventListener('pointercancel', end);
-}
 
 /* ══════════════════════════════════════════════════════════
    Громкость
@@ -4135,9 +4685,10 @@ function makeSlider(el, onChange, onCommit, bubble) {
 let volume = 1;
 let lastVolume = 1;
 
+let wakeVolume = null;   // создаётся в setupVolume() (порт ReactBits Wake Slider)
+
 function paintVolume() {
-  volFill.style.width = (volume * 100) + '%';
-  volKnob.style.left = (volume * 100) + '%';
+  if (wakeVolume) wakeVolume.set(volume);
   const muted = volume <= 0.001;
   muteBtn.style.color = muted ? 'var(--faint)' : '';
 
@@ -4174,15 +4725,165 @@ function setupVolume() {
     return;
   }
 
-  makeSlider(volSlider, (ratio) => {
-    volume = Math.round(ratio * 100) / 100;
-    applyVolume();
-  }, () => {
-    saveVolume(volume);
-    if (volume > 0) lastVolume = volume;
-  });
+  /* ══ слайдер громкости «Wake» — порт ReactBits Wake Slider ══
+     Вместо бегунка — дорожка из тонких полосок. Голова (текущее
+     значение) едет к цели на пружине, её скорость тоже сглаживается
+     пружиной, и от скорости зависит высота «следа»: косинусный горб
+     позади бегунка (r·(1+skew)) и пониже впереди (r·(1−skew/2)).
+     Отпустил — горб плавно оседает обратно в высоту покоя */
+  wakeVolume = (function () {
+    const BARS = 26;
+    const SETTLE = 9.23, GLIDE = 0.3;      // жёсткость пружины головы
+    const FULL_SPEED = 320;                // скорость пальца, дающая максимальный след
+    const MIN_REACH = 1.5, REACH = 5, SKEW = 0.6;
+    const SMOOTHING = 100;                 // инерция сглаживания скорости, мс
+    const REST = 0.233;                    // высота полоски в покое (7px из 30)
+
+    const bars = [];
+    for (let i = 0; i < BARS; i++) {
+      const bar = document.createElement('span');
+      bar.className = 'wbar';
+      bar.dataset.on = '0';
+      const crest = document.createElement('span');
+      crest.className = 'wcrest';
+      bar.appendChild(crest);
+      volSlider.appendChild(bar);
+      bars.push(bar);
+    }
+
+    const m = { x: 0, v: 0, target: 0, sx: 0, sv: 0, amp: 0, raf: 0, last: 0 };
+    const clampN = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    const smoothstep = (s) => s * s * (3 - 2 * s);
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function paint(force) {
+      const h = (m.x / 100) * (BARS - 1);
+      const v = reduced ? 0 : m.sx;
+      const amp = smoothstep(clampN(Math.abs(v) / FULL_SPEED, 0, 1));
+      const dir = Math.sign(v) || 1;
+      const r = MIN_REACH + (REACH - MIN_REACH) * amp;
+      const behind = r * (1 + SKEW);
+      const ahead = r * (1 - 0.5 * SKEW);
+      const lit = Math.round(h);
+      const flat = !force && amp < 0.002 && m.amp < 0.002;
+      for (let i = 0; i < BARS; i++) {
+        const el = bars[i];
+        const on = i <= lit ? '1' : '0';
+        if (el.dataset.on !== on) el.dataset.on = on;
+        if (flat) continue;
+        const d = i - h;
+        const R = d * dir < 0 ? behind : ahead;
+        const lift = Math.abs(d) < R ? amp * Math.cos((Math.PI * d) / (2 * R)) ** 2 : 0;
+        el.style.transform = 'scaleY(' + (REST + lift * (1 - REST)).toFixed(4) + ')';
+        el.firstChild.style.opacity = lift.toFixed(3);
+      }
+      m.amp = amp;
+    }
+
+    function frame(now) {
+      m.raf = 0;
+      const elapsed = clampN((now - m.last) / 1000, 0, 1 / 20);
+      m.last = now;
+      if (reduced) {
+        m.x = m.target; m.v = 0; m.sx = 0;
+      } else {
+        const steps = Math.max(1, Math.ceil(elapsed / (1 / 240)));
+        const dt = elapsed / steps;
+        const w0 = SETTLE / GLIDE;           // критически демпфированная пружина головы
+        const k = w0 * w0, c = 2 * w0;
+        const wv = 2000 / SMOOTHING;         // пружина-фильтр скорости
+        const kv = wv * wv, cv = 2.5 * wv;
+        for (let i = 0; i < steps; i++) {
+          const prev = m.x;
+          m.v += (-k * (m.x - m.target) - c * m.v) * dt;
+          m.x += m.v * dt;
+          const raw = dt > 0 ? (m.x - prev) / dt : 0;   // pct/сек, как в оригинале
+          m.sv += (-kv * (m.sx - raw) - cv * m.sv) * dt;
+          m.sx += m.sv * dt;
+        }
+      }
+      const settled = Math.abs(m.x - m.target) < 0.01 && Math.abs(m.v) < 0.05 && Math.abs(m.sx) < 0.4;
+      paint();
+      if (!settled) m.raf = requestAnimationFrame(frame);
+    }
+    function kick() {
+      if (m.raf) return;
+      m.last = performance.now();
+      m.raf = requestAnimationFrame(frame);
+    }
+
+    let touched = false;   // тянем сейчас — на отпускании сохраняем
+    let dragging = false;
+    function commitFromX(clientX) {
+      const r = volSlider.getBoundingClientRect();
+      const ratio = clampN((clientX - r.left) / Math.max(1, r.width), 0, 1);
+      m.target = Math.round(ratio * 100);
+      kick();
+      touched = true;
+      volume = m.target / 100;
+      applyVolume();
+    }
+
+    volSlider.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      try { volSlider.setPointerCapture(e.pointerId); } catch (err) {}
+      commitFromX(e.clientX);
+    });
+    volSlider.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      commitFromX(e.clientX);
+    });
+    const end = () => {
+      dragging = false;
+      if (!touched) return;
+      touched = false;
+      saveVolume(volume);
+      if (volume > 0) lastVolume = volume;
+    };
+    volSlider.addEventListener('pointerup', end);
+    volSlider.addEventListener('pointercancel', end);
+    volSlider.addEventListener('lostpointercapture', end);
+
+    volSlider.setAttribute('role', 'slider');
+    volSlider.setAttribute('tabindex', '0');
+    volSlider.setAttribute('aria-label', 'Громкость');
+    volSlider.setAttribute('aria-valuemin', '0');
+    volSlider.setAttribute('aria-valuemax', '100');
+    volSlider.addEventListener('keydown', (e) => {
+      let next = null;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = clampN(Math.round(m.target) + 5, 0, 100);
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = clampN(Math.round(m.target) - 5, 0, 100);
+      else return;
+      e.preventDefault();
+      m.target = next; m.x = next; m.v = 0; m.sx = 0; m.sv = 0;
+      volume = next / 100;
+      applyVolume();
+      saveVolume(volume);
+      if (volume > 0) lastVolume = volume;
+      paint(true);
+    });
+
+    paint(true);
+
+    return {
+      /* 0..1 из paintVolume: задаём цель, пружина сама доводит и рисует след */
+      set(v01) {
+        const val = clampN(Math.round(v01 * 100), 0, 100);
+        if (Math.abs(m.target - val) < 0.5 && Math.abs(m.x - val) < 0.5) return;
+        m.target = val;
+        if (Math.abs(m.x - val) > 24) {   // далёкий прыжок (mute/инициализация) — без следа
+          m.x = val; m.v = 0; m.sx = 0; m.sv = 0;
+        }
+        kick();
+      }
+    };
+  })();
+
+  /* слайдер создан уже после первого applyVolume — показываем сохранённую громкость */
+  paintVolume();
 
   muteBtn.addEventListener('click', () => {
+    const wasMuted = volume <= 0.001;
     if (volume > 0.001) {
       lastVolume = volume;
       volume = 0;
@@ -4191,6 +4892,15 @@ function setupVolume() {
     }
     applyVolume();
     saveVolume(volume);
+
+    /* выключение звука — осмысленный момент для анимации:
+       динамик «мотает головой», а не молча меняет иконку */
+    if (!wasMuted) {
+      muteBtn.classList.remove('shake');
+      void muteBtn.offsetWidth;
+      muteBtn.classList.add('shake');
+      setTimeout(() => muteBtn.classList.remove('shake'), 460);
+    }
   });
 }
 
@@ -4324,7 +5034,7 @@ function openInfo() {
     const b = document.createElement('button');
     b.className = 'chip';
     b.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       LUCIDE_PATHS[iconName] + '</svg>';
     b.appendChild(document.createTextNode(label));
@@ -4361,7 +5071,7 @@ function openQueue() {
   if (!up.length) {
     const d = document.createElement('div');
     d.className = 'empty';
-    d.innerHTML = '<b>Это последний трек</b>Дальше ничего нет';
+    d.innerHTML = EMPTY_ICON + '<b>Это последний трек</b>Дальше ничего нет';
     infoBody.appendChild(d);
   } else {
     up.forEach((idx, n) => {
@@ -4501,7 +5211,7 @@ let pendingSeek = null;
 let lastStateSave = 0;
 
 let settings = { remember: true, next: true, motion: false, engine: false, offline: true,
-                 glow: false, glowLevel: 40, glowEdge: false };
+                 glow: true, glowLevel: 40 };
 
 function loadSettings() {
   try {
@@ -4741,12 +5451,16 @@ function stopEngine() {
 }
 
 function applyGlowLevel(level) {
-  const v = Math.max(0, Math.min(100, Number(level) || 0));
-  document.body.style.setProperty('--glow-opacity', String((0.05 + (v / 100) * 0.42).toFixed(3)));
-  document.body.style.setProperty('--glow-bright', String((1.0 + (v / 100) * 0.7).toFixed(3)));
+  /* 0..100 -> доля 0..1. Живёт в --glow-opacity (масштаб слоя) и в
+     aurora.setLevel (яркость внутри шейдера): слайдер двигает ОБА,
+     поэтому реакция видна сразу и плавно по всему диапазону */
+  const v = Math.max(0, Math.min(100, Number(level) || 0)) / 100;
+  document.body.style.setProperty('--glow-opacity', v.toFixed(3));
 
   const range = $('glowLevel');
-  if (range) range.style.setProperty('--fill', v + '%');
+  if (range) range.style.setProperty('--fill', Math.round(v * 100) + '%');
+
+  aurora.setLevel(v);
 }
 
 function applyGlow(on) {
@@ -4754,13 +5468,8 @@ function applyGlow(on) {
   applyGlowLevel(settings.glowLevel);
 }
 
-function applyGlowEdge(on) {
-  document.body.classList.toggle('edge-on', !!on);
-}
-
 function paintSettings() {
   applyGlow(settings.glow);
-  applyGlowEdge(settings.glowEdge);
 
   const level = $('glowLevel');
   if (level) level.value = String(settings.glowLevel);
@@ -4783,6 +5492,7 @@ function hapticTap() {
 
 function openSettings() {
   paintSettings();
+  parkSettings.open();
   scrSettings.classList.add('open');
   showTgBack(true);
   if (engine) engine.pulse('settings');
@@ -4794,6 +5504,7 @@ function openSettings() {
 
 function closeSettings() {
   scrSettings.classList.remove('open');
+  parkSettings.close(420);
   showTgBack(playerOpen);
 }
 
@@ -4822,7 +5533,6 @@ document.querySelectorAll('#scrSettings .switch').forEach((sw) => {
       else clearAudioCache();
     }
     if (key === 'glow') applyGlow(settings.glow);
-    if (key === 'glowEdge') applyGlowEdge(settings.glowEdge);
   });
 });
 
@@ -4989,10 +5699,14 @@ document.addEventListener('visibilitychange', () => {
     stage.classList.remove('shrink');
     scrPlayer.classList.remove('open');
     scrPlayer.style.transform = '';
+    parkPlayer.close(0);            // вернулись из фона — плеер закрыт, экран паркуем сразу
     dock.classList.remove('hide');
     document.body.classList.remove('player-open');
   }
-  if (albumOpenName === null) scrAlbum.classList.remove('open');
+  if (albumOpenName === null) {
+    scrAlbum.classList.remove('open');
+    parkAlbum.close(0);
+  }
 });
 
 mini.addEventListener('click', (e) => {
@@ -5022,8 +5736,14 @@ miniPlay.addEventListener('click', (e) => {
 });
 
 playBtn.addEventListener('click', togglePlay);
-nextBtn.addEventListener('click', () => nextTrack(false));
-prevBtn.addEventListener('click', prevTrack);
+nextBtn.addEventListener('click', () => {
+  mergeGlow();               // волна-переход: палитра тает в цвета нового трека
+  nextTrack(false);
+});
+prevBtn.addEventListener('click', () => {
+  mergeGlow();
+  prevTrack();
+});
 
 favBtn.addEventListener('click', () => {
   if (currentIndex >= 0) toggleFavorite(currentIndex, null);
@@ -5047,7 +5767,7 @@ repeatBtn.addEventListener('click', () => {
   const base = '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>';
   const one = '<text x="12" y="15.5" font-size="7.5" font-weight="700" fill="currentColor" stroke="none" text-anchor="middle">1</text>';
   repeatBtn.innerHTML =
-    '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+    '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
     base + (repeatMode === 2 ? one : '') + '</svg>';
 
   if (tg && tg.HapticFeedback) {
@@ -5063,6 +5783,7 @@ audio.addEventListener('play', () => {
 audio.addEventListener('pause', () => {
   setPlayingUI(false);
   saveState(true);
+  clearBufTimers();   // пауза во время буферизации — таймеры оживления не нужны
 
   /* остановились — таймер сна больше не нужен. Проверяем audio.paused:
      при смене трека плеер тоже кидает pause, но там мы уже запускаем
@@ -5093,8 +5814,7 @@ audio.addEventListener('timeupdate', () => {
 
   // пока тянем ползунок — не перебиваем его позицию
   if (!scrub.classList.contains('dragging')) {
-    scrubFill.style.width = p + '%';
-    scrubKnob.style.left = p + '%';
+    elasticScrub.timePaint(p / 100);
     tCur.textContent = fmt(audio.currentTime);
   }
   saveState(false);
@@ -5108,36 +5828,238 @@ audio.addEventListener('ended', () => {
 });
 
 audio.addEventListener('error', () => {
+  clearBufTimers();
   setPlayingUI(false);
-  if (currentIndex >= 0) artistEl.textContent = '⚠️ Не удалось загрузить аудио';
+  if (currentIndex >= 0) setMarquee(artistEl, '⚠️ Не удалось загрузить аудио');
 });
 
+/* ── буферизация и живучесть потока ──
+   Аудио лежит на бесплатном хосте (pomf2.lain.la): соединения иногда
+   подолгу молчат. Короткое затишье — норма, статус «буферизация…»
+   показываем не сразу. Если хост молчит 9 с — тихо переоткрываем
+   соединение с той же секунды (позицию возвращает pendingSeek в
+   обработчике loadedmetadata). Не ожил ещё 11 с — честно пишем и едем
+   к следующему. Три мёртвых трека за полторы минуты — хост лежит:
+   автопропуск выключаем, чтобы не промотать всю библиотеку впустую */
+let bufTimer = 0, stallTimer = 0, deadTimer = 0;
+const deadStamps = [];
+
+function clearBufTimers() {
+  clearTimeout(bufTimer);
+  clearTimeout(stallTimer);
+  clearTimeout(deadTimer);
+}
+
 audio.addEventListener('waiting', () => {
-  if (currentIndex >= 0) artistEl.textContent = 'буферизация…';
+  if (currentIndex < 0) return;
+  clearBufTimers();
+  bufTimer = setTimeout(() => {
+    setMarquee(artistEl, 'буферизация…');
+    stallTimer = setTimeout(() => {
+      const at = audio.currentTime || 0;
+      const wasPlaying = !audio.paused;
+      pendingSeek = at;              // вернём позицию после перезагрузки
+      audio.src = audio.src;         // переоткрыть соединение
+      audio.load();
+      if (wasPlaying) audio.play().catch(() => {});
+      deadTimer = setTimeout(() => {
+        const now = Date.now();
+        deadStamps.push(now);
+        while (deadStamps.length && now - deadStamps[0] > 90000) deadStamps.shift();
+        if (deadStamps.length >= 3) {
+          setMarquee(artistEl, '⚠️ хост с треками не отвечает — попробуй позже');
+          setPlayingUI(false);
+          return;
+        }
+        setMarquee(artistEl, '⚠️ трек не отвечает — еду дальше');
+        nextTrack(true);
+      }, 11000);
+    }, 9000);
+  }, 700);
 });
 
 audio.addEventListener('playing', () => {
-  if (currentIndex >= 0) artistEl.textContent = artistLine(tracks[currentIndex]);
+  clearBufTimers();
+  deadStamps.length = 0;
+  if (currentIndex >= 0) setMarquee(artistEl, artistLine(tracks[currentIndex]));
 });
 
-/* во время перетаскивания только двигаем ползунок,
-   реальная перемотка — один раз на отпускании.
-   Иначе десятки seek подряд вешают загрузку буфера */
-let scrubRatio = 0;
+/* ══════════════════════════════════════════════════════════
+   Упругая полоса перемотки — порт ReactBits «Elastic Slider».
+   Значение едет к пальцу на пружине: пока тянем — быстро и без
+   перелёта (0.09 с), отпустили — медленнее и с лёгким отскоком
+   (0.3 с, zeta 0.86). У краёв дорожка тянется как резина
+   (сигмоида из оригинала) и отпружинивает назад. Под пальцем
+   полоса становится толще, плашка времени проявляется.
+   Во время перетаскивания позицию двигаем, реальная перемотка —
+   один раз на отпускании: десятки seek подряд вешают буфер.
+   ══════════════════════════════════════════════════════════ */
+const elasticScrub = (function () {
+  const TAU = Math.PI * 2;
+  const MAX_STRETCH = 42;       // предел резины у краёв, px
+  const BOUNCE = 0.42;          // отскок при отпускании (0..0.95)
+  const THICK = 5, THICK_ACTIVE = 11;
 
-makeSlider(scrub, (ratio) => {
-  if (!audio.duration || !isFinite(audio.duration)) return;
-  scrubRatio = ratio;
-  scrubFill.style.width = (ratio * 100) + '%';
-  scrubKnob.style.left = (ratio * 100) + '%';
-  tCur.textContent = fmt(ratio * audio.duration);
-}, () => {
-  if (!audio.duration || !isFinite(audio.duration)) return;
-  audio.currentTime = scrubRatio * audio.duration;
-}, {
-  el: timeBubble,
-  text: (ratio) => fmt(ratio * (isFinite(audio.duration) ? audio.duration : 0))
-});
+  const m = { p: 0, vp: 0, target: 0, s: 0, vs: 0, side: 1, held: false,
+              a: 0, va: 0, goal: 0, length: 1, dragging: false, raf: 0, last: 0 };
+  let holdUntil = 0;            // после отпускания даём отскоку доиграть
+  let scrubRatio = 0;
+
+  const clampN = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const rubber = (d, lim) => 2 * (1 / (1 + Math.exp(-d / lim)) - 0.5) * lim;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function paint() {
+    const len = Math.max(1, m.length);
+    // толщина: покой ↔ палец
+    const thick = THICK + (THICK_ACTIVE - THICK) * m.a;
+    eTrack.style.height = thick.toFixed(2) + 'px';
+    // резиновое растяжение дорожки: вдоль тянется, поперёк чуть сужается
+    const along = 1 + m.s / len;
+    const across = 1 - 0.22 * clampN(m.s / MAX_STRETCH, -1, 1);
+    eTrack.style.transformOrigin = m.side > 0 ? '0% 50%' : '100% 50%';
+    eTrack.style.transform = 'scale(' + along.toFixed(4) + ', ' + across.toFixed(4) + ')';
+    // заливка от пружинного значения p
+    const pc = clampN(m.p, 0, 1);
+    eFill.style.clipPath = 'inset(0 ' + ((1 - pc) * 100).toFixed(3) + '% 0 0 round 999px)';
+    // плашка времени едет с заливкой
+    timeBubble.style.left = (pc * 100).toFixed(2) + '%';
+  }
+
+  function frame(now) {
+    m.raf = 0;
+    const elapsed = clampN((now - m.last) / 1000, 0, 1 / 20);
+    m.last = now;
+    if (reduced) {
+      m.p = m.target; m.vp = 0;
+      if (!m.held) { m.s = 0; m.vs = 0; }
+      m.a = m.goal; m.va = 0;
+    } else {
+      const steps = Math.max(1, Math.ceil(elapsed / (1 / 240)));
+      const dt = elapsed / steps;
+      const fillW = TAU / (m.dragging ? 0.09 : 0.3);
+      const fillZ = m.dragging ? 1 : 0.86;
+      const strW = TAU / 0.42;
+      const strZ = 1 - 0.9 * BOUNCE;
+      const actW = TAU / 0.32;
+      for (let i = 0; i < steps; i++) {
+        m.vp += (-fillW * fillW * (m.p - m.target) - 2 * fillZ * fillW * m.vp) * dt;
+        m.p += m.vp * dt;
+        if (!m.held) {
+          m.vs += (-strW * strW * m.s - 2 * strZ * strW * m.vs) * dt;
+          m.s += m.vs * dt;
+        }
+        m.va += (-actW * actW * (m.a - m.goal) - 2 * 0.9 * actW * m.va) * dt;
+        m.a += m.va * dt;
+      }
+    }
+    const settled = Math.abs(m.p - m.target) < 0.0004 && Math.abs(m.vp) < 0.002 &&
+      (m.held || (Math.abs(m.s) < 0.05 && Math.abs(m.vs) < 0.5)) &&
+      Math.abs(m.a - m.goal) < 0.002 && Math.abs(m.va) < 0.005;
+    if (settled) {
+      m.p = m.target; m.vp = 0; m.a = m.goal; m.va = 0;
+      if (!m.held) { m.s = 0; m.vs = 0; }
+    }
+    paint();
+    if (!settled || m.dragging) m.raf = requestAnimationFrame(frame);
+  }
+  function kick() {
+    if (m.raf) return;
+    m.last = performance.now();
+    m.raf = requestAnimationFrame(frame);
+  }
+  function goal() {
+    m.goal = m.dragging ? 1 : 0;
+    kick();
+  }
+
+  function pointerFraction(e) {
+    const r = scrub.getBoundingClientRect();
+    return (e.clientX - r.left) / Math.max(1, r.width);
+  }
+  function commit(fraction) {
+    const f = clampN(fraction, 0, 1);
+    m.target = f;
+    kick();
+    if (!audio.duration || !isFinite(audio.duration)) return;
+    scrubRatio = f;
+    tCur.textContent = fmt(f * audio.duration);
+    timeBubble.textContent = fmt(f * audio.duration);
+  }
+
+  scrub.addEventListener('pointerdown', (e) => {
+    if (m.dragging) return;
+    if (!audio.duration || !isFinite(audio.duration)) return;
+    m.dragging = true;
+    m.held = false;
+    try { scrub.setPointerCapture(e.pointerId); } catch (err) {}
+    scrub.classList.add('dragging');
+    document.body.classList.add('scrubbing');   // аура обложки сжимается
+    goal();
+    timeBubble.classList.add('show');
+    commit(pointerFraction(e));                 // прыжок к пальцу
+  });
+
+  scrub.addEventListener('pointermove', (e) => {
+    if (!m.dragging) return;
+    const len = Math.max(1, m.length);
+    const frac = pointerFraction(e);
+    const over = frac < 0 ? -frac * len : frac > 1 ? (frac - 1) * len : 0;
+    if (over > 0) {
+      m.held = true;
+      m.side = frac < 0 ? -1 : 1;
+      m.s = rubber(over, MAX_STRETCH);
+      m.vs = 0;
+    } else if (m.held) {
+      m.held = false;
+    }
+    commit(frac);
+  });
+
+  const release = () => {
+    if (!m.dragging) return;
+    m.dragging = false;
+    m.held = false;
+    scrub.classList.remove('dragging');
+    document.body.classList.remove('scrubbing');
+    timeBubble.classList.remove('show');
+    goal();
+    holdUntil = performance.now() + 750;   // отскок доигрывает без перебивания
+    if (audio.duration && isFinite(audio.duration)) {
+      audio.currentTime = scrubRatio * audio.duration;
+    }
+  };
+  scrub.addEventListener('pointerup', release);
+  scrub.addEventListener('pointercancel', release);
+  scrub.addEventListener('lostpointercapture', release);
+
+  window.addEventListener('resize', () => {
+    m.length = scrub.clientWidth;
+    paint();
+  });
+  m.length = scrub.clientWidth;
+  paint();
+
+  return {
+    /* сброс при смене трека: мгновенно в ноль */
+    reset() {
+      m.p = 0; m.vp = 0; m.target = 0; m.s = 0; m.vs = 0;
+      scrubRatio = 0;
+      holdUntil = 0;
+      paint();
+    },
+    /* обычная отрисовка позиции из timeupdate: пружина тихо догоняет */
+    timePaint(fraction) {
+      if (m.dragging) return;
+      if (performance.now() < holdUntil) return;
+      if (!audio.duration || !isFinite(audio.duration)) return;
+      const f = clampN(fraction, 0, 1);
+      if (Math.abs(m.target - f) < 0.0002) return;
+      m.target = f;
+      kick();
+    }
+  };
+})();
 
 /* ══════════════════════════════════════════════════════════
    Играть списком, ссылки, скачивание
@@ -5947,6 +6869,9 @@ let miniSwapX = 12;   // с какой стороны приезжает тек�
 function swipeTrack(dir) {
   if (currentIndex < 0) return;
 
+  /* волна-переход авроры: старый цвет тает в новый */
+  mergeGlow();
+
   const cls = dir > 0 ? 'swipe-next' : 'swipe-prev';
   coverWrap.classList.remove('swipe-next', 'swipe-prev');
   void coverWrap.offsetWidth;
@@ -5969,6 +6894,9 @@ function swipeTrack(dir) {
 function miniSwipe(dir) {
   if (currentIndex < 0) return;
   miniSwapX = dir > 0 ? 18 : -18;
+
+  /* волна-переход авроры — синхронно с уездом текста */
+  mergeGlow();
 
   miniInfo.style.transition = 'transform 150ms var(--ease-out), opacity 150ms ease';
   miniInfo.style.transform = 'translateX(' + (dir > 0 ? -34 : 34) + 'px)';
@@ -6181,7 +7109,7 @@ function openCtxMenu(index, x, y) {
     b.type = 'button';
     b.className = 'ctx-item' + (extraCls ? ' ' + extraCls : '');
     b.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
       'stroke-linecap="round" stroke-linejoin="round">' + icon + '</svg>';
     b.appendChild(document.createTextNode(label));
     b.addEventListener('click', () => { closeCtxMenu(); handler(); });
@@ -6244,10 +7172,16 @@ window.addEventListener('resize', () => closeCtxMenu());
   syncSearchClear();
   setPlayingUI(false);          // сразу помечаем: ничего не играет
 
+  /* скелетон на время загрузки плейлиста: пустой экран читается как «зависло»,
+     живые полоски — как «работает» */
+  panels.all.innerHTML =
+    '<div class="sk-row"><div class="sk-cover"></div><div class="sk-lines">' +
+    '<div class="sk-line w60"></div><div class="sk-line w40"></div></div></div>'.repeat(7);
+
   const raw = await fetchTracks();
 
   if (raw === null) {
-    panels.all.innerHTML = '<div class="empty"><b>Плейлист не загрузился</b>Проверь интернет и обнови</div>';
+    panels.all.innerHTML = '<div class="empty">' + EMPTY_ICON + '<b>Плейлист не загрузился</b>Проверь интернет и обнови</div>';
     showFatal('tracks.json не загрузился ни с GitHub Pages, ни с raw.githubusercontent');
     return;
   }
@@ -6255,8 +7189,9 @@ window.addEventListener('resize', () => closeCtxMenu());
   tracks = raw.map(normalize).filter(Boolean);
 
   if (!tracks.length) {
-    panels.all.innerHTML = '<div class="empty"><b>Треки пустые</b>В tracks.json ' +
-      raw.length + ' записей, но ни у одной нет ссылки на аудио</div>';
+    panels.all.innerHTML = '<div class="empty">' + EMPTY_ICON +
+      '<b>Треки пустые</b>В tracks.json ' + raw.length +
+      ' записей, но ни у одной нет ссылки на аудио</div>';
     showFatal('Получено записей: ' + raw.length + ', после разбора осталось 0');
     return;
   }
@@ -6268,7 +7203,6 @@ window.addEventListener('resize', () => closeCtxMenu());
   /* применяем сохранённые настройки света сразу при старте, а не только
      после захода в настройки — иначе тумблеры «забывались» до первого визита */
   applyGlow(settings.glow);
-  applyGlowEdge(settings.glowEdge);
 
   const saved = loadState();
   if (saved && SORT_LABELS[saved.sort]) {
@@ -6323,7 +7257,7 @@ window.addEventListener('resize', () => closeCtxMenu());
   } else {
     titleEl.textContent = 'Ничего не играет';
     artistEl.textContent = 'Выбери трек из списка';
-    setCover(PLACEHOLDER);
+    setCover(PLACEHOLDER, null);
   }
 })().catch((e) => showFatal('Запуск: ' + (e && e.message ? e.message : e)));
 </script>
