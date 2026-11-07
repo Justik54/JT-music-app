@@ -14,8 +14,8 @@
     --surface-hi: rgba(255, 255, 255, 0.085);
     --line: rgba(255, 255, 255, 0.075);
     --text: #f4f7fa;
-    --sub: rgba(244, 247, 250, 0.46);
-    --faint: rgba(244, 247, 250, 0.2);
+    --sub: rgba(244, 247, 250, 0.65);
+    --faint: rgba(244, 247, 250, 0.42);
     /* акцент живёт на доминирующем цвете обложки (ставит setPalette).
        Храним именно тройку RGB — из неё собираются и цвет, и прозрачности */
     --accent-rgb: 59, 157, 255;
@@ -186,8 +186,8 @@
   /* слайдер «Яркость авроры» ведёт --glow-opacity от 0 до 1: 0% — тихий
      полумрак, 100% — полный свет, разница между краями сразу видна.
      Дефолт (40%) — ощутимо темнее прежнего: 0.58 вместо 0.73 */
-  body.player-open .aurora { opacity: calc(0.3 + var(--glow-opacity, 0.4) * 0.7); }
-  body.player-open.paused .aurora { opacity: calc(0.22 + var(--glow-opacity, 0.4) * 0.48); }
+  body.player-open .aurora { opacity: calc(0.7 + var(--glow-opacity, 0.4) * 0.3); filter: saturate(140%); }
+  body.player-open.paused .aurora { opacity: calc(0.7 + var(--glow-opacity, 0.4) * 0.3); filter: saturate(140%); }
 
   /* ползунок в настройках */
   .set-row.column {
@@ -329,7 +329,7 @@
     font-weight: 600;
     letter-spacing: 0.42em;
     text-transform: uppercase;
-    color: rgba(244, 247, 250, 0.15);
+    color: rgba(244, 247, 250, 0.55);
   }
   .brand b { font-weight: 700; color: rgba(244, 247, 250, 0.3); letter-spacing: 0.5em; }
   .brand i { font-style: normal; color: rgba(var(--accent-rgb), 0.42); letter-spacing: 0; }
@@ -1083,16 +1083,8 @@
   /* ══ экран: плеер ══════════════════════════════════════ */
   #scrPlayer {
     z-index: 5;
-    /* фон пропускает цвет по всему экрану (как в Apple Music), низ
-       притемнён под кнопки, но не до чёрного: аврора-шейдер должен
-       просвечивать по всей высоте, текст читают тени и контраст */
-    background: linear-gradient(
-      180deg,
-      rgba(8, 9, 11, 0.03) 0%,
-      rgba(8, 9, 11, 0.1) 34%,
-      rgba(8, 9, 11, 0.24) 66%,
-      rgba(8, 9, 11, 0.46) 100%
-    );
+    background: radial-gradient(circle at 50% 25%, transparent 0%, rgba(8, 9, 11, 0.45) 85%),
+                linear-gradient(180deg, transparent 0%, rgba(8, 9, 11, 0.65) 100%);
     transform: translateY(100%);
     transition: transform 460ms var(--ease-drawer);
     will-change: transform;
@@ -1891,7 +1883,12 @@
     /* док сжимается под кнопки, а не растягивается на всю ширину экрана */
     .dock { width: min(560px, calc(100% - 48px)); }
 
-    /* плеер: обложка слева, управление справа (а не всё в столбик) */
+    /* верхний бар и плеер центрируются на широком экране */
+    .player-top {
+      width: min(100%, 960px);
+      margin: 0 auto;
+      padding: 16px 20px;
+    }
     .player-body {
       display: grid;
       grid-template-columns: auto minmax(340px, 430px);
@@ -1906,6 +1903,8 @@
       justify-content: center;
       column-gap: 56px;
       padding: 24px 40px 32px;
+      width: min(100%, 960px);
+      margin: 0 auto;
     }
     .cover-wrap { grid-area: cover; width: min(340px, 40vh); margin: 0; }
     .meta { grid-area: meta; text-align: left; margin-bottom: 26px; }
@@ -2433,23 +2432,23 @@
     </div>
     <nav class="tabbar">
       <div class="tabbar-pill" id="tabPill"></div>
-      <button class="tabbar-btn active" data-tab="all">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      <button class="tabbar-btn active" data-tab="all" aria-label="Все">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
         <span class="tab-icon" data-icon="all"></span>
         <span>Все</span>
       </button>
-      <button class="tabbar-btn" data-tab="albums">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2.5"/></svg>
+      <button class="tabbar-btn" data-tab="albums" aria-label="Альбомы">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
         <span class="tab-icon" data-icon="albums"></span>
         <span>Альбомы</span>
       </button>
-      <button class="tabbar-btn" data-tab="fav">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+      <button class="tabbar-btn" data-tab="fav" aria-label="Избранное">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/></svg>
         <span class="tab-icon" data-icon="fav"></span>
         <span>Избранное</span>
       </button>
-      <button class="tabbar-btn" id="settingsBtn">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      <button class="tabbar-btn" id="settingsBtn" aria-label="Настройки">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><circle cx="4" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="10" r="2" fill="currentColor"/><circle cx="20" cy="14" r="2" fill="currentColor"/></svg>
         <span class="tab-icon" data-icon="settings"></span>
         <span>Настройки</span>
       </button>
@@ -3857,7 +3856,7 @@ void main() {
     r = r <= 0.04045 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
     g = g <= 0.04045 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
     b = b <= 0.04045 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
-    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.1073969566 * b);
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
     const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
     const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
     const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
@@ -3901,21 +3900,8 @@ void main() {
   let active = false;
   let frames = 0;
 
-  /* курсор: занавесы мягко тянутся к пальцу/мыши (как в оригинале) */
+  /* курсор: занавесы живут естественной плавной жизнью без привязки к мыши */
   let ptx = 0, pty = 0.5, smx = 0, smy = 0.5, reach = 0, inside = false;
-  function onMove(e) {
-    const w = Math.max(1, canvas.clientWidth || window.innerWidth);
-    const h = Math.max(1, canvas.clientHeight || window.innerHeight);
-    ptx = (e.clientX - w / 2) / h;
-    pty = e.clientY / h;
-    inside = e.clientX >= 0 && e.clientY >= 0 && e.clientX <= w && e.clientY <= h;
-    wake();
-  }
-  function onUp(e) { if (e.pointerType !== 'mouse') inside = false; }
-  window.addEventListener('pointermove', onMove, { passive: true });
-  window.addEventListener('pointerdown', onMove, { passive: true });
-  window.addEventListener('pointerup', onUp, { passive: true });
-  window.addEventListener('pointercancel', onUp, { passive: true });
 
   function render() {
     frames++;
@@ -4073,33 +4059,76 @@ function hslToRgb(h, s, l) {
    обложки-коллажи не раскрашивают фон радугой — занавес остаётся
    в цвете трека. Светлоту держим в коридоре: приглушённые обложки
    не превращаются в серые, тёмные — в чёрные */
+const KNOWN_COVER_PALETTES = {"https://images.genius.com/eaf1162509e8a8aad157ff8576daa9fc.1000x1000x1.png": [[185, 32, 45], [155, 69, 56], [74, 12, 18]], "лилия": [[185, 32, 45], [155, 69, 56], [74, 12, 18]], "mayot - лилия": [[185, 32, 45], [155, 69, 56], [74, 12, 18]], "mayot·лилия": [[185, 32, 45], [155, 69, 56], [74, 12, 18]], "https://pomf2.lain.la/f/rkgi4o7h.mp3": [[185, 32, 45], [155, 69, 56], [74, 12, 18]], "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "минус текст": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee - минус текст": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee·минус текст": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://pomf2.lain.la/f/r9jepmho.mp3": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "на кассе": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "seemee - на кассе": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee·на кассе": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://pomf2.lain.la/f/ah7bysk8.mp3": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "jax": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee - jax": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee·jax": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://pomf2.lain.la/f/t1y9qbep.mp3": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "большие бабки": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano - большие бабки": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano·большие бабки": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://pomf2.lain.la/f/kdn1vbe1.mp3": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://pomf2.lain.la/f/wce3guh9.jpg": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "когда я": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh - когда я": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh·когда я": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "https://pomf2.lain.la/f/r9x3dysc.mp3": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "xddd": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh - xddd": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh·xddd": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "https://pomf2.lain.la/f/0uq1nhxu.mp3": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "https://pomf2.lain.la/f/861vwt9s.jpg": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda - на кассе": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda·на кассе": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "https://pomf2.lain.la/f/zrz6l21f.mp3": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "а может да": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh - а может да": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh·а может да": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "https://pomf2.lain.la/f/zjpmd138.mp3": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "аутбрэйк": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh - аутбрэйк": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh·аутбрэйк": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "https://pomf2.lain.la/f/51ph9nhe.mp3": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "adrenaline": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh - adrenaline": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh·adrenaline": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "https://pomf2.lain.la/f/31xij0m5.mp3": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "битбокс": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee - битбокс": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee·битбокс": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://pomf2.lain.la/f/5z8l97k0.mp3": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "s**** tape": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh - s**** tape": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "cmh·s**** tape": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "https://pomf2.lain.la/f/aqvzh7v5.mp3": [[139, 5, 7], [131, 21, 20], [55, 2, 2]], "кроссики": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee - кроссики": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee·кроссики": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://pomf2.lain.la/f/1ssipuix.mp3": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://images.genius.com/1b14cc4ef940f906ec94b713f785c8fb.1000x1000x1.png": [[110, 70, 57], [116, 113, 82], [44, 28, 22]], "psp-flow": [[110, 70, 57], [116, 113, 82], [44, 28, 22]], "слава кпсс - psp-flow": [[110, 70, 57], [116, 113, 82], [44, 28, 22]], "слава кпсс·psp-flow": [[110, 70, 57], [116, 113, 82], [44, 28, 22]], "https://pomf2.lain.la/f/qmibwga9.mp3": [[110, 70, 57], [116, 113, 82], [44, 28, 22]], "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "дерьмо": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "mayot - дерьмо": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "mayot·дерьмо": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "https://pomf2.lain.la/f/upi3an1u.mp3": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "https://images.genius.com/e51316fc932db27fc3e8541aa3548592.1000x1000x1.png": [[137, 58, 134], [98, 62, 108], [54, 23, 53]], "телеграм": [[137, 58, 134], [98, 62, 108], [54, 23, 53]], "scally milano - телеграм": [[137, 58, 134], [98, 62, 108], [54, 23, 53]], "scally milano·телеграм": [[137, 58, 134], [98, 62, 108], [54, 23, 53]], "https://pomf2.lain.la/f/vdcswu0q.mp3": [[137, 58, 134], [98, 62, 108], [54, 23, 53]], "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c6f64127b7c14300b8c99f8deffc3149.jpg": [[58, 74, 37], [97, 28, 33], [23, 29, 14]], "ялрс": [[58, 74, 37], [97, 28, 33], [23, 29, 14]], "soda luv - ялрс": [[58, 74, 37], [97, 28, 33], [23, 29, 14]], "soda luv·ялрс": [[58, 74, 37], [97, 28, 33], [23, 29, 14]], "https://pomf2.lain.la/f/w04sjizm.mp3": [[58, 74, 37], [97, 28, 33], [23, 29, 14]], "https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "биполярный": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "scally milano - биполярный": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "scally milano·биполярный": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://pomf2.lain.la/f/z0nu7sxt.mp3": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c601efdd906b4e809cb9fa1088ae4c3a.jpg": [[82, 118, 156], [39, 43, 91], [32, 47, 62]], "добро пожаловать": [[82, 118, 156], [39, 43, 91], [32, 47, 62]], "og buda & mayot - добро пожаловать": [[82, 118, 156], [39, 43, 91], [32, 47, 62]], "og buda & mayot·добро пожаловать": [[82, 118, 156], [39, 43, 91], [32, 47, 62]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/6ce982ed203749f8b6938cc22764c9e6.mp3": [[82, 118, 156], [39, 43, 91], [32, 47, 62]], "дабстэп": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. scally milano) - дабстэп": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. scally milano)·дабстэп": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "https://pomf2.lain.la/f/2xji36zq.mp3": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "бэньг бэньг": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "scally milano - бэньг бэньг": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "scally milano·бэньг бэньг": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://pomf2.lain.la/f/424syuh9.mp3": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "дзагоев": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda - дзагоев": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda·дзагоев": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "https://pomf2.lain.la/f/aboyl1yf.mp3": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "подкован": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano - подкован": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano·подкован": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://pomf2.lain.la/f/hhz5wwz4.mp3": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://images.genius.com/6d506d3c2e96922d2cab3a99f7be8974.1000x1000x1.png": [[97, 58, 65], [79, 61, 57], [38, 23, 26]], "vip": [[97, 58, 65], [79, 61, 57], [38, 23, 26]], "unki (ft. bushido zho) - vip": [[97, 58, 65], [79, 61, 57], [38, 23, 26]], "unki (ft. bushido zho)·vip": [[97, 58, 65], [79, 61, 57], [38, 23, 26]], "https://pomf2.lain.la/f/yhffln4s.mp3": [[97, 58, 65], [79, 61, 57], [38, 23, 26]], "hu3ta (vjlink)": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. soda luv) - hu3ta (vjlink)": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. soda luv)·hu3ta (vjlink)": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "https://pomf2.lain.la/f/2gqtkoda.mp3": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "колян": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "scally milano - колян": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "scally milano·колян": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/1324494073dc4693abb51b4ef84a9185.mp3": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://images.genius.com/6baf7ba3c9643051a2fb8ae9ef8dea80.1000x1000x1.png": [[101, 106, 184], [128, 158, 207], [40, 42, 73]], "face id": [[101, 106, 184], [128, 158, 207], [40, 42, 73]], "mayot & seemee (ft. 163onmyneck) - face id": [[101, 106, 184], [128, 158, 207], [40, 42, 73]], "mayot & seemee (ft. 163onmyneck)·face id": [[101, 106, 184], [128, 158, 207], [40, 42, 73]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/8459a8bda34c4e65b0c7d335bb9bcecb.mp3": [[101, 106, 184], [128, 158, 207], [40, 42, 73]], "windows": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee (ft. mayot) - windows": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee (ft. mayot)·windows": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://pomf2.lain.la/f/b4227l8u.mp3": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "скам": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "scally milano - скам": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "scally milano·скам": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://pomf2.lain.la/f/i77twddk.mp3": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://images.genius.com/5f99590171d32af55c9795acccdc9612.1000x1000x1.png": [[72, 122, 39], [121, 158, 52], [28, 48, 15]], "dredd judge": [[72, 122, 39], [121, 158, 52], [28, 48, 15]], "seemee - dredd judge": [[72, 122, 39], [121, 158, 52], [28, 48, 15]], "seemee·dredd judge": [[72, 122, 39], [121, 158, 52], [28, 48, 15]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/65fab6afbc7d4cb2b68639b018d90a19.mp3": [[72, 122, 39], [121, 158, 52], [28, 48, 15]], "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/524225226e3f48f5b45d31218ef88492.jpg": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "инвестор": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "scally milano - инвестор": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "scally milano·инвестор": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/de5a4d1a012849c8aa73d0b63b877770.mp3": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "не виноват": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "scally milano - не виноват": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "scally milano·не виноват": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/32b569d452af41c9a3cbbe40ddce6a79.mp3": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "тюрбан": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "scally milano & uglystephan - тюрбан": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "scally milano & uglystephan·тюрбан": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/0635f4ae2e854ddbb9c7a9a4d162b544.mp3": [[42, 30, 48], [35, 30, 47], [16, 12, 19]], "https://images.genius.com/dc8bab816ca60d34c477eed5f31b2b16.1000x1000x1.png": [[167, 38, 43], [125, 98, 70], [66, 15, 17]], "ля ля ля": [[167, 38, 43], [125, 98, 70], [66, 15, 17]], "стинт - ля ля ля": [[167, 38, 43], [125, 98, 70], [66, 15, 17]], "стинт·ля ля ля": [[167, 38, 43], [125, 98, 70], [66, 15, 17]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/e0fea3f5e8ff48b29b89818fde812841.mp3": [[167, 38, 43], [125, 98, 70], [66, 15, 17]], "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a9789430f4884b04ad22ee0e22a910f3.jpg": [[100, 38, 29], [71, 21, 24], [40, 15, 11]], "династия": [[100, 38, 29], [71, 21, 24], [40, 15, 11]], "villian & madk1d - династия": [[100, 38, 29], [71, 21, 24], [40, 15, 11]], "villian & madk1d·династия": [[100, 38, 29], [71, 21, 24], [40, 15, 11]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/4051ef8f22a948daa01c15fd0e39f9f2.mp3": [[100, 38, 29], [71, 21, 24], [40, 15, 11]], "big pun": [[101, 106, 184], [128, 158, 207], [40, 42, 73]], "mayot & seemee - big pun": [[101, 106, 184], [128, 158, 207], [40, 42, 73]], "mayot & seemee·big pun": [[101, 106, 184], [128, 158, 207], [40, 42, 73]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/abaffe66da6b49feb1cdf97bf6e9ebfd.mp3": [[101, 106, 184], [128, 158, 207], [40, 42, 73]], "колпак": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "mayot - колпак": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "mayot·колпак": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "https://pomf2.lain.la/f/8a0smspj.mp3": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "https://images.genius.com/df60ffed5e7cf7d05e3b43a244a4f0ff.1000x1000x1.png": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "восап": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "163onmyneck - восап": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "163onmyneck·восап": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/74a2bf16bce3416fac5f13c3a659401f.mp3": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "спиттин": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. mayot) - спиттин": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. mayot)·спиттин": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/505fb567bb41488d968bd27bb8b4dca3.mp3": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "самп": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. bushido zho) - самп": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. bushido zho)·самп": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/b99a8c8c2a4d4b16a9b5e6a7671f2a41.mp3": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "fpv flow 2029": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh - fpv flow 2029": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh·fpv flow 2029": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/1b006f34f04247a4bd452a2e9d9e37df.mp3": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "https://images.genius.com/3b29f875a2d725ebc467d9e3c0fc0594.1000x1000x1.png": [[53, 121, 139], [81, 104, 125], [21, 48, 55]], "rave mode": [[53, 121, 139], [81, 104, 125], [21, 48, 55]], "cmh - rave mode": [[53, 121, 139], [81, 104, 125], [21, 48, 55]], "cmh·rave mode": [[53, 121, 139], [81, 104, 125], [21, 48, 55]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/e46874eac8154474af1785b2dede5a22.mp3": [[53, 121, 139], [81, 104, 125], [21, 48, 55]], "https://images.genius.com/734359417981da30b8cdc7d7e10e2457.1000x1000x1.png": [[153, 99, 90], [87, 43, 49], [61, 39, 36]], "skin$": [[153, 99, 90], [87, 43, 49], [61, 39, 36]], "cmh - skin$": [[153, 99, 90], [87, 43, 49], [61, 39, 36]], "cmh·skin$": [[153, 99, 90], [87, 43, 49], [61, 39, 36]], "https://pomf2.lain.la/f/rfm4s76v.mp3": [[153, 99, 90], [87, 43, 49], [61, 39, 36]], "микро": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee (ft. mayot) - микро": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee (ft. mayot)·микро": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://pomf2.lain.la/f/il0gefsu.mp3": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "scally milano & og buda - большие бабки": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano & og buda·большие бабки": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://images.genius.com/61e9eb92c06c7538f59adc523f2c039c.1000x1000x1.png": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "орви": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "baby melo - орви": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "baby melo·орви": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/8a0e4af510e541deab842ef7193deb43.mp3": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "seemee - дерьмо": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee·дерьмо": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/fd9674d674574e8f8d14ec443c1eb5a7.mp3": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://images.genius.com/5327fad05f60d4192af895947c54b54e.1000x1000x1.png": [[109, 137, 15], [127, 130, 49], [43, 54, 6]], "ашан": [[109, 137, 15], [127, 130, 49], [43, 54, 6]], "soda luv - ашан": [[109, 137, 15], [127, 130, 49], [43, 54, 6]], "soda luv·ашан": [[109, 137, 15], [127, 130, 49], [43, 54, 6]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/24e0713853ba440b8b4fa7acf3442c3a.mp3": [[109, 137, 15], [127, 130, 49], [43, 54, 6]], "гоатс милк": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "163onmyneck - гоатс милк": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "163onmyneck·гоатс милк": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/c7745dc58b414a889d8de3c1198da92c.mp3": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "грачи": [[185, 32, 45], [155, 69, 56], [74, 12, 18]], "mayot (ft. og buda) - грачи": [[185, 32, 45], [155, 69, 56], [74, 12, 18]], "mayot (ft. og buda)·грачи": [[185, 32, 45], [155, 69, 56], [74, 12, 18]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/305197bd32994700ae8ce59c3200dfac.mp3": [[185, 32, 45], [155, 69, 56], [74, 12, 18]], "hot wheels": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee (ft. 163onmyneck & scally milano) - hot wheels": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "seemee (ft. 163onmyneck & scally milano)·hot wheels": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/5d5aed668f88455b9a1992c5be6e7618.mp3": [[75, 132, 38], [146, 196, 52], [30, 52, 15]], "https://images.genius.com/cb0f3e324cce2453101c1309ec3ff901.1000x1000x1.png": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "аутсайдэр": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "cmh - аутсайдэр": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "cmh·аутсайдэр": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "https://pomf2.lain.la/f/4co0sbup.mp3": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "реквием2000": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh - реквием2000": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh·реквием2000": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/9ba3591e95114b1f984aeb280dd7d9b3.mp3": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "спрайт": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "cmh - спрайт": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "cmh·спрайт": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/b589cf215d7141cc8732365c57f53578.mp3": [[200, 205, 215], [140, 150, 165], [60, 68, 80]], "https://images.genius.com/7531446c8fc275a286d5819e36f4d1d5.1000x1000x1.png": [[44, 75, 107], [38, 116, 143], [17, 30, 42]], "стикер": [[44, 75, 107], [38, 116, 143], [17, 30, 42]], "cmh & lida - стикер": [[44, 75, 107], [38, 116, 143], [17, 30, 42]], "cmh & lida·стикер": [[44, 75, 107], [38, 116, 143], [17, 30, 42]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/6a49a3ff8a1e480b9a1756dce4d89013.mp3": [[44, 75, 107], [38, 116, 143], [17, 30, 42]], "винрар": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. 163onmyneck) - винрар": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "og buda (ft. 163onmyneck)·винрар": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/03a1269cef9343078c655b612a3e3da3.mp3": [[90, 66, 60], [150, 124, 98], [36, 26, 24]], "фагаю": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "mayot - фагаю": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "mayot·фагаю": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/6e425795ec864e10adf82c0145bc9e56.mp3": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "https://images.genius.com/b929bdd1ba79cdea4c4c30ed53877eb5.1000x1000x1.png": [[70, 34, 82], [44, 33, 73], [28, 13, 32]], "следующий": [[70, 34, 82], [44, 33, 73], [28, 13, 32]], "og buda - следующий": [[70, 34, 82], [44, 33, 73], [28, 13, 32]], "og buda·следующий": [[70, 34, 82], [44, 33, 73], [28, 13, 32]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/cf59ae29592c4c949155d39ecf5f19bb.mp3": [[70, 34, 82], [44, 33, 73], [28, 13, 32]], "https://images.genius.com/663619c33497033b1398a709c4d1eb14.1000x1000x1.png": [[55, 135, 210], [30, 95, 170], [15, 45, 90]], "штанги": [[55, 135, 210], [30, 95, 170], [15, 45, 90]], "pretty scream & seemee - штанги": [[55, 135, 210], [30, 95, 170], [15, 45, 90]], "pretty scream & seemee·штанги": [[55, 135, 210], [30, 95, 170], [15, 45, 90]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/77e219301b2a4563a4d2d15b1d33fe28.mp3": [[55, 135, 210], [30, 95, 170], [15, 45, 90]], "чайка": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh & пошлая молли - чайка": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh & пошлая молли·чайка": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "https://pomf2.lain.la/f/96e4e6cp.mp3": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "даяизсибири": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh - даяизсибири": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh·даяизсибири": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "https://pomf2.lain.la/f/8oq06p8d.mp3": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "все группи попадают в рай": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh - все группи попадают в рай": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "cmh·все группи попадают в рай": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "https://pomf2.lain.la/f/356r7ut3.mp3": [[43, 63, 90], [168, 96, 84], [17, 25, 36]], "https://images.genius.com/1932d8ea8a964db81269e0857821807d.1000x1000x1.png": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "dirrt": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "big baby tape & kizaru - dirrt": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "big baby tape & kizaru·dirrt": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/ba08e2c70d794950a76339681d076ff0.mp3": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "накипь": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "mayot - накипь": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "mayot·накипь": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/99c15e2bb9de4e0ab5f343bd3ce6c777.mp3": [[44, 112, 48], [76, 53, 120], [17, 44, 19]], "по пятам": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano - по пятам": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano·по пятам": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://pomf2.lain.la/f/rzy6xtbu.mp3": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://images.genius.com/9a17ee0480a3623dfef7f154e6b83dc9.1000x1000x1.png": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "днями и ночами": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "bushido zho, scally milano & полка - днями и ночами": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "bushido zho, scally milano & полка·днями и ночами": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/e1582689014b43969f8b936ab61ac0d2.mp3": [[130, 140, 155], [75, 82, 95], [35, 40, 50]], "недоволен": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano - недоволен": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano·недоволен": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/27eace875d914d83a815d0d1e4671ef2.mp3": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "glo": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano - glo": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "scally milano·glo": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/f4fb5decf97148d1a674afd99d67e3fe.mp3": [[34, 32, 110], [34, 25, 71], [13, 12, 44]], "https://pomf2.lain.la/f/qll7kw3u.jpg": [[180, 190, 205], [90, 100, 115], [35, 42, 52]], "фит с алишером (feat with alisher)": [[180, 190, 205], [90, 100, 115], [35, 42, 52]], "morgenshtern & kizary - фит с алишером (feat with alisher)": [[180, 190, 205], [90, 100, 115], [35, 42, 52]], "morgenshtern & kizary·фит с алишером (feat with alisher)": [[180, 190, 205], [90, 100, 115], [35, 42, 52]], "https://pomf2.lain.la/f/b7nu4thp.mp3": [[180, 190, 205], [90, 100, 115], [35, 42, 52]], "https://images.genius.com/76efc6476e004e0ce262f74f8b0ad2d5.1000x1000x1.png": [[24, 48, 140], [35, 75, 180], [15, 25, 75]], "101 причина": [[24, 48, 140], [35, 75, 180], [15, 25, 75]], "villian & og buda - 101 причина": [[24, 48, 140], [35, 75, 180], [15, 25, 75]], "villian & og buda·101 причина": [[24, 48, 140], [35, 75, 180], [15, 25, 75]], "https://pomf2.lain.la/f/u010ow87.mp3": [[24, 48, 140], [35, 75, 180], [15, 25, 75]], "https://pomf2.lain.la/f/u655aeeo.jpg": [[195, 210, 45], [160, 180, 35], [55, 65, 15]], "влияние (influence)": [[195, 210, 45], [160, 180, 35], [55, 65, 15]], "mayot - влияние (influence)": [[195, 210, 45], [160, 180, 35], [55, 65, 15]], "mayot·влияние (influence)": [[195, 210, 45], [160, 180, 35], [55, 65, 15]], "https://pomf2.lain.la/f/ohxtb9t8.mp3": [[195, 210, 45], [160, 180, 35], [55, 65, 15]], "https://pomf2.lain.la/f/48eky6tp.jpg": [[215, 50, 175], [140, 40, 150], [60, 20, 70]], "g-shokk": [[215, 50, 175], [140, 40, 150], [60, 20, 70]], "soda luv (ft. og buda) - g-shokk": [[215, 50, 175], [140, 40, 150], [60, 20, 70]], "soda luv (ft. og buda)·g-shokk": [[215, 50, 175], [140, 40, 150], [60, 20, 70]], "https://pomf2.lain.la/f/j2z5xord.mp3": [[215, 50, 175], [140, 40, 150], [60, 20, 70]]};
+
+function getKnownPalette(src, track) {
+  if (src && KNOWN_COVER_PALETTES[src]) return KNOWN_COVER_PALETTES[src];
+  if (track) {
+    if (track.cover && KNOWN_COVER_PALETTES[track.cover]) return KNOWN_COVER_PALETTES[track.cover];
+    if (track.src && KNOWN_COVER_PALETTES[track.src]) return KNOWN_COVER_PALETTES[track.src];
+    if (track.title) {
+      const t = track.title.toLowerCase().trim();
+      if (KNOWN_COVER_PALETTES[t]) return KNOWN_COVER_PALETTES[t];
+      if (track.artist) {
+        const at1 = (track.artist + ' - ' + track.title).toLowerCase().trim();
+        if (KNOWN_COVER_PALETTES[at1]) return KNOWN_COVER_PALETTES[at1];
+        const at2 = (track.artist + '·' + track.title).toLowerCase().trim();
+        if (KNOWN_COVER_PALETTES[at2]) return KNOWN_COVER_PALETTES[at2];
+      }
+    }
+  }
+  return null;
+}
+
 function auroraStops(c1) {
   const key = rgbToHsl(c1[0], c1[1], c1[2]);
   const h = key[0];
-  const s = Math.max(0.1, Math.min(0.85, key[1] * 1.12));
-  const l = Math.max(0.3, Math.min(0.6, key[2]));
-  const a = hslToRgb((h + 0.985) % 1, Math.min(0.85, s * 0.9), Math.max(0.16, l * 0.52));
-  const b = hslToRgb(h, s, l);
-  const c = hslToRgb((h + 0.02) % 1, Math.min(0.9, s * 1.05), Math.min(0.72, l * 1.3 + 0.05));
+  const s = key[1];
+  const l = key[2];
+
+  // Монохромные обложки (белый стакан, ч/б фото, серый/графитовый арт)
+  const diff = Math.max(c1[0], c1[1], c1[2]) - Math.min(c1[0], c1[1], c1[2]);
+  if (diff < 38 || s < 0.28 || l > 0.78 || l < 0.12) {
+    return [
+      [22, 26, 34],
+      [60, 68, 80],
+      [130, 140, 155]
+    ];
+  }
+
+  // Насыщенные, чистые цвета строго в тоне обложки без паразитных сдвигов спектра
+  const sat = Math.max(0.70, Math.min(1.0, s * 1.35));
+  const lit = Math.max(0.38, Math.min(0.58, l * 1.05));
+  const a = hslToRgb(h, sat * 0.85, lit * 0.70);
+  const b = hslToRgb(h, sat, lit);
+  const c = hslToRgb(h, sat * 0.95, Math.min(0.68, lit * 1.20));
   return [a, b, c];
 }
 
 function setPalette(c1, c2, c3, alts) {
   const st = document.documentElement.style;
-  st.setProperty('--c1-rgb', c1.join(', '));
-  st.setProperty('--c2-rgb', c2.join(', '));
-  st.setProperty('--c3-rgb', c3.join(', '));
+  const diff = Math.max(c1[0], c1[1], c1[2]) - Math.min(c1[0], c1[1], c1[2]);
+  const key = rgbToHsl(c1[0], c1[1], c1[2]);
+  const isMono = (diff < 38 || key[1] < 0.28 || key[2] > 0.78 || key[2] < 0.12);
 
-  /* аврора перетекает в цвет трека: шейдер держит старую палитру, пока
-     интерполяция не догонит, — смена трека выглядит как таяние цвета */
+  if (isMono) {
+    st.setProperty('--c1-rgb', '150, 160, 175');
+    st.setProperty('--c2-rgb', '80, 90, 105');
+    st.setProperty('--c3-rgb', '35, 42, 52');
+    st.setProperty('--accent-rgb', '160, 170, 185');
+  } else {
+    st.setProperty('--c1-rgb', c1.join(', '));
+    st.setProperty('--c2-rgb', (c2 || c1).join(', '));
+    st.setProperty('--c3-rgb', (c3 || c1).join(', '));
+    st.setProperty('--accent-rgb', c1.join(', '));
+  }
+
   const stops = auroraStops(c1);
   aurora.setColors(stops[0], stops[1], stops[2]);
 }
 
 function resetPalette() {
   setPalette([120, 190, 255], [255, 130, 210], [120, 255, 225]);
-  /* фиксируем классический синий: из серой заглушки «палитра»
-     выходит грязной, а дефолт должен быть фирменным */
   document.documentElement.style.setProperty('--accent-rgb', '59, 157, 255');
 }
 
@@ -4283,12 +4312,28 @@ function paletteViaProxy(src, track, cb) {
 function setCover(src, track) {
   coverWrap.classList.add('dim');
 
-  /* серая заглушка — не «обложка»: палитру и акцент из неё не выводим,
-     оставляем дефолтные цвета и экономим проход по канвасу */
   if (src === PLACEHOLDER) {
     resetPalette();
     setAmbient(src, null);
     coverWrap.classList.remove('dim');
+    return;
+  }
+
+  // 1. Мгновенная точная синхронизация из базы палитр всех треков
+  const pre = getKnownPalette(src, track);
+  if (pre) {
+    setPalette(pre[0], pre[1], pre[2], pre.slice(1));
+    setAmbient(src, pre, pre.slice(1));
+    coverEl.onload = () => {
+      coverWrap.classList.remove('dim');
+    };
+    coverEl.onerror = () => {
+      coverEl.onerror = null;
+      coverEl.src = PLACEHOLDER;
+      coverWrap.classList.remove('dim');
+    };
+    coverEl.removeAttribute('crossorigin');
+    coverEl.src = src;
     return;
   }
 
@@ -6782,45 +6827,8 @@ document.addEventListener('click', (e) => {
   }
 });
 
-/* ══════════════════════════════════════════════════════════
-   Двойной тап по половине плеера: −10 / +10 секунд
-   ══════════════════════════════════════════════════════════ */
-let lastTapTime = 0;
-let lastTapX = 0;
-let lastTapY = 0;
-
-function flashSeek(side) {
-  const el = side === 'left' ? seekFlashL : seekFlashR;
-  el.classList.remove('show');
-  void el.offsetWidth;
-  el.classList.add('show');
-}
-
-scrPlayer.addEventListener('pointerup', (e) => {
-  if (!playerOpen) return;
-  // кнопки, ползунок, обложка, верхняя панель, название и таймкоды живут своей жизнью
-  if (e.target.closest('button, input, .scrub, .volume, .cover-wrap, .player-top, .timer-menu, .meta, .times')) return;
-
-  const now = performance.now();
-  const half = scrPlayer.clientWidth / 2;
-  const isLeft = e.clientX < half;
-
-  // два тапа считаем двойным только если палец почти не уехал и по вертикали:
-  // иначе обычная попытка прокрутить экран перематывала трек
-  const samePlace =
-    Math.abs(e.clientX - lastTapX) < 70 &&
-    Math.abs(e.clientY - lastTapY) <= 15;
-
-  if (now - lastTapTime < 330 && samePlace) {
-    lastTapTime = 0;
-    seekBy(isLeft ? -10 : 10);
-    flashSeek(isLeft ? 'left' : 'right');
-    return;
-  }
-  lastTapTime = now;
-  lastTapX = e.clientX;
-  lastTapY = e.clientY;
-});
+/* Двойной тап отключен по требованию */
+function flashSeek(side) {}
 
 /* ══════════════════════════════════════════════════════════
    Свайп по обложке / мини-плееру — переключение трека
