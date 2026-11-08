@@ -59,7 +59,7 @@
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: var(--text);
     user-select: none;
     -webkit-user-select: none;
@@ -4447,12 +4447,12 @@ void main() {
     gl.uniform3f(u.uStopA, stopsCur[0], stopsCur[1], stopsCur[2]);
     gl.uniform3f(u.uStopB, stopsCur[3], stopsCur[4], stopsCur[5]);
     gl.uniform3f(u.uStopC, stopsCur[6], stopsCur[7], stopsCur[8]);
-    gl.uniform1f(u.uAmplitude, 1.05 * (1 + 0.45 * surgeV));
+    gl.uniform1f(u.uAmplitude, 1.05);
     gl.uniform1f(u.uBlend, 0.5);
     gl.uniform1f(u.uHeight, 0.52);
     gl.uniform1f(u.uScale, 1.1);
     gl.uniform1f(u.uGlow, 0.6);
-    gl.uniform1f(u.uBrightness, Math.min(2.2, (0.95 + 0.4 * surgeV + beatPulse) * levelMul));
+    gl.uniform1f(u.uBrightness, 0.95 * levelMul);
     gl.uniform3f(u.uPointer, smx, smy, reach);
     gl.uniform1f(u.uReveal, 1 - Math.pow(1 - reveal, 3));
     gl.uniform1f(u.uOpacity, 1);
@@ -4479,18 +4479,12 @@ void main() {
     smx += (ptx - smx) * kf;
     smy += (pty - smy) * kf;
 
-    if (surgeV > 0.001) surgeV *= Math.exp(-dt / 0.55); else surgeV = 0;
-
+    surgeV = 0;
     beatPulse = 0;
-    if (settings.beatSync && typeof getBassEnergy === 'function') {
-      const bEnergy = getBassEnergy();
-      if (bEnergy > 0.3) surgeV = Math.max(surgeV, Math.min(1.2, (bEnergy - 0.3) * 1.6));
-      beatPulse = bEnergy * 0.32;
-    }
 
     if (reveal < 1) reveal = Math.min(1, reveal + dt / 2.4);
 
-    clock += dt * speedCur * (1 + 2.2 * surgeV);
+    clock += dt * speedCur * 0.75;
 
     render();
     raf = requestAnimationFrame(frame);
@@ -4932,21 +4926,13 @@ function setMarquee(el, text) {
   });
 }
 
-/* ══ импульс при старте воспроизведения ══
-   Лёгкий «вдох» авроры: волны на миг ускоряются и приподнимаются,
-   затем плавно оседают. Раньше это была вспышка mesh-сетки */
-function pulseMesh() {
-  aurora.surge(0.4);
-}
+/* ══ воспроизведение ══
+   Без резких пульсаций и вспышек: ровный, спокойный фон */
+function pulseMesh() {}
 
 /* ══ переход при скипе трека ══
-   Вместо резкой вспышки — волна-вдох: аврора ускоряется, приподнимается
-   и ярчеет, а палитра (setPalette -> aurora.setColors) в это же время
-   плавно перетекает в цвета нового трека. Выглядит как таяние старого
-   цвета в новом — без обрыва и без дёрганых скачков */
-function mergeGlow() {
-  aurora.surge(1);
-}
+   Палитра плавно перетекает в цвета нового трека без скачков яркости */
+function mergeGlow() {}
 
 /* ══════════════════════════════════════════════════════════
    Плавное затухание звука
@@ -4982,12 +4968,12 @@ function pauseWithFade() {
 /* смена трека: сначала тихо, потом меняем — без «щёлк» в тишину */
 function switchWithFade(fn) {
   const cf = Math.max(0, Number(settings.crossfade) || 0);
-  const fadeMs = cf > 0 ? cf * 1000 : 100;
-  if (switching || audio.paused || audio.volume < 0.02) {
+  if (cf === 0 || switching || audio.paused || audio.volume < 0.02) {
     switching = false;
     fn();
     return;
   }
+  const fadeMs = cf * 1000;
   switching = true;
   fadeTo(0, fadeMs, () => {
     switching = false;
@@ -5073,10 +5059,12 @@ function loadTrack(index) {
   tCur.textContent = '0:00';
   tDur.textContent = t.duration ? fmt(t.duration) : '0:00';
 
-  if (settings.eqEnabled || audioSrcNode) {
+  const isCorsHost = t.src && !t.src.includes('pomf2.lain.la');
+  if ((settings.eqEnabled || audioSrcNode) && isCorsHost) {
     audio.crossOrigin = 'anonymous';
   } else {
     audio.removeAttribute('crossorigin');
+    audio.crossOrigin = null;
   }
 
   audio.src = t.src;
@@ -5127,21 +5115,26 @@ function play() {
     }
   }
 
-  // отменяем незавершённое затухание и снимаем флаг: иначе switchWithFade
-  // навсегда решит, что смена трека ещё идёт, и перестанет гасить звук
+  // отменяем незавершённое затухание и снимаем флаг
   cancelAnimationFrame(fadeRaf);
   switching = false;
 
-  audio.volume = 0;                 // начинаем с нуля и поднимаем — без резкого старта
+  const cf = Math.max(0, Number(settings.crossfade) || 0);
+  if (cf > 0) {
+    audio.volume = 0;
+  } else {
+    audio.volume = volume;
+  }
 
   const p = audio.play();
   const ok = () => {
     pulseMesh();
-    const cf = Math.max(0, Number(settings.crossfade) || 0);
-    fadeTo(volume, cf > 0 ? cf * 1000 : 170);
+    if (cf > 0) {
+      fadeTo(volume, cf * 1000);
+    }
   };
   const fail = () => {
-    audio.volume = volume;      // иначе останется на нуле и будет тишина
+    audio.volume = volume;
     setPlayingUI(false);
     artistEl.textContent = 'Нажми ▶ чтобы играть';
   };
@@ -5993,6 +5986,12 @@ function toggleEq(forceState) {
       audioCtx.resume().catch(() => {});
     }
     hapticFeedback('light');
+    return;
+  }
+
+  const tCheck = currentIndex >= 0 ? tracks[currentIndex] : null;
+  if (tCheck && tCheck.src && tCheck.src.includes('pomf2.lain.la')) {
+    toast('Этому треку эквалайзер недоступен (хост без CORS)');
     return;
   }
 
@@ -7437,6 +7436,7 @@ async function cacheUpcoming() {
     }
 
     for (const url of urls) {
+      if (!url || url.includes('pomf2.lain.la') || location.protocol === 'file:') continue;
       if (await cache.match(url)) continue;
       try {
         // Только обычный CORS-запрос. Ответ no-cors («opaque») нельзя ни прочитать,
