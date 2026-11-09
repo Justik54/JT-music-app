@@ -6315,8 +6315,22 @@ function renderLyrics() {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
-    s = s.replace(/\*{2,}/g, '<span class="censor censor-hard"></span>');
-    s = s.replace(/#{2,}/g, '<span class="censor censor-mat"></span>');
+
+    // Объединяем подряд идущие цензуры (например, '#### #### ####') в одну сплошную плашку
+    s = s.replace(/([#*]{2,}(?:[\s,–—\-]+[#*]{2,})*)/g, (fullMatch) => {
+      const tokens = fullMatch.match(/[#*]{2,}/g) || [];
+      const count = tokens.length;
+      const isHard = tokens.some(t => t.includes('*'));
+      const cls = isHard ? 'censor censor-hard' : 'censor censor-mat';
+
+      if (count <= 1) {
+        return '<span class="' + cls + '"></span>';
+      }
+
+      const emWidth = (count * (isHard ? 2.9 : 2.6)).toFixed(1);
+      return '<span class="' + cls + '" style="width: ' + emWidth + 'em;"></span>';
+    });
+
     return s;
   }
 
