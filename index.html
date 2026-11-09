@@ -137,27 +137,10 @@
   }
   /* лёгкая вуаль: верх почти чистый, низ притемнён — чтобы текст и кнопки
      читались. Полностью в чёрный не уводим: цвет должен жить по всему экрану */
-  .ambient::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    pointer-events: none;
-    background: linear-gradient(180deg,
-      rgba(8, 9, 11, 0) 0%,
-      rgba(8, 9, 11, 0.1) 30%,
-      rgba(8, 9, 11, 0.42) 62%,
-      rgba(8, 9, 11, 0.72) 86%,
-      rgba(8, 9, 11, 0.88) 100%);
-  }
-  /* в плеере вуаль почти не нужна: цвет должен заливать ВЕСЬ экран
-     (как в Apple Music), текст читается за счёт фона самого плеера */
+  /* Затемнение снизу полностью удалено: цвета и списки чистые */
+  .ambient::after,
   body.player-open .ambient::after {
-    background: linear-gradient(180deg,
-      rgba(8, 9, 11, 0) 0%,
-      rgba(8, 9, 11, 0.02) 38%,
-      rgba(8, 9, 11, 0.1) 70%,
-      rgba(8, 9, 11, 0.3) 100%);
+    display: none !important;
   }
 
   /* ── Аврора — WebGL-шейдер (порт ReactBits Aurora на чистый WebGL) ──
@@ -1191,8 +1174,7 @@
   /* ══ экран: плеер ══════════════════════════════════════ */
   #scrPlayer {
     z-index: 5;
-    background: radial-gradient(circle at 50% 25%, transparent 0%, rgba(8, 9, 11, 0.30) 85%),
-                linear-gradient(180deg, transparent 0%, rgba(8, 9, 11, 0.45) 100%);
+    background: transparent;
     transform: translateY(100%);
     transition: transform 460ms var(--ease-drawer);
     will-change: transform;
@@ -1693,15 +1675,12 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 6px 14px;
-    min-height: 32px;
+    padding: 2px 4px;
+    min-height: 28px;
     margin-top: 0;
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: transparent;
+    border: none;
   }
 
   /* очень низкий экран (напр. телефон горизонтально) — включаем прокрутку */
@@ -2618,28 +2597,70 @@
     background: rgba(255, 255, 255, 0.06);
   }
 
+  .lyrics-content.plain-lyrics {
+    padding: 10px 16px 52px;
+    gap: 0;
+  }
+  .lyrics-content.plain-lyrics .lyrics-header-line {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 18px 0 8px;
+    padding: 0 4px;
+    opacity: 0.95;
+    user-select: none;
+  }
   .lyrics-content.plain-lyrics .lyrics-line {
-    font-size: 16.5px;
+    font-size: 15px;
     font-weight: 500;
-    line-height: 1.55;
-    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    color: rgba(255, 255, 255, 0.92);
     opacity: 1;
-    padding: 6px 14px;
+    padding: 3px 4px;
+    margin: 0;
+    border-radius: 6px;
     cursor: default;
+    word-break: break-word;
   }
   .lyrics-content.plain-lyrics .lyrics-line:hover {
     background: transparent;
     opacity: 1;
   }
-  .lyrics-content.plain-lyrics .lyrics-line.section-header {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 16px;
-    padding-bottom: 2px;
-    opacity: 0.9;
+  .lyrics-content.plain-lyrics .lyrics-space {
+    height: 14px;
+    flex-shrink: 0;
+  }
+  .censor {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    padding: 1px 7px;
+    border-radius: 6px;
+    margin: 0 2px;
+    line-height: 1.35;
+    user-select: none;
+    letter-spacing: 0.16em;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .censor-mat {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(4px);
+  }
+  .censor-hard {
+    background: rgba(255, 69, 58, 0.18);
+    color: #ff6961;
+    border: 1px solid rgba(255, 69, 58, 0.35);
+    box-shadow: 0 0 8px rgba(255, 69, 58, 0.2);
+  }
+  .censor .c-dots {
+    transform: translateY(-0.5px);
   }
 
   /* Empty state в стиле Apple Music */
@@ -3058,20 +3079,7 @@
         <div class="set-label">Переходить к следующему треку</div>
         <button class="switch" data-key="next" aria-label="Автопереход"><span class="switch-knob"></span></button>
       </div>
-      <div class="set-row">
-        <div class="set-label">
-          Пульсация авроры под бит
-          <span class="set-hint">Мягкая реакция яркости шейдера на бас (по умолчанию выкл)</span>
-        </div>
-        <button class="switch" data-key="beatSync" aria-label="Пульсация под бит"><span class="switch-knob"></span></button>
-      </div>
-      <div class="set-row column">
-        <div class="set-label">
-          Кроссфейд при смене трека
-          <span class="set-value" id="crossfadeVal">Выкл</span>
-        </div>
-        <input class="set-range" id="crossfadeLevel" type="range" min="0" max="3" step="1" value="0">
-      </div>
+
 
     </div>
 
@@ -3168,13 +3176,7 @@
 
     <!-- Меню 3 точек -->
     <div class="player-more-menu" id="playerMoreMenu">
-      <button class="player-more-item" id="moreEqBtn">
-        <span class="item-left">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
-          Эквалайзер
-        </span>
-        <span class="item-badge" id="moreEqBadge">Выкл</span>
-      </button>
+
       <button class="player-more-item" id="moreSpeedBtn">
         <span class="item-left">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -3390,12 +3392,11 @@ if (tg) {
 /* подтверждение закрытия — только пока играет музыка, иначе бесит */
 let closingLocked = false;
 function lockClosing(on) {
-  if (!tg || !tg.enableClosingConfirmation || closingLocked === on) return;
-  try {
-    if (on) tg.enableClosingConfirmation();
-    else if (tg.disableClosingConfirmation) tg.disableClosingConfirmation();
-    closingLocked = on;
-  } catch (e) {}
+  // Отключено предупреждение при выходе по требованию пользователя
+  if (tg && tg.disableClosingConfirmation) {
+    try { tg.disableClosingConfirmation(); } catch (e) {}
+  }
+  closingLocked = false;
 }
 
 const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
@@ -6285,16 +6286,19 @@ function parseLyrics(rawText) {
 
   rawLines.forEach((l) => {
     const trimmed = l.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      lines.push({ time: -1, text: '', synced: false, isBreak: true });
+      return;
+    }
     const m = trimmed.match(lrcRegex);
     if (m) {
       hasTimestamps = true;
       const min = parseInt(m[1], 10);
       const sec = parseInt(m[2], 10);
       const ms = m[3] ? parseInt(m[3].padEnd(3, '0').slice(0, 3), 10) : 0;
-      lines.push({ time: min * 60 + sec + ms / 1000, text: m[4] || '♪', synced: true });
+      lines.push({ time: min * 60 + sec + ms / 1000, text: m[4] || '♪', synced: true, isBreak: false });
     } else {
-      lines.push({ time: -1, text: trimmed, synced: false });
+      lines.push({ time: -1, text: trimmed, synced: false, isBreak: false });
     }
   });
 
@@ -6351,14 +6355,35 @@ function renderLyrics() {
 
   container.classList.toggle('plain-lyrics', !currentLyricsData.hasTimestamps);
 
+  function formatCensorship(str) {
+    let s = str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    // **** - сильнее мата (выраженный акцентный бейдж цензуры)
+    s = s.replace(/\*{3,}/g, '<span class="censor censor-hard" title="Цензура+"><span class="c-dots">••••</span></span>');
+    // #### - мат (матовый бейдж цензуры)
+    s = s.replace(/#{3,}/g, '<span class="censor censor-mat" title="Цензура"><span class="c-dots">••••</span></span>');
+    return s;
+  }
+
   currentLyricsData.lines.forEach((line, idx) => {
+    if (line.isBreak) {
+      const sp = document.createElement('div');
+      sp.className = 'lyrics-space';
+      container.appendChild(sp);
+      return;
+    }
+
     const div = document.createElement('div');
-    div.className = 'lyrics-line';
     div.dataset.lidx = String(idx);
-    div.textContent = line.text;
 
     if (!currentLyricsData.hasTimestamps && /^\[.+\]$/.test(line.text.trim())) {
-      div.classList.add('section-header');
+      div.className = 'lyrics-header-line';
+      div.textContent = line.text;
+    } else {
+      div.className = 'lyrics-line';
+      div.innerHTML = formatCensorship(line.text);
     }
 
     if (line.time >= 0) {
