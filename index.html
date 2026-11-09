@@ -518,10 +518,31 @@
     margin: 4px 6px;
   }
   .timer-menu.open { display: flex; }
-  .timer-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .timer-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease;
+  }
+  .timer-item:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .timer-item.active {
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.12);
+  }
   .timer-item i {
     font-style: normal;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 600;
     color: var(--faint);
     font-variant-numeric: tabular-nums;
@@ -656,21 +677,9 @@
   }
   .scroll::-webkit-scrollbar { width: 0; }
 
-  /* Плавное растворение списка над плавающим баром */
+  /* Убрано искусственное затемнение: контент чисто уходит под Liquid Glass док */
   .list-fade {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: calc(180px + env(safe-area-inset-bottom));
-    z-index: 5;
-    pointer-events: none;
-    background: linear-gradient(to bottom,
-      rgba(8, 9, 11, 0) 0%,
-      rgba(8, 9, 11, 0.35) 25%,
-      rgba(8, 9, 11, 0.75) 50%,
-      var(--bg) 75%,
-      var(--bg) 100%);
+    display: none;
   }
 
   .panel { display: none; }
@@ -1196,14 +1205,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 14px 4px;
+    padding: calc(12px + env(safe-area-inset-top)) 16px 8px;
     flex-shrink: 0;
     touch-action: none;
     cursor: grab;
     position: relative;
   }
-  .top-left { display: flex; align-items: center; gap: 4px; }
-  .top-right { display: flex; gap: 0; }
+  .top-left { display: flex; align-items: center; gap: 8px; }
+  .top-right { display: flex; align-items: center; gap: 8px; }
   .player-top::before {
     content: "";
     position: absolute;
@@ -6865,6 +6874,7 @@ if (playerMoreBtn && playerMoreMenu) {
     speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length];
     saveSpeed();
     paintSpeed();
+    syncMoreMenuBadges();
     hapticFeedback('selection');
   });
 
@@ -6873,7 +6883,12 @@ if (playerMoreBtn && playerMoreMenu) {
     playerMoreMenu.classList.remove('open');
     const tm = $('timerMenu');
     if (tm) {
-      tm.classList.toggle('open');
+      if (tm.classList.contains('open')) {
+        tm.classList.remove('open');
+      } else {
+        buildSleepMenu();
+        tm.classList.add('open');
+      }
       hapticFeedback('light');
     }
   });
@@ -7659,6 +7674,10 @@ const SPEED_KEY = 'jt_speed_v1';
 const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
 let speed = 1;
 
+function saveSpeed() {
+  try { localStorage.setItem(SPEED_KEY, String(speed)); } catch (e) {}
+}
+
 function loadSpeed() {
   const v = parseFloat(localStorage.getItem(SPEED_KEY));
   speed = SPEEDS.indexOf(v) !== -1 ? v : 1;
@@ -8069,6 +8088,7 @@ function setSleepMode(mode) {
   sleepMode = mode;
   sleepEndsAt = 0;
   clearTimeout(sleepTimerId);
+  syncMoreMenuBadges();
   sleepTimerId = 0;
 
   const opt = SLEEP_OPTIONS.find((o) => o[0] === mode) || SLEEP_OPTIONS[0];
