@@ -1601,12 +1601,7 @@
   .stat-line i { font-style: normal; color: var(--sub); font-variant-numeric: tabular-nums; }
 
   /* история поиска */
-  .search-history {
-    display: flex;
-    gap: 7px;
-    flex-wrap: wrap;
-    margin-top: 10px;
-  }
+  .search-history { display: none !important; }
   .search-history .chip { height: 26px; font-size: 11.5px; padding: 0 10px; }
 
   .controls {
@@ -2634,33 +2629,21 @@
     flex-shrink: 0;
   }
   .censor {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    vertical-align: middle;
-    padding: 1px 7px;
-    border-radius: 6px;
+    display: inline-block;
+    height: 0.85em;
+    border-radius: 4px;
+    vertical-align: -0.06em;
     margin: 0 2px;
-    line-height: 1.35;
     user-select: none;
-    letter-spacing: 0.16em;
-    font-size: 11px;
-    font-weight: 800;
+    pointer-events: none;
   }
   .censor-mat {
-    background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    backdrop-filter: blur(4px);
+    width: 42px;
+    background: #5c6473;
   }
   .censor-hard {
-    background: rgba(255, 69, 58, 0.18);
-    color: #ff6961;
-    border: 1px solid rgba(255, 69, 58, 0.35);
-    box-shadow: 0 0 8px rgba(255, 69, 58, 0.2);
-  }
-  .censor .c-dots {
-    transform: translateY(-0.5px);
+    width: 50px;
+    background: #844c53;
   }
 
   /* Empty state в стиле Apple Music */
@@ -5115,42 +5098,23 @@ let switching = false;
 
 function fadeTo(target, ms, done) {
   cancelAnimationFrame(fadeRaf);
-  const from = audio.volume;
-  const t0 = performance.now();
-
-  const step = () => {
-    const k = Math.min(1, (performance.now() - t0) / ms);
-    audio.volume = Math.max(0, Math.min(1, from + (target - from) * k));
-    if (k < 1) fadeRaf = requestAnimationFrame(step);
-    else if (done) done();
-  };
-  fadeRaf = requestAnimationFrame(step);
+  audio.volume = target;
+  if (done) done();
 }
 
 function pauseWithFade() {
   if (audio.paused) return;
-  // интерфейс переключаем сразу: ждать, пока догорит затухание, — это и есть «задержка»
+  cancelAnimationFrame(fadeRaf);
   setPlayingUI(false);
-  fadeTo(0, 90, () => {
-    audio.pause();
-    audio.volume = volume;   // вернуть громкость, иначе следующий play будет тихим
-  });
+  audio.pause();
+  audio.volume = volume;
 }
 
 /* смена трека: сначала тихо, потом меняем — без «щёлк» в тишину */
 function switchWithFade(fn) {
-  const cf = Math.max(0, Number(settings.crossfade) || 0);
-  if (cf === 0 || switching || audio.paused || audio.volume < 0.02) {
-    switching = false;
-    fn();
-    return;
-  }
-  const fadeMs = cf * 1000;
-  switching = true;
-  fadeTo(0, fadeMs, () => {
-    switching = false;
-    fn();
-  });
+  cancelAnimationFrame(fadeRaf);
+  switching = false;
+  fn();
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -5290,20 +5254,11 @@ function play() {
   // отменяем незавершённое затухание и снимаем флаг
   cancelAnimationFrame(fadeRaf);
   switching = false;
-
-  const cf = Math.max(0, Number(settings.crossfade) || 0);
-  if (cf > 0) {
-    audio.volume = 0;
-  } else {
-    audio.volume = volume;
-  }
+  audio.volume = volume;
 
   const p = audio.play();
   const ok = () => {
     pulseMesh();
-    if (cf > 0) {
-      fadeTo(volume, cf * 1000);
-    }
   };
   const fail = () => {
     audio.volume = volume;
@@ -6360,10 +6315,8 @@ function renderLyrics() {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
-    // **** - сильнее мата (выраженный акцентный бейдж цензуры)
-    s = s.replace(/\*{3,}/g, '<span class="censor censor-hard" title="Цензура+"><span class="c-dots">••••</span></span>');
-    // #### - мат (матовый бейдж цензуры)
-    s = s.replace(/#{3,}/g, '<span class="censor censor-mat" title="Цензура"><span class="c-dots">••••</span></span>');
+    s = s.replace(/\*{2,}/g, '<span class="censor censor-hard"></span>');
+    s = s.replace(/#{2,}/g, '<span class="censor censor-mat"></span>');
     return s;
   }
 
@@ -6513,6 +6466,9 @@ function loadSettings() {
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
     if (s && typeof s === 'object') settings = Object.assign(settings, s);
   } catch (e) {}
+  settings.crossfade = 0;
+  settings.beatSync = false;
+  try { localStorage.removeItem(SEARCH_KEY); } catch (e) {}
 }
 
 function saveSettings() {
@@ -7021,7 +6977,7 @@ searchInput.addEventListener('input', () => {
     searchQuery = searchInput.value.trim().toLowerCase();
     renderActive();
     resyncQueue();      // очередь = результаты поиска, а не старая
-    if (searchQuery.length >= 2) pushSearch(searchInput.value);
+    // search suggestions removed
   }, 120);
 });
 
@@ -7952,11 +7908,9 @@ const SEARCH_KEY = 'jt_search_v1';
 let searchHistory = [];
 
 function loadSearchHistory() {
-  try {
-    const arr = JSON.parse(localStorage.getItem(SEARCH_KEY) || '[]');
-    searchHistory = Array.isArray(arr) ? arr.slice(0, 6) : [];
-  } catch (e) { searchHistory = []; }
-  return searchHistory;
+  try { localStorage.removeItem(SEARCH_KEY); } catch (e) {}
+  searchHistory = [];
+  return [];
 }
 
 function pushSearch(q) {
@@ -7969,38 +7923,7 @@ function pushSearch(q) {
 
 function renderSearchHistory() {
   const box = $('searchHistory');
-  box.innerHTML = '';
-
-  syncSearchClear();
-
-  const focused = document.activeElement === searchInput;
-  const typed = searchInput.value.trim();
-
-  if (!focused || typed) {
-    box.style.display = 'none';
-    return;
-  }
-
-  const items = loadSearchHistory();
-  if (!items.length) {
-    box.style.display = 'none';
-    return;
-  }
-
-  box.style.display = 'flex';
-  items.forEach((q) => {
-    const b = document.createElement('button');
-    b.className = 'chip';
-    b.textContent = q;
-    b.addEventListener('click', () => {
-      searchInput.value = q;
-      searchQuery = q.toLowerCase();
-      renderActive();
-      searchInput.blur();
-      renderSearchHistory();
-    });
-    box.appendChild(b);
-  });
+  if (box) box.style.display = 'none';
 }
 
 searchInput.addEventListener('focus', renderSearchHistory);
