@@ -1317,29 +1317,6 @@
     "id": "11hyanp"
   },
   {
-    "title": "Фаю",
-    "artist": "MAYOT",
-    "album": "ЗАПРАВКА КИД",
-    "year": "2020",
-    "release": "2020-12-25",
-    "featuring": [],
-    "producer": [
-      "Sqweezey",
-      "prod. ivy"
-    ],
-    "writers": [
-      "MAYOT",
-      "Sqweezey",
-      "prod. ivy"
-    ],
-    "label": "CPLUS, MELON MUSIC",
-    "lyrics": "",
-    "src": "https://raw.githubusercontent.com/Justik54/JT-music-app-audio/main/audio/6e425795ec864e10adf82c0145bc9e56.mp3",
-    "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg",
-    "duration": 94,
-    "id": "105jpuy"
-  },
-  {
     "title": "Следующий",
     "artist": "OG Buda",
     "album": "FREERIO 2",
