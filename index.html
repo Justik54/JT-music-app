@@ -3915,20 +3915,31 @@ async function fetchTracks() {
   return null;
 }
 
+function cleanEnglishTranslit(s) {
+  if (!s || typeof s !== 'string') return s || '';
+  let prev = '';
+  let res = s;
+  while (prev !== res) {
+    prev = res;
+    res = res.replace(/([а-яёА-ЯЁ][^(\[]*?)\s*[\(\[](?:(?!(?:feat\.?|ft\.?)\s+(?!with\b)|при\s+участии)[A-Za-z0-9\s!?,.'’/&+_–—-]+)[\)\]]/gi, '$1');
+  }
+  return res.replace(/\s+/g, ' ').trim();
+}
+
 function normalize(t) {
   if (!t || typeof t !== 'object') return null;
   const src = t.src || t.url || t.audio || '';
   if (!src) return null;
   return {
-    title: (t.title || 'Без названия').trim(),
-    artist: (t.artist || 'Неизвестный').trim(),
-    album: (t.album || 'Сингл').trim() || 'Сингл',
+    title: cleanEnglishTranslit(t.title || 'Без названия'),
+    artist: cleanEnglishTranslit(t.artist || 'Неизвестный'),
+    album: cleanEnglishTranslit(t.album || 'Сингл') || 'Сингл',
     year: String(t.year || '').slice(0, 4),
     release: String(t.release || ''),
-    featuring: Array.isArray(t.featuring) ? t.featuring.filter(Boolean) : [],
-    producer: Array.isArray(t.producer) ? t.producer.filter(Boolean) : [],
-    writers: Array.isArray(t.writers) ? t.writers.filter(Boolean) : [],
-    label: String(t.label || ''),
+    featuring: Array.isArray(t.featuring) ? t.featuring.map(cleanEnglishTranslit).filter(Boolean) : [],
+    producer: Array.isArray(t.producer) ? t.producer.map(cleanEnglishTranslit).filter(Boolean) : [],
+    writers: Array.isArray(t.writers) ? t.writers.map(cleanEnglishTranslit).filter(Boolean) : [],
+    label: cleanEnglishTranslit(String(t.label || '')),
     src: src,
     cover: t.cover || '',
     duration: Number(t.duration) || 0,
@@ -3980,7 +3991,7 @@ const normName = (s) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 function artistLine(t) {
   if (!t) return '';
 
-  const raw = (t.artist || '').trim();
+  const raw = cleanEnglishTranslit(t.artist || '');
   const extra = [];
 
   // вытаскиваем feat./ft. из скобок прямо в имени артиста

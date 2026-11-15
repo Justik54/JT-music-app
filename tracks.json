@@ -11,8 +11,8 @@
     "featuring": [],
     "producer": [
       "DooMee",
-      "Александр Рудич (Alexandr Rudich)",
-      "Даниил Александров (Daniil Alexandrov)"
+      "Александр Рудич",
+      "Даниил Александров"
     ],
     "writers": [
       "DooMee",
@@ -133,7 +133,7 @@
     ],
     "writers": [
       "CMH",
-      "МУККА (MUKKA)",
+      "МУККА",
       "spbwaves"
     ],
     "label": "KOALA MUSIC",
@@ -221,7 +221,7 @@
     ],
     "writers": [
       "CMH",
-      "Слава КПСС (Slava KPSS)",
+      "Слава КПСС",
       "spbwaves"
     ],
     "label": "KOALA MUSIC, Антихайп (Antihype)",
@@ -244,7 +244,7 @@
     ],
     "writers": [
       "CMH",
-      "Антон Лиссов (Anton Lissov)",
+      "Антон Лиссов",
       "BEATCASTER",
       "spbwaves"
     ],
@@ -338,7 +338,7 @@
       "SLAJIDI"
     ],
     "writers": [
-      "Слава КПСС (Slava KPSS)",
+      "Слава КПСС",
       "163ONMYNECK",
       "SLAJIDI"
     ],
@@ -800,9 +800,9 @@
       "Envtn"
     ],
     "writers": [
-      "СТИНТ (THE STINT)",
+      "СТИНТ",
       "Envtn",
-      "реприза (REPRIZZA)"
+      "реприза"
     ],
     "label": "The Fence",
     "lyrics": "",
@@ -824,7 +824,7 @@
       "tainiykick",
       "dexey!",
       "Masha Zubkova",
-      "мамэтотолькодляфото (mijfp)"
+      "мамэтотолькодляфото"
     ],
     "writers": [
       "VILLIAN",
@@ -852,7 +852,7 @@
       "sb220iq",
       "morioh",
       "CALYKO",
-      "Даниил Александров (Daniil Alexandrov)"
+      "Даниил Александров"
     ],
     "writers": [
       "sb220iq",
@@ -1076,7 +1076,7 @@
     "featuring": [],
     "producer": [
       "YGCezar",
-      "Иван Комаров (Ivan Komarov)"
+      "Иван Комаров"
     ],
     "writers": [
       "Baby Melo"
@@ -1368,13 +1368,13 @@
     "release": "2026-02-13",
     "featuring": [],
     "producer": [
-      "Кирилл Бледный (Kirill Bledny)",
-      "Константин Пыжов (Konstantin Pyzhov)"
+      "Кирилл Бледный",
+      "Константин Пыжов"
     ],
     "writers": [
       "CMH",
-      "Кирилл Бледный (Kirill Bledny)",
-      "Константин Пыжов (Konstantin Pyzhov)",
+      "Кирилл Бледный",
+      "Константин Пыжов",
       "spbwaves"
     ],
     "label": "",
@@ -1505,7 +1505,7 @@
     "writers": [
       "BUSHIDO ZHO",
       "Scally Milano",
-      "Полка (polkapretty)",
+      "Полка",
       "Wex",
       "riileybeatz"
     ],
@@ -1561,7 +1561,7 @@
     "id": "yyb5mf"
   },
   {
-    "title": "Фит с Алишером (Feat with Alisher)",
+    "title": "Фит с Алишером",
     "artist": "MORGENSHTERN & kizary",
     "album": "Сингл",
     "year": "2022",
@@ -1638,7 +1638,7 @@
   {
     "title": "G-SHOKK",
     "artist": "SODA LUV (Ft. OG Buda)",
-    "album": "КОТЬ! КОТЬ! (KITTY! KITTY!)",
+    "album": "КОТЬ! КОТЬ!",
     "year": "2021",
     "release": "2021-04-02",
     "featuring": [
@@ -1649,7 +1649,7 @@
       "demarcxx",
       "gob wants nothing",
       "CPLUS",
-      "Даниил Александров (Daniil Alexandrov)"
+      "Даниил Александров"
     ],
     "writers": [
       "gob wants nothing",
@@ -1688,20 +1688,20 @@
   },
   {
     "title": "спидран",
-    "artist": "плм (plm) (Ft. не панк (ne pank))",
-    "album": "реп альбом делюкс (rap album deluxe)",
+    "artist": "плм (Ft. не панк)",
+    "album": "реп альбом делюкс",
     "year": "2021",
     "release": "2021-07-02",
     "featuring": [
-      "не панк (ne pank)"
+      "не панк"
     ],
     "producer": [
       "Loudn",
-      "Александр Блаженский (Alexander Blajenskiy)",
-      "Иван Марголдин (Ivan Margoldin)"
+      "Александр Блаженский",
+      "Иван Марголдин"
     ],
     "writers": [
-      "плм (plm)"
+      "плм"
     ],
     "label": "KOALA MUSIC",
     "lyrics": "",
@@ -1776,7 +1776,7 @@
   {
     "title": "Бэнг бэнг",
     "artist": "Lida",
-    "album": "Жабы атаковали планету Земля (TAPE)",
+    "album": "Жабы атаковали планету Земля",
     "year": "2019",
     "release": "2019-01-06",
     "featuring": [],
@@ -1841,14 +1841,14 @@
   },
   {
     "title": "Фрэш",
-    "artist": "УННВ (UNNV)",
-    "album": "Неизданное (Unreleased)",
+    "artist": "УННВ",
+    "album": "Неизданное",
     "year": "2009",
     "release": "2009-11-20",
     "featuring": [],
     "producer": [],
     "writers": [
-      "УННВ (UNNV)",
+      "УННВ",
       "Anq (UNNV)",
       "Crash (UNNV)",
       "MarikMarakesh (UNNV)"
@@ -1885,16 +1885,16 @@
   },
   {
     "title": "Bonus Babe",
-    "artist": "ЛСП (LSP)",
+    "artist": "ЛСП",
     "album": "Сингл",
     "year": "2014",
     "release": "2014-02-22",
     "featuring": [],
     "producer": [
-      "Рома Англичанин (Roma Anglichanin)"
+      "Рома Англичанин"
     ],
     "writers": [
-      "ЛСП (LSP)"
+      "ЛСП"
     ],
     "label": "",
     "lyrics": "",
