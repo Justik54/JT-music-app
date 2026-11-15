@@ -1946,27 +1946,7 @@
     will-change: width;
   }
   .vol-thumb {
-    position: absolute;
-    top: 50%;
-    left: 0%;
-    width: 10px;
-    height: 10px;
-    margin-top: -5px;
-    margin-left: -5px;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-    pointer-events: none;
-    opacity: 0;
-    transform: scale(0.6);
-    transition: opacity 160ms ease, transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 160ms ease;
-    will-change: left, opacity, transform;
-  }
-  .wake:hover .vol-thumb,
-  .wake.dragging .vol-thumb {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+    display: none !important;
   }
   .volume-hint { flex: 1; font-size: 11px; color: var(--faint); text-align: center; }
 
