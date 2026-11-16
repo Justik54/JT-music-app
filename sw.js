@@ -1,13 +1,15 @@
 /* JT Music — офлайн-кэш
    Стратегии:
    - index.html и tracks.json — сеть в приоритете, кэш как запасной вариант
-   - обложки — кэш в приоритете
+   - обложки — кэш в приоритете (COVER_CACHE: до 80 файлов, внешние CDN и wsrv.nl)
    - аудио — кэшируется по запросу плеера (последние несколько треков)
 */
 const VERSION = 'jt-v2.0.0';
 const SHELL = './index.html';
 const AUDIO_CACHE = 'jt-audio-v1';
 const AUDIO_MAX = 6;   // сколько треков держим офлайн
+const COVER_CACHE = 'jt-covers-v1';
+const COVER_MAX = 80;  // сколько обложек держим в кэше
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -22,7 +24,7 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((k) => k !== VERSION && k !== AUDIO_CACHE)
+            .filter((k) => k !== VERSION && k !== AUDIO_CACHE && k !== COVER_CACHE)
             .map((k) => caches.delete(k))
         )
       )
@@ -67,9 +69,13 @@ self.addEventListener('message', (event) => {
   if (data.type === 'clear-audio') {
     event.waitUntil(caches.delete(AUDIO_CACHE));
   }
+
+  if (data.type === 'clear-covers') {
+    event.waitUntil(caches.delete(COVER_CACHE));
+  }
 });
 
-/* ── сеть ──────────────────────────────────────────────── */
+/* ── типы ресурсов ─────────────────────────────────────── */
 function isImage(url) {
   return /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i.test(url);
 }
@@ -78,6 +84,11 @@ function isAudio(url) {
   return /\.(mp3|flac|m4a|ogg|wav|aac|opus)(\?|$)/i.test(url);
 }
 
+function isCoverRequest(url, req) {
+  if (req.destination === 'image') return true;
+  if (url.hostname === 'wsrv.nl' || url.hostname.endsWith('.wsrv.nl')) return true;
+  return isImage(url.pathname);
+}
 
 /* офлайн: отдаём трек из кэша (перемотка в этом режиме ограничена) */
 async function serveAudio(req) {
@@ -94,13 +105,38 @@ async function serveAudio(req) {
   }
 }
 
+/* обложки: Cache-First с лимитом до COVER_MAX записей */
+async function serveCover(req) {
+  const cache = await caches.open(COVER_CACHE);
+  const hit = await cache.match(req);
+  if (hit) return hit;
+
+  try {
+    const res = await fetch(req);
+    if (res && res.ok && res.type !== 'opaque') {
+      await cache.put(req, res.clone());
+      const keys = await cache.keys();
+      if (keys.length > COVER_MAX) {
+        const toDelete = keys.slice(0, keys.length - COVER_MAX);
+        for (const k of toDelete) {
+          await cache.delete(k);
+        }
+      }
+    }
+    return res;
+  } catch (e) {
+    if (hit) return hit;
+    throw e;
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
 
-  // аудио: пока есть сеть — вообще не вмешиваемся,
+  // 1. Аудио: пока есть сеть — вообще не вмешиваемся,
   // иначе браузер не может перематывать (перемотка через SW ломается)
   if (isAudio(url.pathname) || req.destination === 'audio') {
     if (navigator.onLine) return;
@@ -108,25 +144,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.origin !== location.origin) return; // остальные чужие CDN не трогаем
-
-  // картинки — сначала кэш
-  if (isImage(url.pathname)) {
-    event.respondWith(
-      caches.match(req).then(
-        (hit) =>
-          hit ||
-          fetch(req)
-            .then((res) => {
-              const copy = res.clone();
-              caches.open(VERSION).then((c) => c.put(req, copy));
-              return res;
-            })
-            .catch(() => hit)
-      )
-    );
+  // 2. Обложки (ДО проверки url.origin!): wsrv.nl, images.genius.com и любые картинки
+  if (isCoverRequest(url, req)) {
+    event.respondWith(serveCover(req));
     return;
   }
+
+  if (url.origin !== location.origin) return; // остальные чужие CDN не трогаем
 
   // json — сеть в приоритете, при обрыве отдаём прошлую копию,
   // НО НИКОГДА не подменяем на index.html (иначе JSON.parse падает и список пустой)
