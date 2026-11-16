@@ -274,6 +274,7 @@
      Задержка visibility нужна, чтобы анимация уезда успела проиграться. */
   #scrPlayer:not(.open),
   #scrAlbum:not(.open),
+  #scrArtist:not(.open),
   #scrSettings:not(.open) {
     pointer-events: none;
     visibility: hidden;
@@ -281,10 +282,12 @@
   }
   #scrPlayer:not(.open) { transition: transform 460ms var(--ease-drawer), visibility 0s linear 460ms; }
   #scrAlbum:not(.open) { transition: transform 380ms var(--ease-out), opacity 340ms var(--ease-out), visibility 0s linear 380ms; }
+  #scrArtist:not(.open) { transition: transform 380ms var(--ease-out), opacity 340ms var(--ease-out), visibility 0s linear 380ms; }
   #scrSettings:not(.open) { transition: transform 380ms var(--ease-drawer), visibility 0s linear 380ms; }
 
   #scrPlayer.open,
   #scrAlbum.open,
+  #scrArtist.open,
   #scrSettings.open {
     visibility: visible;
     transition-delay: 0s;
@@ -292,7 +295,8 @@
 
   #scrLibrary { transition: opacity 340ms var(--ease-out); }
   .stage.shrink #scrLibrary,
-  .stage.shrink #scrAlbum { opacity: 0; }
+  .stage.shrink #scrAlbum,
+  .stage.shrink #scrArtist { opacity: 0; }
 
   /* ══ экран: библиотека ═════════════════════════════════ */
   .lib-head {
@@ -333,7 +337,7 @@
     top: 5px;
     bottom: 5px;
     left: 0;
-    width: 25%;
+    width: 20%;
     transition: transform 340ms var(--ease-drawer);
     pointer-events: none;
   }
@@ -804,6 +808,140 @@
   }
 
   /* ══ сетка альбомов ════════════════════════════════════ */
+  /* ══ Избранные альбомы ═════════════════════════════════ */
+  .album-hero-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .album-hero-fav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--text);
+    cursor: pointer;
+    transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+  }
+  .album-hero-fav-btn:active {
+    transform: scale(0.92);
+    background: var(--surface-hi);
+  }
+  .album-hero-fav-btn.on {
+    color: var(--accent);
+    border-color: rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.12);
+  }
+  .album-hero-fav-btn.on svg,
+  .album-fav-nav-btn.on svg {
+    fill: var(--accent);
+    stroke: var(--accent);
+    animation: heartBeat 420ms var(--ease-spring);
+  }
+  .album-fav-nav-btn {
+    color: var(--sub);
+    transition: color 200ms ease, transform 180ms ease;
+  }
+  .album-fav-nav-btn:active { transform: scale(0.92); }
+  .album-fav-nav-btn.on { color: var(--accent); }
+
+  .fav-albums-section {
+    margin-bottom: 24px;
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+  .fav-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--text);
+    margin: 4px 4px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .fav-section-title svg {
+    color: var(--accent);
+  }
+  .fav-albums-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 12px;
+    margin-bottom: 8px;
+  }
+  @media (min-width: 480px) {
+    .fav-albums-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 14px; }
+  }
+  @media (min-width: 768px) {
+    .fav-albums-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) {
+    .fav-albums-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px 16px; }
+  }
+  @media (min-width: 1500px) {
+    .fav-albums-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 22px 18px; }
+  }
+  .fav-album-card {
+    cursor: pointer;
+    min-width: 0;
+    transition: transform 200ms var(--ease-spring);
+  }
+  .fav-album-card:active { transform: scale(0.96); }
+  .fav-album-img {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    object-fit: cover;
+    background: var(--surface-hi);
+    box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: block;
+    margin-bottom: 8px;
+    transition: transform 220ms var(--ease-out);
+  }
+  .fav-album-card:hover .fav-album-img {
+    transform: scale(1.03);
+  }
+  .fav-album-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .fav-album-sub {
+    font-size: 11.5px;
+    color: var(--sub);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .album-card-fav-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(8, 9, 11, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+  }
+
   .album-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1057,6 +1195,7 @@
   @media (prefers-reduced-motion: reduce) {
     #scrSettings,
     #scrAlbum,
+    #scrArtist,
     #scrPlayer,
     .mini,
     .sheet,
@@ -1397,7 +1536,7 @@
     border-radius: inherit;
     transition: opacity 260ms var(--ease-out);
   }
-  .cover-wrap.dim img { opacity: 0; }
+  .cover-wrap.dim img { opacity: 1; }
 
   /* свайп по обложке: перелистывание «карточкой» в 3D */
   .cover-wrap.swipe-next { animation: coverSwipeNext 380ms var(--ease-out); }
@@ -2233,7 +2372,8 @@
     }
     .panel.active > .empty,
     .panel.active > .list-actions,
-    .panel.active > .album-grid { grid-column: 1 / -1; }
+    .panel.active > .album-grid,
+    .panel.active > .artist-grid { grid-column: 1 / -1; }
 
     .album-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
@@ -2367,6 +2507,18 @@
         "cover sub"
         "cover btn";
       align-content: center;
+      align-items: center;
+      text-align: left;
+      gap: 0 24px;
+      padding: 0 0 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--line);
+    }
+    .album-hero-actions {
+      grid-area: btn;
+      justify-content: flex-start;
+    }
+      align-content: center;
       align-items: start;
       column-gap: 26px;
       text-align: left;
@@ -2440,6 +2592,7 @@
     }
 
     .album-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 22px 18px; }
+    .artist-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 22px 18px; }
     .album-card-name { font-size: 15px; }
     .album-card-sub { font-size: 13px; }
 
@@ -2459,6 +2612,7 @@
 
     .panel.active { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .album-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .artist-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
     .row-cover { width: 62px; height: 62px; }
     .row-title { font-size: 14px; }
     .row-sub { font-size: 12px; }
@@ -2490,6 +2644,408 @@
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+
+  /* ══ экран: профиль артиста ══════════════════════════════ */
+  #scrArtist {
+    z-index: 2;
+    background: var(--bg);
+    overflow: hidden;
+    transform: translateX(100%);
+    transition: transform 380ms var(--ease-out);
+    will-change: transform;
+  }
+  #scrArtist.open { transform: translateX(0); }
+  #scrArtist::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(8, 9, 11, 0.22) 0%, rgba(8, 9, 11, 0.6) 24%, rgba(8, 9, 11, 0.92) 50%, var(--bg) 88%);
+    pointer-events: none;
+  }
+  #scrArtist > * { position: relative; z-index: 1; }
+
+  .artist-hero {
+    padding: 12px 20px 24px;
+    text-align: center;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .artist-avatar-wrap {
+    position: relative;
+    width: min(44vw, 172px);
+    aspect-ratio: 1;
+    margin: 0 auto 16px;
+    cursor: pointer;
+  }
+  .artist-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--surface-hi);
+    box-shadow: 0 16px 44px -10px rgba(0, 0, 0, 0.85);
+    border: 3px solid rgba(255, 255, 255, 0.16);
+    display: block;
+    position: relative;
+    z-index: 2;
+    transition: transform 280ms var(--ease-spring);
+  }
+  .artist-avatar:active { transform: scale(0.96); }
+  .artist-avatar-glow {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.45) 0%, transparent 72%);
+    filter: blur(16px);
+    z-index: 1;
+    pointer-events: none;
+    animation: glowPulse 3.5s ease-in-out infinite alternate;
+  }
+  @keyframes glowPulse {
+    from { opacity: 0.5; transform: scale(0.96); }
+    to { opacity: 0.85; transform: scale(1.05); }
+  }
+  .artist-hero-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-bottom: 5px;
+  }
+  .artist-hero-name {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.028em;
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .verified-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 0;
+    vertical-align: middle;
+  }
+  .verified-badge svg {
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(42, 171, 238, 0.45));
+  }
+  .artist-hero-sub {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+  }
+  .artist-bio-wrap {
+    max-width: 480px;
+    margin: 0 auto 16px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    text-align: left;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: rgba(244, 247, 250, 0.82);
+    position: relative;
+  }
+  .artist-bio {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+    white-space: pre-line;
+  }
+  .artist-bio.expanded {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
+  .artist-bio-more {
+    display: inline-block;
+    margin-top: 6px;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+  .artist-hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 380px;
+  }
+  .play-artist {
+    flex: 1;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 20px;
+    border-radius: 22px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14.5px;
+    cursor: pointer;
+    box-shadow: 0 8px 22px -6px rgba(var(--accent-rgb), 0.6);
+    transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 180ms ease;
+  }
+  .play-artist:active { transform: scale(0.95); }
+  .shuffle-artist-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 18px;
+    border-radius: 22px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), background 180ms ease;
+  }
+  .shuffle-artist-btn:active { transform: scale(0.95); background: var(--surface-hi); }
+  .artist-stats-pills {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .artist-stat-pill {
+    padding: 5px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sub);
+    letter-spacing: -0.01em;
+  }
+  .genius-badge-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 100, 0.12);
+    border: 1px solid rgba(255, 255, 100, 0.28);
+    color: #ffff64;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    min-height: 32px;
+    transition: background 180ms ease, transform 180ms ease;
+  }
+  .genius-badge-link:active {
+    transform: scale(0.94);
+    background: rgba(255, 255, 100, 0.22);
+  }
+  .genius-badge-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    border-radius: 4px;
+    background: #ffff64;
+    color: #000;
+    font-weight: 900;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .artist-section-title {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    padding: 16px 20px 8px;
+  }
+  .info-artist-link {
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: rgba(var(--accent-rgb), 0.35);
+    text-underline-offset: 3px;
+  }
+  .info-artist-link:active { opacity: 0.7; }
+
+  /* Сетка артистов */
+  .artist-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 14px;
+    padding: 0 4px;
+  }
+  @media (min-width: 480px) {
+    .artist-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 16px; }
+  }
+  @media (min-width: 768px) {
+    .artist-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) {
+    .artist-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  }
+  .artist-card {
+    cursor: pointer;
+    min-width: 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 10px;
+    border-radius: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition: transform 220ms var(--ease-spring), background 200ms ease, border-color 200ms ease;
+  }
+  .artist-card:active {
+    transform: scale(0.95);
+    background: var(--surface-hi);
+  }
+  .artist-card-avatar-wrap {
+    position: relative;
+    width: 96px;
+    max-width: 100%;
+    aspect-ratio: 1;
+    margin-bottom: 10px;
+  }
+  .artist-card-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--surface-hi);
+    display: block;
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: transform 260ms var(--ease-out), box-shadow 260ms ease;
+  }
+  .artist-card:hover .artist-card-img {
+    transform: scale(1.04);
+    box-shadow: 0 12px 30px -6px rgba(var(--accent-rgb), 0.35);
+  }
+  .artist-card-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--text);
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    display: block;
+    box-sizing: border-box;
+    padding: 0 2px;
+  }
+  .artist-card-sub {
+    font-size: 11.5px;
+    color: var(--sub);
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+
+  .row-artist-link,
+  .player-artist-link,
+  .mini-artist-link {
+    cursor: pointer;
+    transition: opacity 150ms ease, color 150ms ease;
+    display: inline;
+  }
+  .row-artist-link:hover,
+  .player-artist-link:hover,
+  .mini-artist-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 2.5px;
+  }
+  .row-artist-link:active,
+  .player-artist-link:active,
+  .mini-artist-link:active {
+    opacity: 0.7;
+  }
+
+  /* Карточка артиста в результатах поиска */
+  .search-artist-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: transform 180ms ease, background 180ms ease;
+  }
+  .search-artist-hero:active {
+    transform: scale(0.97);
+    background: var(--surface-hi);
+  }
+  .search-artist-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+  .search-artist-meta {
+    flex: 1;
+    min-width: 0;
+  }
+  .search-artist-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .search-artist-badge {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  #scrArtist.open .artist-avatar { animation: coverPop 620ms var(--ease-out) backwards; }
+  #scrArtist.open .artist-hero-name { animation: partIn 460ms var(--ease-out) 120ms backwards; }
+  #scrArtist.open .artist-hero-sub  { animation: partIn 460ms var(--ease-out) 160ms backwards; }
+  #scrArtist.open .artist-bio-wrap  { animation: partIn 460ms var(--ease-out) 180ms backwards; }
+  #scrArtist.open .artist-hero-actions { animation: partIn 460ms var(--ease-out) 200ms backwards; }
+  #scrArtist.open .artist-stats-pills { animation: partIn 460ms var(--ease-out) 220ms backwards; }
 
   /* обложка альбома «проявляется» размером */
   #scrAlbum.open .album-hero img { animation: coverPop 620ms var(--ease-out) backwards; }
@@ -3269,8 +3825,9 @@
 
     <div class="scroll">
       <div class="panel active" id="panelAll"></div>
-      <div class="panel" id="panelFav"></div>
+      <div class="panel" id="panelArtists"></div>
       <div class="panel" id="panelAlbums"></div>
+      <div class="panel" id="panelFav"></div>
     </div>
 
     <div class="list-fade"></div>
@@ -3283,18 +3840,86 @@
       <button class="nav-btn" id="albumBack" aria-label="Назад в библиотеку">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
       </button>
+      <div style="flex:1"></div>
+      <button class="nav-btn album-fav-nav-btn" id="albumFavBtn" aria-label="В избранное" title="Добавить альбом в избранное">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+      </button>
     </div>
     <div class="scroll" style="padding-top:0">
       <div class="album-hero">
         <img id="albumCover" alt="">
         <div class="album-hero-name" id="albumName"></div>
         <div class="album-hero-sub" id="albumSub"></div>
-        <button class="play-album" id="albumPlay">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          Слушать
-        </button>
+        <div class="album-hero-actions">
+          <button class="play-album" id="albumPlay">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            Слушать
+          </button>
+          <button class="album-hero-fav-btn" id="albumHeroFavBtn" aria-label="В избранное" title="Добавить альбом в избранное">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          </button>
+        </div>
       </div>
       <div id="albumTracks"></div>
+    </div>
+  </section>
+
+  <!-- ── экран: профиль артиста ── -->
+  <section class="screen" id="scrArtist">
+    <div class="navbar">
+      <button class="nav-btn" id="artistBack" aria-label="Назад">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      </button>
+      <div style="flex:1"></div>
+    </div>
+    <div class="scroll" style="padding-top:0">
+      <div class="artist-hero">
+        <div class="artist-avatar-wrap" id="artistAvatarWrap" title="Нажмите, чтобы открыть фото">
+          <img id="artistAvatar" alt="" class="artist-avatar">
+          <div class="artist-avatar-glow"></div>
+        </div>
+        <div class="artist-hero-name-row">
+          <div class="artist-hero-name" id="artistName"></div>
+          <span class="verified-badge" id="artistVerifiedBadge" title="Подтверждённый профиль">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" fill="#2AABEE"/>
+              <path d="M7.8 12.3l3 3 5.4-6" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+        <div class="artist-hero-sub" id="artistSub"></div>
+        
+        <div class="artist-bio-wrap" id="artistBioWrap" style="display:none">
+          <p class="artist-bio" id="artistBio"></p>
+          <button class="artist-bio-more" id="artistBioMore">Подробнее</button>
+        </div>
+
+        <div class="artist-hero-actions">
+          <button class="play-album play-artist" id="artistPlay">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            Слушать
+          </button>
+          <button class="shuffle-artist-btn" id="artistShuffle">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+            Перемешать
+          </button>
+        </div>
+
+        <div class="artist-stats-pills" id="artistStatsPills">
+          <div class="artist-stat-pill" id="artistStatTracks">0 треков</div>
+          <div class="artist-stat-pill" id="artistStatAlbums">0 альбомов</div>
+          <div class="artist-stat-pill" id="artistStatFeats" style="display:none">0 фитов</div>
+        </div>
+      </div>
+
+      <div class="artist-section-title" id="artistTracksTitle">Треки</div>
+      <div id="artistTracks"></div>
+
+      <div class="artist-section-title" id="artistAlbumsTitle" style="display:none">Альбомы</div>
+      <div class="album-grid" id="artistAlbums" style="display:none; padding: 0 16px 20px;"></div>
+
+      <div class="artist-section-title" id="artistFeatTitle" style="display:none">Совместные треки</div>
+      <div id="artistFeatTracks" style="display:none"></div>
     </div>
   </section>
 
@@ -3328,6 +3953,11 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
         <span class="tab-icon" data-icon="all"></span>
         <span>Все</span>
+      </button>
+      <button class="tabbar-btn" data-tab="artists" aria-label="Артисты">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="tab-icon" data-icon="artists"></span>
+        <span>Артисты</span>
       </button>
       <button class="tabbar-btn" data-tab="albums" aria-label="Альбомы">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -3653,7 +4283,144 @@ const TRACKS_URLS = (location.protocol === 'file:'
    плеер всё равно поднимется на этом списке. Обновляется перезаписью блока */
 const EMBEDDED_TRACKS = [{"title":"Лилия","artist":"MAYOT","album":"GHETTO GARDEN","year":"2020","lyrics":"","src":"https://pomf2.lain.la/f/rkgi4o7h.mp3","cover":"https://images.genius.com/eaf1162509e8a8aad157ff8576daa9fc.1000x1000x1.png","duration":107,"featuring":[],"producer":["DooMee","Александр Рудич (Alexandr Rudich)","Даниил Александров (Daniil Alexandrov)"],"writers":["DooMee","MAYOT"],"label":"MELON MUSIC, CPLUS","release":"2020-09-04"},{"title":"Минус текст","artist":"SEEMEE","album":"TXC","year":"2021","lyrics":"","src":"https://pomf2.lain.la/f/r9jepmho.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":116,"featuring":[],"producer":["DooMee","Why $kidd"],"writers":["Why $kidd","DooMee","SEEMEE"],"label":"MELON MUSIC, CPLUS","release":"2021-06-25"},{"title":"На кассе","artist":"SEEMEE","album":"TXC","year":"2021","lyrics":"","src":"https://pomf2.lain.la/f/ah7bysk8.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":123,"featuring":["163ONMYNECK"],"producer":["DooMee"],"writers":["DooMee","163ONMYNECK","SEEMEE"],"label":"MELON MUSIC, CPLUS","release":"2021-06-25"},{"title":"JAX","artist":"SEEMEE","album":"TXC","year":"2021","lyrics":"","src":"https://pomf2.lain.la/f/t1y9qbep.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":163,"featuring":["BUSHIDO ZHO"],"producer":["TonySouljah","DooMee"],"writers":["TonySouljah","SEEMEE","BUSHIDO ZHO"],"label":"MELON MUSIC, CPLUS","release":"2021-06-25"},{"title":"Большие Бабки","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","lyrics":"","src":"https://pomf2.lain.la/f/kdn1vbe1.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":140,"featuring":[],"producer":["saintracks","wygo01"],"writers":["Scally Milano","OG Buda","saintracks","wygo01"],"label":"","release":"2022-04-15"},{"title":"КОГДА Я","artist":"CMH","album":"**** THIS ALBUM","year":"2025","lyrics":"","src":"https://pomf2.lain.la/f/r9x3dysc.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":119,"featuring":[],"producer":["spbwaves"],"writers":["CMH","МУККА (MUKKA)","spbwaves"],"label":"KOALA MUSIC","release":"2025-01-24"},{"title":"xDDD","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"KOALA MUSIC","lyrics":"","src":"https://pomf2.lain.la/f/0uq1nhxu.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":90},{"title":"На кассе","artist":"OG Buda","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["163ONMYNECK"],"producer":["Wex","RNDM CREW"],"writers":["OG Buda","163ONMYNECK","Wex"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://pomf2.lain.la/f/zrz6l21f.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":143},{"title":"А МОЖЕТ ДА","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["BEATCASTER","spbwaves"],"writers":["CMH","BEATCASTER","spbwaves"],"label":"KOALA MUSIC","lyrics":"","src":"https://pomf2.lain.la/f/zjpmd138.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":118},{"title":"АУТБРЭЙК","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["spbwaves"],"writers":["CMH","Слава КПСС (Slava KPSS)","spbwaves"],"label":"KOALA MUSIC, Антихайп (Antihype)","lyrics":"","src":"https://pomf2.lain.la/f/51ph9nhe.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":158},{"title":"ADRENALINE","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["BEATCASTER","spbwaves"],"writers":["CMH","Антон Лиссов (Anton Lissov)","BEATCASTER","spbwaves"],"label":"KOALA MUSIC","lyrics":"","src":"https://pomf2.lain.la/f/31xij0m5.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":141},{"title":"Битбокс","artist":"SEEMEE","album":"TXC","year":"2021","release":"2021-06-25","featuring":["OG Buda"],"producer":["chronic"],"writers":["chronic","OG Buda","SEEMEE"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://pomf2.lain.la/f/5z8l97k0.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":124},{"title":"S**** TAPE","artist":"CMH","album":"**** THIS ALBUM","year":"2025","release":"2025-01-24","featuring":[],"producer":["spbwaves"],"writers":["CMH"],"label":"KOALA MUSIC","lyrics":"","src":"https://pomf2.lain.la/f/aqvzh7v5.mp3","cover":"https://pomf2.lain.la/f/wce3guh9.jpg","duration":135},{"title":"Кроссики","artist":"SEEMEE","album":"TXC","year":"2021","release":"2021-06-25","featuring":["LOVV66"],"producer":["DARK THE PRODUCER","DooMee","mirice"],"writers":["mirice","DooMee","DARK THE PRODUCER","SEEMEE","LOVV66"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a9165bb72ce648a1b1a3f1e67dc63d79.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":168},{"title":"PSP-FLOW","artist":"Слава КПСС","album":"ЕДИНСТВЕННЫЙ РЭПЕР","year":"2026","release":"2026-07-31","featuring":[],"producer":["SLAJIDI"],"writers":["Слава КПСС (Slava KPSS)","163ONMYNECK","SLAJIDI"],"label":"Антихайп (Antihype), The Fence","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e042474dab644b66bd757c072b279983.mp3","cover":"https://images.genius.com/1b14cc4ef940f906ec94b713f785c8fb.1000x1000x1.png","duration":168},{"title":"Дерьмо","artist":"MAYOT","album":"ЗАПРАВКА КИД","year":"2020","release":"2020-12-25","featuring":[],"producer":["Sqweezey","manyice"],"writers":["MAYOT","Sqweezey","manyice"],"label":"CPLUS, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4ea5570202e848e6a9d07637c05cba11.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg","duration":73},{"title":"Телеграм","artist":"Scally Milano","album":"Really Rich","year":"2022","release":"2022-12-16","featuring":[],"producer":["lakes (prod)"],"writers":["Scally Milano","lakes (prod)"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/768a850455b04b66a0ab988e8262bc13.mp3","cover":"https://images.genius.com/e51316fc932db27fc3e8541aa3548592.1000x1000x1.png","duration":131},{"title":"ЯЛРС","artist":"SODA LUV","album":"НИЧЕГО ЛИЧНОГО 2","year":"2022","release":"2022-11-25","featuring":[],"producer":["YG Woods","8keey"],"writers":["SODA LUV","YG Woods"],"label":"CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/9443e0d476ba4957a685b13b05c687d4.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c6f64127b7c14300b8c99f8deffc3149.jpg","duration":130},{"title":"Биполярный","artist":"Scally Milano","album":"ONION","year":"2021","release":"2021-06-18","featuring":[],"producer":["Heronwater Beats"],"writers":["Scally Milano","Heronwater Beats"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/367a43010b6b4deabbe7b2a8e3ed22a5.mp3","cover":"https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png","duration":130},{"title":"Добро Пожаловать","artist":"OG Buda & MAYOT","album":"Сингл","year":"2021","release":"2021-04-28","featuring":[],"producer":["Wex","TREEPSIDE"],"writers":["OG Buda","MAYOT","Wex","TREEPSIDE"],"label":"CPLUS, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5f3d439b174a4f979425fe572f31e6c1.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c601efdd906b4e809cb9fa1088ae4c3a.jpg","duration":109},{"title":"Дабстэп","artist":"OG Buda (Ft. Scally Milano)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["Scally Milano"],"producer":["Heronwater Beats"],"writers":["OG Buda","Scally Milano","Heronwater Beats"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e4eda2b4fc014839819215ecd9c5e5f5.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":136},{"title":"Бэньг Бэньг","artist":"Scally Milano","album":"ONION","year":"2021","release":"2021-06-18","featuring":[],"producer":["Wex","oqumeh"],"writers":["Scally Milano","Wex","oqumeh"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/d50a5ab9e6c24c13963047ec20366d8a.mp3","cover":"https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png","duration":126},{"title":"Дзагоев","artist":"OG Buda","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":[],"producer":["Nest","Gredy","Wex"],"writers":["OG Buda","Nest","Gredy","Wex"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7a854a26491c451e8fd180beef965483.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":121},{"title":"Подкован","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","release":"2022-04-12","featuring":[],"producer":["Senk","thirdfen"],"writers":["Scally Milano","Senk","thirdfen"],"label":"amc music","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/53adcbf1873d4da783aef32bd1a13f1e.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":133},{"title":"VIP","artist":"unki (Ft. BUSHIDO ZHO)","album":"JERK SHIT HAPPENS 2","year":"2024","release":"2024-06-07","featuring":["BUSHIDO ZHO"],"producer":["blickyhomeboy","yuko (Producer)","Wex","DIsshhhh"],"writers":["unki","BUSHIDO ZHO","blickyhomeboy","Wex"],"label":"#neWWave (RUS)","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/dafd13497c8c433bba9583eb659deb27.mp3","cover":"https://images.genius.com/6d506d3c2e96922d2cab3a99f7be8974.1000x1000x1.png","duration":97},{"title":"hu3ta (VJLink)","artist":"OG Buda (Ft. SODA LUV)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["SODA LUV"],"producer":["Heronwater Beats"],"writers":["OG Buda","SODA LUV","Heronwater Beats"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/b3afedbc2b914513a086f53d64dd78e3.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":121},{"title":"Колян","artist":"Scally Milano","album":"ONION","year":"2021","release":"2021-06-18","featuring":[],"producer":["Wex","Matake"],"writers":["Scally Milano","Wex","Matake"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/bf9245d04ce04739941d574e38d43835.mp3","cover":"https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png","duration":139},{"title":"FACE ID","artist":"MAYOT & SEEMEE (Ft. 163ONMYNECK)","album":"SCUM OFF THE POT 2","year":"2022","release":"2022-06-24","featuring":["163ONMYNECK"],"producer":["CALYKO"],"writers":["CALYKO","163ONMYNECK","MAYOT","SEEMEE"],"label":"CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/16b75103cd994b8f8056935c435ba444.mp3","cover":"https://images.genius.com/6baf7ba3c9643051a2fb8ae9ef8dea80.1000x1000x1.png","duration":143},{"title":"WINDOWS","artist":"SEEMEE (Ft. MAYOT)","album":"TXC","year":"2021","release":"2021-06-25","featuring":["MAYOT"],"producer":["DooMee","TonySouljah","VisaGangBeatz"],"writers":["SEEMEE","MAYOT","VisaGangBeatz","TonySouljah","DooMee"],"label":"CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/d819f91980e44cd5968cbf917c80f52d.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":100},{"title":"Скам","artist":"Scally Milano","album":"ONION","year":"2021","release":"2021-06-18","featuring":[],"producer":["Heronwater Beats"],"writers":["Scally Milano","Heronwater Beats"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4ddcb9deaec44369afffccb089d2f946.mp3","cover":"https://images.genius.com/e19aecf1aaf2fedc30cafc4256b069d9.1000x1000x1.png","duration":153},{"title":"DREDD JUDGE","artist":"SEEMEE","album":"TXC 2","year":"2024","release":"2024-09-13","featuring":[],"producer":["180revs"],"writers":["SEEMEE","180revs"],"label":"KOALA MUSIC, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/03786a44ecd841b2a88597c3140e9cf0.mp3","cover":"https://images.genius.com/5f99590171d32af55c9795acccdc9612.1000x1000x1.png","duration":132},{"title":"Инвестор","artist":"Scally Milano","album":"MONEY COUNTER MUSIC","year":"2021","release":"2021-12-17","featuring":[],"producer":["Kreeshnah"],"writers":["Scally Milano","Kreeshnah"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a244ea31b0d9434a8fe5041a2455acd7.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/524225226e3f48f5b45d31218ef88492.jpg","duration":100},{"title":"Не виноват","artist":"Scally Milano","album":"MONEY COUNTER MUSIC","year":"2021","release":"2021-12-17","featuring":[],"producer":["Heronwater Beats"],"writers":["Scally Milano","Heronwater Beats"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/2896eacc0a754e5291964fafedfcde01.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/524225226e3f48f5b45d31218ef88492.jpg","duration":138},{"title":"Тюрбан","artist":"Scally Milano & uglystephan","album":"MONEY COUNTER MUSIC","year":"2021","release":"2021-12-17","featuring":[],"producer":["spaceboyren"],"writers":["Scally Milano","uglystephan","spaceboyren"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7c4ebb1a52594829a773697007e86ffa.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/524225226e3f48f5b45d31218ef88492.jpg","duration":145},{"title":"ЛЯ ЛЯ ЛЯ","artist":"СТИНТ","album":"чел, тебе 30","year":"2026","release":"2026-08-14","featuring":[],"producer":["Envtn"],"writers":["СТИНТ (THE STINT)","Envtn","реприза (REPRIZZA)"],"label":"The Fence","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/d48954fee2b244d291c14c6f5b3bdec6.mp3","cover":"https://images.genius.com/dc8bab816ca60d34c477eed5f31b2b16.1000x1000x1.png","duration":126},{"title":"ДИНАСТИЯ","artist":"VILLIAN & madk1d","album":"Красивое Зло","year":"2026","release":"2026-07-24","featuring":[],"producer":["youngslashprod","nowaycvv","tainiykick","dexey!","Masha Zubkova","мамэтотолькодляфото (mijfp)"],"writers":["VILLIAN","madk1d","youngslashprod","nowaycvv","tainiykick","dexey!"],"label":"ALIVE (RUS), KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/42d4f68ff7b74838845b5664da4d6ea1.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a9789430f4884b04ad22ee0e22a910f3.jpg","duration":150},{"title":"BIG PUN","artist":"MAYOT & SEEMEE","album":"SCUM OFF THE POT 2","year":"2022","release":"2022-06-24","featuring":[],"producer":["sb220iq","morioh","CALYKO","Даниил Александров (Daniil Alexandrov)"],"writers":["sb220iq","morioh","CALYKO","SEEMEE","MAYOT"],"label":"CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/242518ec1ffc4342b1f6e32ffd864643.mp3","cover":"https://images.genius.com/6baf7ba3c9643051a2fb8ae9ef8dea80.1000x1000x1.png","duration":136},{"title":"Колпак","artist":"MAYOT","album":"ЗАПРАВКА КИД","year":"2020","release":"2020-12-25","featuring":[],"producer":["Sqweezey"],"writers":["Sqweezey","MAYOT"],"label":"CPLUS, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/030a098b13384d7dba9ad9b2960d359f.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg","duration":119},{"title":"Восап","artist":"163ONMYNECK","album":"GROW GUIDE 3","year":"2023","release":"2023-09-01","featuring":[],"producer":["lakes (prod)"],"writers":["163ONMYNECK","lakes (prod)"],"label":"RNDM CREW, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/6f2fcc8ad0e947ebad0a44faed8c0698.mp3","cover":"https://images.genius.com/df60ffed5e7cf7d05e3b43a244a4f0ff.1000x1000x1.png","duration":150},{"title":"Спиттин","artist":"OG Buda (Ft. MAYOT)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["MAYOT"],"producer":["blicky"],"writers":["OG Buda","MAYOT","blicky"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/2ef728bb814e4d94b3babee684323318.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":142},{"title":"САМП","artist":"OG Buda (Ft. BUSHIDO ZHO)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["BUSHIDO ZHO"],"producer":["Heronwater Beats"],"writers":["OG Buda","BUSHIDO ZHO"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/913cf2d21ee84f748193d688df2dd47d.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":139},{"title":"FPV FLOW 2029","artist":"CMH","album":"все группи попадают в рай","year":"2026","release":"2026-02-13","featuring":[],"producer":["Skurt"],"writers":["CMH","Skurt","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/82f7bd2e81544d6bbcaaaba4cb3cd43e.mp3","cover":"https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png","duration":104},{"title":"RAVE MODE","artist":"CMH","album":"BIOHAZARD","year":"2019","release":"2019-08-01","featuring":[],"producer":["FirstFeel"],"writers":["CMH"],"label":"KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/fe7bf94bec6a40d49d7da37007d69fc7.mp3","cover":"https://images.genius.com/3b29f875a2d725ebc467d9e3c0fc0594.1000x1000x1.png","duration":165},{"title":"SKIN$","artist":"CMH","album":"Сингл","year":"2023","release":"2023-09-08","featuring":[],"producer":["spbwaves"],"writers":["CMH"],"label":"KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c2f49f91f1974c2689260abd453febd1.mp3","cover":"https://images.genius.com/734359417981da30b8cdc7d7e10e2457.1000x1000x1.png","duration":104},{"title":"МИКРО","artist":"SEEMEE (Ft. MAYOT)","album":"TXC","year":"2021","release":"2021-06-25","featuring":["MAYOT"],"producer":["DooMee"],"writers":["DooMee","MAYOT","SEEMEE"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5a759a944f8549a3b837b32bcb11edfc.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":138},{"title":"Большие Бабки","artist":"Scally Milano & OG Buda","album":"Пропаганда денег","year":"2022","release":"2022-04-15","featuring":[],"producer":["saintracks","wygo01"],"writers":["Scally Milano","OG Buda","saintracks","wygo01"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/a6cfdc85e2ae4e419be94d6e3e21011b.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":140},{"title":"ОРВИ","artist":"Baby Melo","album":"Who Realer?","year":"2024","release":"2024-05-31","featuring":[],"producer":["YGCezar","Иван Комаров (Ivan Komarov)"],"writers":["Baby Melo"],"label":"A+ (A Plus), HOOD2HOOD","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5ee158cdacf645b4b04ea728a48a5083.mp3","cover":"https://images.genius.com/61e9eb92c06c7538f59adc523f2c039c.1000x1000x1.png","duration":142},{"title":"Дерьмо","artist":"SEEMEE","album":"TXC","year":"2021","release":"2021-01-29","featuring":[],"producer":["TonySouljah"],"writers":["TonySouljah","SEEMEE"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/15ac6e39700049c793da84e625031db6.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":110},{"title":"Ашан","artist":"SODA LUV","album":"Ничего личного","year":"2019","release":"2019-12-20","featuring":[],"producer":["Yung Dexn"],"writers":["Yung Dexn","SODA LUV"],"label":"Rhymes Music","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c9f793430c014bec86babe2754cff67a.mp3","cover":"https://images.genius.com/5327fad05f60d4192af895947c54b54e.1000x1000x1.png","duration":103},{"title":"Гоатс милк","artist":"163ONMYNECK","album":"GROW GUIDE 3","year":"2023","release":"2023-09-01","featuring":[],"producer":["Kay Kay","SLAJIDI"],"writers":["163ONMYNECK","Kay Kay","SLAJIDI"],"label":"RNDM CREW, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c19784d1b6f24d1e88d463a3f09e1911.mp3","cover":"https://images.genius.com/df60ffed5e7cf7d05e3b43a244a4f0ff.1000x1000x1.png","duration":112},{"title":"Грачи","artist":"MAYOT (Ft. OG Buda)","album":"GHETTO GARDEN","year":"2020","release":"2020-09-04","featuring":["OG Buda"],"producer":["Sqweezey"],"writers":["Sqweezey","OG Buda","MAYOT"],"label":"MELON MUSIC, RNDM CREW, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c0f40275d4bf4780a8cafb67d3449d1d.mp3","cover":"https://images.genius.com/eaf1162509e8a8aad157ff8576daa9fc.1000x1000x1.png","duration":55},{"title":"Hot Wheels","artist":"SEEMEE (Ft. 163ONMYNECK & Scally Milano)","album":"TXC","year":"2021","release":"2021-06-25","featuring":["Scally Milano","163ONMYNECK"],"producer":["chronic","cardinparis"],"writers":["SEEMEE","Scally Milano","163ONMYNECK","chronic","cardinparis"],"label":"MELON MUSIC, CPLUS","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/bf418506b7754a3bbfa0523f00b15f57.mp3","cover":"https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png","duration":146},{"title":"Аутсайдэр","artist":"CMH","album":"ANTIWRLD","year":"2023","release":"2023-02-17","featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/fdcd832a7de14cb593b324aa1e0b1df3.mp3","cover":"https://images.genius.com/cb0f3e324cce2453101c1309ec3ff901.1000x1000x1.png","duration":129},{"title":"реквием2000","artist":"CMH","album":"все группи попадают в рай","year":"2026","release":"2026-02-13","featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/e65c71d94c7c4e33877d8704c24aab20.mp3","cover":"https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png","duration":129},{"title":"Спрайт","artist":"CMH","album":"ANTIWRLD","year":"2023","release":"2023-02-17","featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/33b8b7e649ae491a9fc9286af720f9e6.mp3","cover":"https://images.genius.com/cb0f3e324cce2453101c1309ec3ff901.1000x1000x1.png","duration":132},{"title":"СТИКЕР","artist":"CMH & Lida","album":"PAYDAY","year":"2020","release":"2020-12-11","featuring":[],"producer":["spbwaves"],"writers":["CMH","Lida","spbwaves"],"label":"KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/69d203d71d4d45e2964c97acbb8b61e2.mp3","cover":"https://images.genius.com/7531446c8fc275a286d5819e36f4d1d5.1000x1000x1.png","duration":132},{"title":"Винрар","artist":"OG Buda (Ft. 163ONMYNECK)","album":"FREERIO","year":"2021","release":"2021-04-30","featuring":["163ONMYNECK"],"producer":["BeatsByKelly","Wex"],"writers":["OG Buda","163ONMYNECK","BeatsByKelly","Wex"],"label":"KOALA MUSIC, MELON MUSIC, RNDM CREW","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c650401aaf294b4db1173a3d800fc544.mp3","cover":"https://pomf2.lain.la/f/861vwt9s.jpg","duration":146},{"title":"Фагаю","artist":"MAYOT","album":"ЗАПРАВКА КИД","year":"2020","release":"2020-12-25","featuring":[],"producer":["Sqweezey","prod. ivy"],"writers":["MAYOT","Sqweezey","prod. ivy"],"label":"CPLUS, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/597a063428fa4fb9b3046c98860bf24b.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg","duration":94},{"title":"Следующий","artist":"OG Buda","album":"FREERIO 2","year":"2022","release":"2022-04-29","featuring":[],"producer":["UraniumSeller","Rallex"],"writers":["OG Buda","UraniumSeller","Rallex"],"label":"RNDM CREW, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5a0239e6c7904e7db45d6023fce72a71.mp3","cover":"https://images.genius.com/b929bdd1ba79cdea4c4c30ed53877eb5.1000x1000x1.png","duration":101},{"title":"Штанги","artist":"Pretty Scream & SEEMEE","album":"Leave Your Bones","year":"2021","release":"2021-06-11","featuring":[],"producer":["Pretty Scream"],"writers":["Pretty Scream","SEEMEE"],"label":"MELON MUSIC, Loyalty Means Everything","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/7118110c884f41678c60ebbffa290eb5.mp3","cover":"https://images.genius.com/663619c33497033b1398a709c4d1eb14.1000x1000x1.png","duration":97},{"title":"чайка","artist":"CMH & Пошлая Молли","album":"все группи попадают в рай","year":"2026","release":"2026-02-13","featuring":[],"producer":["Кирилл Бледный (Kirill Bledny)","Константин Пыжов (Konstantin Pyzhov)"],"writers":["CMH","Кирилл Бледный (Kirill Bledny)","Константин Пыжов (Konstantin Pyzhov)","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/ef538116b70742318efc2c0d429c06ab.mp3","cover":"https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png","duration":169},{"title":"даяизсибири","artist":"CMH","album":"все группи попадают в рай","year":"2026","release":"2026-02-13","featuring":[],"producer":["BEATCASTER"],"writers":["CMH","BEATCASTER","spbwaves"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/b1fcda8edd7c47549754abd616920482.mp3","cover":"https://images.genius.com/c1481be7cbf1d57842317735600b2c44.1000x1000x1.png","duration":140},{"title":"все группи попадают в рай","artist":"CMH","album":"все группи попадают в рай","year":"2026","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/62c80ac0d68343b082b45e20f6883692.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/aaf913a8d1c4420093be2b5d551f7d40.jpg","duration":136,"featuring":[],"producer":["spbwaves"],"writers":["CMH","spbwaves"],"label":"","release":"2026-02-13"},{"title":"G-SHOKK","artist":"SODA LUV (Ft. OG Buda)","album":"КОТЬ! КОТЬ!","year":"2021","release":"2021-04-02","featuring":["OG Buda"],"producer":["amyp","demarcxx","gob wants nothing","CPLUS","Даниил Александров (Daniil Alexandrov)"],"writers":["gob wants nothing","demarcxx","amyp","OG Buda","SODA LUV"],"label":"MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/4fc8997d02af4803b1f5eff2580e8cc9.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/1f85db54165f40feaf6afed80baee15c.jpg","duration":185},{"title":"Dirrt","artist":"Big Baby Tape & kizaru","album":"BANDANA I","year":"2021","release":"2021-10-22","featuring":[],"producer":["Big Baby Tape"],"writers":["Big Baby Tape"],"label":"BENZO RECORDS, HAUNTED FAMILY, KOALA MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/eb7a0aab555349fd9777950443a648d0.mp3","cover":"https://images.genius.com/1932d8ea8a964db81269e0857821807d.1000x1000x1.png","duration":161},{"title":"Накипь","artist":"MAYOT","album":"ЗАПРАВКА КИД","year":"2020","release":"2020-12-25","featuring":[],"producer":["blsq","manyice"],"writers":["manyice","blsq","MAYOT"],"label":"CPLUS, MELON MUSIC","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/db3d81c997114459b30b83476554f263.mp3","cover":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg","duration":127},{"title":"По Пятам","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","release":"2022-04-15","featuring":[],"producer":["saintracks"],"writers":["saintracks","Scally Milano"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c71bcd2912bd48c4b742e1f1710c4b57.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":114},{"title":"днями и ночами","artist":"BUSHIDO ZHO, Scally Milano & Полка","album":"sweet and tearz","year":"2025","release":"2025-12-03","featuring":[],"producer":["Wex","riileybeatz"],"writers":["BUSHIDO ZHO","Scally Milano","Полка (polkapretty)","Wex","riileybeatz"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/f28834455e5c40f7b4098eac5e60ca62.mp3","cover":"https://images.genius.com/9a17ee0480a3623dfef7f154e6b83dc9.1000x1000x1.png","duration":142},{"title":"Недоволен","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","release":"2022-04-15","featuring":[],"producer":["KILLHEEN"],"writers":["KILLHEEN","Scally Milano"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/c24c02112d544202b958470608706072.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":120},{"title":"GLO","artist":"Scally Milano","album":"Пропаганда денег","year":"2022","release":"2022-04-15","featuring":[],"producer":["FONFORINO","babyswishh1"],"writers":["Scally Milano","FONFORINO","babyswishh1"],"label":"","lyrics":"","src":"https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/5bc40fdc67ae4c1a95c5a92cd07073c0.mp3","cover":"https://images.genius.com/be08d4f1c2880be99f9040aa0e172df1.1000x1000x1.png","duration":136}];
 
+const KNOWN_ARTISTS = {
+  "MAYOT": {
+    "name": "MAYOT",
+    "url": "https://genius.com/artists/MAYOT",
+    "image": "https://images.genius.com/3caaf4cc1e269e806bc0cc9b0283623e.1000x800x1.jpg",
+    "description": "Никитин Артём Геннадьевич (родился 2 февраля 1999 года в Тюмени) — российский рэп-исполнитель, сооснователь объединения MELON MUSIC, автор культовых релизов «GHETTO GARDEN» и «Заправка Кид»."
+  },
+  "OG Buda": {
+    "name": "OG Buda",
+    "url": "https://genius.com/artists/OG-Buda",
+    "image": "https://images.genius.com/0f1bb57ff9a75431fe602a8e9af42ebd.1000x1000x1.png",
+    "description": "Ляхов Григорий Алексеевич (родился 10 января 1994 года в Тюмени) — российский трэп-исполнитель, один из лидеров объединений MELON MUSIC и RANDOM CREW, популяризировавший детройт-звучание в СНГ."
+  },
+  "CMH": {
+    "name": "CMH",
+    "url": "https://genius.com/artists/CMH",
+    "image": "https://images.genius.com/cbd55064bc16da55c2f459dc4ea46f65.630x630x1.jpg",
+    "description": "Тушенцов Руслан Сергеевич (родился 23 декабря 1995 года в Ачинске) — российский рэп-исполнитель, электронный музыкант и видеоблогер, известный экспериментами в стилях rave, hyperpop и phonk."
+  },
+  "SEEMEE": {
+    "name": "SEEMEE",
+    "url": "https://genius.com/artists/SEEMEE",
+    "image": "https://images.genius.com/46c37e9ffecb69c307fbfcea05d3a993.1000x1000x1.jpg",
+    "description": "Степанов Алексей Олегович (родился 22 августа 1996 года в Тюмени) — российский трэп-исполнитель, ключевой участник объединения MELON MUSIC, автор успешного альбома «TXC»."
+  },
+  "163ONMYNECK": {
+    "name": "163ONMYNECK",
+    "url": "https://genius.com/artists/163onmyneck",
+    "image": "https://images.genius.com/9644f1fe14eec2c8cee352f801389c8c.1000x1000x1.png",
+    "description": "Щуров Роман Вадимович (родился 31 августа 1996 года в Тюмени) — российский рэп-исполнитель, участник объединений MELON MUSIC и RANDOM CREW, один из главных первопроходцев детройт-рэпа в России."
+  },
+  "BUSHIDO ZHO": {
+    "name": "BUSHIDO ZHO",
+    "url": "https://genius.com/artists/Bushido-zho",
+    "image": "https://images.genius.com/aa28424a1cf6db92df78508cb3896fc7.1000x1000x1.jpg",
+    "description": "Маскуров Жоас Львович (родился 28 января 1999 года в Москве) — российский рэп-исполнитель, автор громких хитов «Тесно» и «vodila», создатель самобытного флоу и яркого стиля."
+  },
+  "Baby Melo": {
+    "name": "Baby Melo",
+    "url": "https://genius.com/artists/Baby-melo",
+    "image": "https://images.genius.com/83ea3f60f9dd3c4dd2400e285098b68d.1000x1000x1.jpg",
+    "description": "Меладзе Гога Амиранович (родился 22 июля 2008 года в Батуми) — молодой рэп-исполнитель, участник объединений HOOD2HOOD и Prescription Gang, автор вирусных трэп-бэнгеров."
+  },
+  "Big Baby Tape": {
+    "name": "Big Baby Tape",
+    "url": "https://genius.com/artists/Big-baby-tape",
+    "image": "https://images.genius.com/ae6bcf1236f16cbbbbcebfe92a623719.1000x1000x1.jpg",
+    "description": "Ракитин Егор Олегович (родился 5 января 2000 года в Москве) — российский рэп-исполнитель и саунд-продюсер, лидер объединения Benzo Gang, создатель альбомов «Dragonborn» и «BANDANA I»."
+  },
+  "LOVV66": {
+    "name": "LOVV66",
+    "url": "https://genius.com/artists/Lovv66",
+    "image": "https://images.genius.com/ae72d0ea8cfc9a3d456fa39f3796ecf7.1000x1000x1.jpg",
+    "description": "Шабашов Иван Константинович (родился 20 сентября 1997 года в Брянске) — российский рэп-исполнитель и мелодист, автор альбомов «ФИЗИКЛ ПЕЙН» и «БЭСТ ФРЭНДС»."
+  },
+  "Lida": {
+    "name": "Lida",
+    "url": "https://genius.com/artists/Lida",
+    "image": "https://images.genius.com/aaef6dfdcf7ef13d80d2a095ff37df5a.1000x1000x1.jpg",
+    "description": "Ромадов Николай Вячеславович (родился 10 мая 1995 года в Москве) — популярный поп-рейв исполнитель, рок-музыкант и продюсер, основатель сольного рейв-проекта Lida."
+  },
+  "Pretty Scream": {
+    "name": "Pretty Scream",
+    "url": "https://genius.com/artists/Pretty-scream",
+    "image": "https://images.genius.com/219fce79f8502f694ef32230b42c4b00.1000x1000x1.jpg",
+    "description": "Негуляев Игорь Михайлович (родился 19 июня 1998 года) — музыкальный продюсер, диджей и битмейкер, сотрудничавший с ключевыми артистами отечественной трэп-сцены."
+  },
+  "SODA LUV": {
+    "name": "SODA LUV",
+    "url": "https://genius.com/artists/Soda-luv",
+    "image": "https://images.genius.com/8dbfc8ef084c0423fb040d8616147413.1000x1000x1.jpg",
+    "description": "Терентюк Владислав Русланович (родился 28 июля 1998 года в Ухте) — российский рэп-исполнитель и автор ярких концептуальных релизов «Ничего личного» и «КОТЬ! КОТЬ!»."
+  },
+  "Scally Milano": {
+    "name": "Scally Milano",
+    "url": "https://genius.com/artists/Scally-milano",
+    "image": "https://images.genius.com/9788d4fe6d3e8e2107ce9b1f73b64bc2.1000x1000x1.jpg",
+    "description": "Дмитриев Даниил Владиславович (родился 25 марта 2002 года в Березниках) — российский исполнитель, один из первопроходцев и главных популяризаторов детройт-рэпа в России."
+  },
+  "VILLIAN": {
+    "name": "VILLIAN",
+    "url": "https://genius.com/artists/Villian",
+    "image": "https://images.genius.com/b52c0029b464a7818eb85c57c5e2d534.1000x1000x1.jpg",
+    "description": "Зелинский Андрей Андреевич — российский рэп-исполнитель и музыкант, автор атмосферных трэп-релизов и совместных работ с madk1d."
+  },
+  "kizaru": {
+    "name": "kizaru",
+    "url": "https://genius.com/artists/Kizaru",
+    "image": "https://images.genius.com/4597b4ddfe6fb73d74945d7f76373727.1000x1000x1.jpg",
+    "description": "Нечипоренко Олег Викторович (родился 21 мая 1989 года в Санкт-Петербурге) — хип-хоп исполнитель, проживающий в Барселоне, основатель творческого объединения HAUNTED FAMILY."
+  },
+  "madk1d": {
+    "name": "madk1d",
+    "url": "https://genius.com/artists/Madk1d",
+    "image": "https://images.genius.com/6a56e9fe55fa4f971ba46ba3e4ae1599.1000x1000x1.jpg",
+    "description": "Серков Марк Робертович (родился 11 апреля 2002 года в Томске) — российский музыкальный исполнитель, автор мелодичных рэп-релизов."
+  },
+  "uglystephan": {
+    "name": "uglystephan",
+    "url": "https://genius.com/artists/Uglystephan",
+    "image": "https://images.genius.com/39a66710b1d0340c679a8e0f5be87095.1000x1000x1.jpg",
+    "description": "Дунаевский Степан Фёдорович (родился 29 декабря 2006 года в Москве) — российский рэп-исполнитель, автор вирусных хитов «Skamming Shit» и «15»."
+  },
+  "unki": {
+    "name": "unki",
+    "url": "https://genius.com/artists/Unki",
+    "image": "https://images.genius.com/c605d3369a036495123d467a91a92e10.1000x1000x1.jpg",
+    "description": "Долгов Тимофей Алексеевич (родился 1 октября 2005 года в Новосибирске) — российский рэп-исполнитель и саунд-инженер, автор релизов «Харизма» и хита «Defolt»."
+  },
+  "Полка": {
+    "name": "Полка",
+    "url": "https://genius.com/artists/Polka-rus",
+    "image": "https://images.genius.com/bcf7d7b1b11ca0f4776e73bb9387431e.1000x1000x1.jpg",
+    "description": "Кошкин Игорь Алексеевич — российский рэп-исполнитель, автор популярных треков «Знаю» и «днями и ночами»."
+  },
+  "Пошлая Молли": {
+    "name": "Пошлая Молли",
+    "url": "https://genius.com/artists/Poshlaya-molly",
+    "image": "https://images.genius.com/4316fe0082f5b404d0263f3db3bb0d9a.1000x1000x1.jpg",
+    "description": "Культовая рок-группа под руководством Кирилла Бледного, один из самых ярких представителей русскоязычного поп-панка и синти-рока."
+  },
+  "СТИНТ": {
+    "name": "СТИНТ",
+    "url": "https://genius.com/artists/Stint",
+    "image": "https://images.genius.com/0f6d0f666f7f6da9dc98a44c9b9aef64.1000x1000x1.jpg",
+    "description": "Шабанов Максим Владимирович (родился 16 мая 1995 года в Иваново) — российский стример, видеоблогер и музыкальный исполнитель."
+  },
+  "Слава КПСС": {
+    "name": "Слава КПСС",
+    "url": "https://genius.com/artists/Slava-kpss",
+    "image": "https://images.genius.com/e24eeb3544be33c306d860d5c07b6bfb.1000x1000x1.jpg",
+    "description": "Машнов Вячеслав Валерьевич (родился 9 мая 1990 года в Хабаровске) — российский рэп-исполнитель, поэт и баттл-рэпер, лидер творческого объединения «Антихайп»."
+  }
+};
+
 const FAV_KEY = 'jt_favs_v1';
+const FAV_ALBUMS_KEY = 'jt_fav_albums_v1';
+let favoriteAlbums = new Set();
 const VOL_KEY = 'jt_volume_v1';
 
 const PLACEHOLDER = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
@@ -3777,6 +4544,19 @@ const coverWrap = $('coverWrap');
 const favBtn = $('favBtn');
 const titleEl = $('title');
 const artistEl = $('artist');
+artistEl.style.cursor = 'pointer';
+artistEl.setAttribute('role', 'button');
+artistEl.setAttribute('title', 'Открыть профиль исполнителя');
+artistEl.addEventListener('click', () => {
+  if (currentIndex >= 0) {
+    const t = tracks[currentIndex];
+    const mainArt = extractPrimaryArtist(t);
+    if (mainArt) {
+      closePlayer();
+      setTimeout(() => openArtist(mainArt), 220);
+    }
+  }
+});
 const scrub = $('scrub');
 const eTrack = $('eTrack');
 const eFill = $('eFill');
@@ -3822,7 +4602,8 @@ const seekFlashL = $('seekFlashLeft');
 const seekFlashR = $('seekFlashRight');
 const ctxMenu = $('ctxMenu');
 
-const panels = { all: $('panelAll'), fav: $('panelFav'), albums: $('panelAlbums') };
+const scrArtist = $('scrArtist');
+const panels = { all: $('panelAll'), artists: $('panelArtists'), albums: $('panelAlbums'), fav: $('panelFav') };
 
 /* ══════════════════════════════════════════════════════════
    Состояние
@@ -3836,6 +4617,7 @@ let repeatMode = 0;
 let favorites = new Set();
 let activeTab = 'all';
 let albumOpenName = null;
+let artistOpenName = null;
 
 /* ══════════════════════════════════════════════════════════
    Хранилище
@@ -3845,9 +4627,46 @@ function loadFavs() {
     const raw = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
     favorites = new Set(Array.isArray(raw) ? raw : []);
   } catch (e) { favorites = new Set(); }
+
+  try {
+    const rawAlb = JSON.parse(localStorage.getItem(FAV_ALBUMS_KEY) || '[]');
+    favoriteAlbums = new Set(Array.isArray(rawAlb) ? rawAlb : []);
+  } catch (e) { favoriteAlbums = new Set(); }
 }
 function saveFavs() {
   try { localStorage.setItem(FAV_KEY, JSON.stringify([...favorites])); } catch (e) {}
+}
+function saveFavAlbums() {
+  try { localStorage.setItem(FAV_ALBUMS_KEY, JSON.stringify([...favoriteAlbums])); } catch (e) {}
+}
+function toggleFavoriteAlbum(name, btnEl) {
+  if (!name || name === 'Сингл') return;
+  const wasOn = favoriteAlbums.has(name);
+  if (wasOn) favoriteAlbums.delete(name);
+  else favoriteAlbums.add(name);
+  saveFavAlbums();
+
+  if (btnEl) btnEl.classList.toggle('on', !wasOn);
+  syncFavAlbumButtons();
+  if (activeTab === 'fav') renderFav();
+  if (activeTab === 'albums') renderAlbums();
+
+  if (tg && tg.HapticFeedback) {
+    try { tg.HapticFeedback.impactOccurred(wasOn ? 'light' : 'medium'); } catch (e) {}
+  }
+}
+function syncFavAlbumButtons() {
+  const isFav = albumOpenName && favoriteAlbums.has(albumOpenName);
+  const btn = $('albumFavBtn');
+  if (btn) {
+    btn.classList.toggle('on', !!isFav);
+    btn.setAttribute('aria-label', isFav ? 'Удалить альбом из избранного' : 'Добавить альбом в избранное');
+  }
+  const heroBtn = $('albumHeroFavBtn');
+  if (heroBtn) {
+    heroBtn.classList.toggle('on', !!isFav);
+    heroBtn.setAttribute('aria-label', isFav ? 'Удалить альбом из избранного' : 'Добавить альбом в избранное');
+  }
 }
 function loadVolume() {
   const v = parseFloat(localStorage.getItem(VOL_KEY));
@@ -3945,6 +4764,67 @@ function normalize(t) {
     duration: Number(t.duration) || 0,
     lyrics: String(t.lyrics || '')
   };
+}
+
+function extractPrimaryArtist(t) {
+  if (!t) return '';
+  const list = getTrackArtistList(t);
+  return list[0] || cleanEnglishTranslit(t.artist || '').trim();
+}
+
+function getTrackArtistList(t) {
+  if (!t) return [];
+  const raw = cleanEnglishTranslit(t.artist || '').trim();
+  const extra = [];
+  const cleaned = raw.replace(
+    /[\[\]]?\s*[\(\[]\s*(?:feat\.?|ft\.?|при\s+участии)\s*([^\)\]]+)[\)\]]/gi,
+    (m, names) => {
+      names.split(/\s*[,&]\s*|\s+and\s+/i).forEach((n) => {
+        if (n.trim()) extra.push(n.trim());
+      });
+      return ' ';
+    }
+  );
+  const mainParts = cleaned
+    .split(/\s*[,&/]\s*|\s+(?:feat\.?|ft\.?|при\s+участии|and)\s+/i)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const seen = new Set();
+  const result = [];
+  mainParts.concat(extra, (t.featuring || []).map(cleanEnglishTranslit).filter(Boolean)).forEach((name) => {
+    const key = normName(name);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    result.push(name.trim());
+  });
+  return result.length ? result : [raw];
+}
+
+function formatArtistSpans(t, linkClass = 'row-artist-link') {
+  const frag = document.createDocumentFragment();
+  const list = getTrackArtistList(t);
+  if (!list.length) {
+    frag.textContent = t.artist || 'Неизвестный';
+    return frag;
+  }
+  list.forEach((art, idx) => {
+    if (idx > 0) {
+      frag.appendChild(document.createTextNode(idx === 1 ? ' & ' : ', '));
+    }
+    const span = document.createElement('span');
+    span.className = linkClass;
+    span.dataset.artist = art;
+    span.textContent = art;
+    span.setAttribute('title', 'Открыть профиль: ' + art);
+    span.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (typeof playerOpen !== 'undefined' && playerOpen) closePlayer();
+      openArtist(art);
+    });
+    frag.appendChild(span);
+  });
+  return frag;
 }
 
 /* разбивает строку артистов на основного и остальных:
@@ -4095,6 +4975,7 @@ function screenParker(el) {
 }
 const parkPlayer = screenParker(scrPlayer);
 const parkAlbum = screenParker(scrAlbum);
+const parkArtist = screenParker(scrArtist);
 const parkSettings = screenParker(scrSettings);
 
 function openPlayer() {
@@ -4171,7 +5052,7 @@ function closePlayer() {
   closeLyricsSheet();
   if (typeof closeEqSheet === 'function') closeEqSheet();
   coverFull.classList.remove('open');
-  showTgBack(albumOpenName !== null);
+  showTgBack(albumOpenName !== null || artistOpenName !== null);
 }
 
 function openAlbum(name) {
@@ -4189,7 +5070,7 @@ function closeAlbum() {
   albumOpenName = null;
   scrAlbum.classList.remove('open');
   parkAlbum.close(420);
-  showTgBack(playerOpen);
+  showTgBack(playerOpen || artistOpenName !== null);
 }
 
 function showTgBack(show) {
@@ -4202,6 +5083,7 @@ if (tg && tg.BackButton) {
     tg.BackButton.onClick(() => {
       if (playerOpen) closePlayer();
       else if (scrSettings.classList.contains('open')) closeSettings();
+      else if (artistOpenName !== null) closeArtist();
       else if (albumOpenName !== null) closeAlbum();
     });
   } catch (e) {}
@@ -4248,8 +5130,24 @@ function makeRow(index, delay) {
   img.className = 'row-cover';
   img.alt = '';
   img.loading = 'lazy';
-  img.src = coverOf(t);
-  img.onerror = () => { img.src = PLACEHOLDER; };
+  const cSrc = coverOf(t);
+  const cached = getCoverBlob(cSrc);
+  if (cached && cached.objectUrl) {
+    img.src = cached.objectUrl;
+  } else {
+    img.src = getProxyCoverUrl(cSrc);
+    img.onerror = () => {
+      if (img.src !== cSrc) {
+        img.onerror = () => { img.src = PLACEHOLDER; };
+        img.src = cSrc;
+      } else {
+        img.src = PLACEHOLDER;
+      }
+    };
+    loadCoverBlob(cSrc).then((entry) => {
+      if (entry && entry.objectUrl) img.src = entry.objectUrl;
+    }).catch(() => {});
+  }
 
   const info = document.createElement('div');
   info.className = 'row-info';
@@ -4258,7 +5156,7 @@ function makeRow(index, delay) {
 
   const ss = document.createElement('div');
   ss.className = 'row-sub';
-  ss.textContent = artistLine(t);
+  ss.appendChild(formatArtistSpans(t, 'row-artist-link'));
 
   info.append(tt, ss);
 
@@ -4419,6 +5317,34 @@ function renderAll() {
     panels.all.innerHTML = emptyState();
     return;
   }
+
+  if (searchQuery) {
+    const matchedArtists = Object.keys(KNOWN_ARTISTS).filter((a) => a.toLowerCase().includes(searchQuery));
+    if (matchedArtists.length) {
+      const topArt = matchedArtists[0];
+      const g = groupByArtist().get(topArt);
+      const hero = document.createElement('div');
+      hero.className = 'search-artist-hero';
+      const im = document.createElement('img');
+      im.className = 'search-artist-img';
+      im.alt = '';
+      im.src = artistAvatarOf(topArt, g ? g.all : []);
+      im.onerror = () => { im.src = PLACEHOLDER; };
+      const meta = document.createElement('div');
+      meta.className = 'search-artist-meta';
+      const nm = document.createElement('div');
+      nm.className = 'search-artist-name';
+      nm.textContent = topArt;
+      const bd = document.createElement('div');
+      bd.className = 'search-artist-badge';
+      bd.textContent = 'Исполнитель · Профиль ›';
+      meta.append(nm, bd);
+      hero.append(im, meta);
+      hero.addEventListener('click', () => openArtist(topArt));
+      panels.all.appendChild(hero);
+    }
+  }
+
   const frag = document.createDocumentFragment();
   idx.forEach((i, n) => frag.appendChild(makeRow(i, n * 24)));
   panels.all.appendChild(frag);
@@ -4428,26 +5354,475 @@ function renderAll() {
 function renderFav() {
   panels.fav.innerHTML = '';
   const idx = visibleIndices().filter((i) => favorites.has(keyOf(tracks[i])));
-  if (!idx.length) {
+  const favAlbNames = [...favoriteAlbums].filter((albName) => {
+    if (!albName || albName === 'Сингл') return false;
+    if (searchQuery) return albName.toLowerCase().includes(searchQuery);
+    return true;
+  });
+
+  if (!idx.length && !favAlbNames.length) {
     panels.fav.innerHTML = searchQuery
       ? emptyState()
-      : '<div class="empty">' + EMPTY_ICON + '<b>В избранном пусто</b>Нажми ♥ у трека, чтобы сохранить</div>';
+      : '<div class="empty">' + EMPTY_ICON + '<b>В избранном пусто</b>Нажми ♥ у трека или альбома, чтобы сохранить</div>';
     return;
   }
+
   const frag = document.createDocumentFragment();
 
-  const bar = document.createElement('div');
-  bar.className = 'list-actions';
-  const playAll = document.createElement('button');
-  playAll.className = 'chip';
-  playAll.textContent = '▶ Играть всё';
-  playAll.addEventListener('click', () => playList(idx.slice()));
-  bar.appendChild(playAll);
-  frag.appendChild(bar);
+  // 1. Секция любимых альбомов
+  if (favAlbNames.length > 0) {
+    const albSection = document.createElement('div');
+    albSection.className = 'fav-albums-section';
 
-  idx.forEach((i, n) => frag.appendChild(makeRow(i, n * 24)));
+    const albTitle = document.createElement('div');
+    albTitle.className = 'fav-section-title';
+    albTitle.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 1 0 7 7"/><circle cx="12" cy="12" r="2"/></svg> Любимые альбомы';
+    albSection.appendChild(albTitle);
+
+    const albGrid = document.createElement('div');
+    albGrid.className = 'fav-albums-grid';
+
+    favAlbNames.forEach((albName) => {
+      const idxs = groupByAlbum().get(albName) || [];
+      if (!idxs.length) return;
+      const card = document.createElement('div');
+      card.className = 'fav-album-card';
+
+      const img = document.createElement('img');
+      img.className = 'fav-album-img';
+      img.loading = 'lazy';
+      img.src = coverOf(tracks[idxs[0]]);
+      img.onerror = () => { img.src = PLACEHOLDER; };
+
+      const nm = document.createElement('div');
+      nm.className = 'fav-album-name';
+      nm.textContent = albName;
+
+      const sub = document.createElement('div');
+      sub.className = 'fav-album-sub';
+      sub.textContent = idxs.length + ' ' + plural(idxs.length, 'трек', 'трека', 'треков');
+
+      card.append(img, nm, sub);
+      card.addEventListener('click', () => openAlbum(albName));
+      albGrid.appendChild(card);
+    });
+
+    albSection.appendChild(albGrid);
+    frag.appendChild(albSection);
+  }
+
+  // 2. Секция любимых треков
+  if (idx.length > 0) {
+    if (favAlbNames.length > 0) {
+      const trkTitle = document.createElement('div');
+      trkTitle.className = 'fav-section-title';
+      trkTitle.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg> Любимые треки';
+      frag.appendChild(trkTitle);
+    }
+
+    const bar = document.createElement('div');
+    bar.className = 'list-actions';
+    const playAll = document.createElement('button');
+    playAll.className = 'chip';
+    playAll.textContent = '▶ Играть всё';
+    playAll.addEventListener('click', () => playList(idx.slice()));
+    bar.appendChild(playAll);
+    frag.appendChild(bar);
+
+    idx.forEach((i, n) => frag.appendChild(makeRow(i, n * 24)));
+  }
+
   panels.fav.appendChild(frag);
   syncPlayingRow();
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   Артисты: Genius, Профили, Логика
+   ══════════════════════════════════════════════════════════ */
+function getArtistData(name) {
+  if (!name) return null;
+  const key = normName(name);
+  for (const k of Object.keys(KNOWN_ARTISTS)) {
+    if (normName(k) === key) return KNOWN_ARTISTS[k];
+  }
+  try {
+    const cached = localStorage.getItem('genius_artist_' + key);
+    if (cached) return JSON.parse(cached);
+  } catch (e) {}
+
+  return {
+    name: name,
+    url: 'https://genius.com/search?q=' + encodeURIComponent(name),
+    image: '',
+    description: ''
+  };
+}
+
+function artistAvatarOf(name, list = []) {
+  const data = getArtistData(name);
+  if (data && data.image) return data.image;
+  if (list && list.length && tracks[list[0]]) {
+    const c = coverOf(tracks[list[0]]);
+    if (!isPlaceholder(c)) return c;
+  }
+  return PLACEHOLDER;
+}
+
+async function fetchGeniusArtistAsync(name) {
+  if (!name) return null;
+  const key = normName(name);
+  const cur = getArtistData(name);
+  if (cur && cur.image && cur.description) return cur;
+
+  try {
+    const res = await fetch('https://genius.com/api/search/multi?per_page=5&q=' + encodeURIComponent(name));
+    if (!res.ok) return null;
+    const json = await res.json();
+    const sections = json.response && json.response.sections;
+    if (Array.isArray(sections)) {
+      for (const sec of sections) {
+        if (sec.type === 'artist' && sec.hits && sec.hits.length) {
+          const r = sec.hits[0].result;
+          const info = {
+            name: name,
+            url: r.url || ('https://genius.com/artists/' + encodeURIComponent(name)),
+            image: r.image_url || r.header_image_url || '',
+            description: ''
+          };
+          try {
+            localStorage.setItem('genius_artist_' + key, JSON.stringify(info));
+          } catch (e) {}
+          return info;
+        }
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+function extractTrackArtists(t) {
+  const raw = (t.artist || '').trim();
+  const extra = [];
+
+  const cleaned = raw.replace(
+    /[\[\]]?\s*[\(\[]\s*(?:feat\.?|ft\.?|при\s+участии)\s*([^\)\]]+)[\)\]]/gi,
+    (m, names) => {
+      names.split(/\s*[,&]\s*|\s+and\s+/i).forEach((n) => {
+        if (n.trim()) extra.push(n.trim());
+      });
+      return ' ';
+    }
+  );
+
+  const mainParts = cleaned
+    .split(/\s*[,&]\s*|\s+(?:feat\.?|ft\.?|при\s+участии|and)\s+/i)
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+  const featParts = (t.featuring || [])
+    .concat(extra)
+    .map((x) => (x || '').trim())
+    .filter(Boolean);
+
+  return {
+    primary: mainParts[0] || raw,
+    main: mainParts.length ? mainParts : [raw],
+    feat: featParts
+  };
+}
+
+function groupByArtist() {
+  const groups = new Map();
+  tracks.forEach((t, i) => {
+    const { main, feat } = extractTrackArtists(t);
+    main.forEach((m) => {
+      if (!groups.has(m)) groups.set(m, { main: [], feat: [], all: [] });
+      if (!groups.get(m).main.includes(i)) groups.get(m).main.push(i);
+      if (!groups.get(m).all.includes(i)) groups.get(m).all.push(i);
+    });
+
+    const mainSet = new Set(main.map((m) => m.toLowerCase()));
+    const seenFeat = new Set();
+    feat.forEach((f) => {
+      const fLow = f.toLowerCase();
+      if (mainSet.has(fLow) || seenFeat.has(fLow)) return;
+      seenFeat.add(fLow);
+      if (!groups.has(f)) groups.set(f, { main: [], feat: [], all: [] });
+      if (!groups.get(f).feat.includes(i)) groups.get(f).feat.push(i);
+      if (!groups.get(f).all.includes(i)) groups.get(f).all.push(i);
+    });
+  });
+  return groups;
+}
+
+function openArtist(name) {
+  if (!name) return;
+  artistOpenName = name;
+  renderArtistPage(name);
+  parkArtist.open();
+  scrArtist.classList.add('open');
+  showTgBack(true);
+  if (tg && tg.HapticFeedback) {
+    try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
+  }
+}
+
+function closeArtist() {
+  artistOpenName = null;
+  scrArtist.classList.remove('open');
+  parkArtist.close(380);
+  showTgBack(playerOpen || albumOpenName !== null);
+}
+
+function renderArtistPage(name) {
+  if (!name) return;
+  const groups = groupByArtist();
+  let group = groups.get(name);
+  let resolvedName = name;
+
+  if (!group) {
+    for (const [k, v] of groups.entries()) {
+      if (normName(k) === normName(name)) {
+        group = v;
+        resolvedName = k;
+        break;
+      }
+    }
+  }
+
+  // Если точного совпадения нет (например, имя составное: «OG Buda & 163ONMYNECK» или «CMH & Lida»)
+  if (!group) {
+    const rawParts = name.split(/\s*[,&/]\s*|\s+(?:feat\.?|ft\.?|при\s+участии|and)\s+/i).map((s) => s.trim()).filter(Boolean);
+    for (const p of rawParts) {
+      if (groups.has(p)) {
+        group = groups.get(p);
+        resolvedName = p;
+        break;
+      }
+      for (const [k, v] of groups.entries()) {
+        if (normName(k) === normName(p)) {
+          group = v;
+          resolvedName = k;
+          break;
+        }
+      }
+      if (group) break;
+    }
+  }
+
+  // Резервный поиск по подстроке во всей медиатеке
+  if (!group) {
+    const nLow = normName(name);
+    const matchedIdxs = [];
+    tracks.forEach((t, i) => {
+      const artLow = normName(t.artist || '');
+      const feats = (t.featuring || []).map((f) => normName(f));
+      if (artLow.includes(nLow) || feats.some((f) => f.includes(nLow))) {
+        matchedIdxs.push(i);
+      }
+    });
+    if (matchedIdxs.length) {
+      group = { main: matchedIdxs, feat: [], all: matchedIdxs };
+    }
+  }
+
+  if (!group) group = { main: [], feat: [], all: [] };
+
+  const data = getArtistData(resolvedName);
+
+  $('artistName').textContent = resolvedName;
+  const avatarEl = $('artistAvatar');
+  avatarEl.onerror = () => { avatarEl.src = PLACEHOLDER; };
+  avatarEl.src = artistAvatarOf(resolvedName, group.all);
+
+  const mainCount = group.main.length;
+  const featCount = group.feat.length;
+  const allCount = group.all.length;
+
+  const artistAlbums = [...new Set(group.all.map((i) => albumKeyOf(tracks[i])).filter(Boolean))];
+
+  $('artistSub').textContent =
+    'ИСПОЛНИТЕЛЬ · ' + allCount + ' ' + plural(allCount, 'трек', 'трека', 'треков') +
+    (artistAlbums.length ? ' · ' + artistAlbums.length + ' ' + plural(artistAlbums.length, 'альбом', 'альбома', 'альбомов') : '');
+
+
+
+  const bioWrap = $('artistBioWrap');
+  const bioEl = $('artistBio');
+  const bioMore = $('artistBioMore');
+
+  if (data && data.description) {
+    bioEl.textContent = data.description;
+    bioWrap.style.display = 'block';
+    bioEl.classList.remove('expanded');
+    bioMore.textContent = 'Подробнее';
+    bioMore.onclick = () => {
+      const isExp = bioEl.classList.toggle('expanded');
+      bioMore.textContent = isExp ? 'Свернуть' : 'Подробнее';
+    };
+    requestAnimationFrame(() => {
+      if (bioEl.scrollHeight <= bioEl.clientHeight + 4) {
+        bioMore.style.display = 'none';
+      } else {
+        bioMore.style.display = 'inline-block';
+      }
+    });
+  } else {
+    bioWrap.style.display = 'none';
+    fetchGeniusArtistAsync(name).then((info) => {
+      if (info && artistOpenName === name) {
+        if (info.image && avatarEl.src === PLACEHOLDER) avatarEl.src = info.image;
+        if (info.description) {
+          bioEl.textContent = info.description;
+          bioWrap.style.display = 'block';
+        }
+      }
+    });
+  }
+
+  $('artistPlay').onclick = () => {
+    if (!group.all.length) return;
+    queue = group.all.slice();
+    queuePos = 0;
+    loadTrack(queue[0]);
+    play();
+    openPlayer();
+  };
+
+  $('artistShuffle').onclick = () => {
+    if (!group.all.length) return;
+    queue = group.all.slice();
+    if (typeof shuffleQueue === 'function') shuffleQueue(queue[0]);
+    queuePos = 0;
+    loadTrack(queue[0]);
+    play();
+    openPlayer();
+  };
+
+  $('artistStatTracks').textContent = allCount + ' ' + plural(allCount, 'трек', 'трека', 'треков');
+  $('artistStatAlbums').textContent = artistAlbums.length + ' ' + plural(artistAlbums.length, 'альбом', 'альбома', 'альбомов');
+  const featsPill = $('artistStatFeats');
+  if (featCount > 0) {
+    featsPill.textContent = featCount + ' ' + plural(featCount, 'фит', 'фита', 'фитов');
+    featsPill.style.display = 'block';
+  } else {
+    featsPill.style.display = 'none';
+  }
+
+  const box = $('artistTracks');
+  box.innerHTML = '';
+  group.main.forEach((i, k) => box.appendChild(makeRow(i, k * 20)));
+  syncPlayingRow();
+
+  const albSec = $('artistAlbums');
+  const albTitle = $('artistAlbumsTitle');
+  albSec.innerHTML = '';
+  if (artistAlbums.length > 0) {
+    albTitle.style.display = 'block';
+    albSec.style.display = 'grid';
+    artistAlbums.forEach((albName) => {
+      const firstIdx = group.all.find((i) => albumKeyOf(tracks[i]) === albName);
+      const card = document.createElement('div');
+      card.className = 'album-card';
+      const im = document.createElement('img');
+      im.className = 'album-card-img';
+      im.alt = '';
+      im.loading = 'lazy';
+      im.src = firstIdx !== undefined ? coverOf(tracks[firstIdx]) : PLACEHOLDER;
+      im.onerror = () => { im.src = PLACEHOLDER; };
+      const nm = document.createElement('div');
+      nm.className = 'album-card-name';
+      nm.textContent = albName;
+      const sb = document.createElement('div');
+      sb.className = 'album-card-sub';
+      const albTracks = tracks.filter((t) => albumKeyOf(t) === albName);
+      sb.textContent = albTracks.length + ' ' + plural(albTracks.length, 'трек', 'трека', 'треков');
+      card.append(im, nm, sb);
+      card.addEventListener('click', () => openAlbum(albName));
+      albSec.appendChild(card);
+    });
+  } else {
+    albTitle.style.display = 'none';
+    albSec.style.display = 'none';
+  }
+
+  const featSec = $('artistFeatTracks');
+  const featTitle = $('artistFeatTitle');
+  featSec.innerHTML = '';
+  if (group.feat.length > 0) {
+    featTitle.style.display = 'block';
+    featSec.style.display = 'block';
+    group.feat.forEach((i, k) => featSec.appendChild(makeRow(i, k * 20)));
+  } else {
+    featTitle.style.display = 'none';
+    featSec.style.display = 'none';
+  }
+}
+
+$('artistBack').addEventListener('click', closeArtist);
+
+$('artistAvatarWrap').addEventListener('click', () => {
+  const src = $('artistAvatar').src;
+  if (!src || isPlaceholder(src)) return;
+  coverFullImg.src = src;
+  coverFull.classList.add('open');
+});
+
+function renderArtists() {
+  panels.artists.innerHTML = '';
+  const groups = groupByArtist();
+
+  let names = [...groups.keys()].sort((a, b) => {
+    const diff = groups.get(b).all.length - groups.get(a).all.length;
+    return diff !== 0 ? diff : a.localeCompare(b, 'ru');
+  });
+
+  if (searchQuery) {
+    names = names.filter((name) => name.toLowerCase().includes(searchQuery));
+  }
+
+  if (!names.length) {
+    panels.artists.innerHTML = searchQuery
+      ? emptyState()
+      : '<div class="empty">' + EMPTY_ICON + '<b>Исполнителей нет</b>В библиотеке пока нет исполнителей</div>';
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'artist-grid';
+
+  names.forEach((name) => {
+    const g = groups.get(name);
+    const card = document.createElement('div');
+    card.className = 'artist-card';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'artist-card-avatar-wrap';
+
+    const img = document.createElement('img');
+    img.className = 'artist-card-img';
+    img.alt = '';
+    img.loading = 'lazy';
+    img.src = artistAvatarOf(name, g.all);
+    img.onerror = () => { img.src = PLACEHOLDER; };
+    wrap.appendChild(img);
+
+    const nm = document.createElement('div');
+    nm.className = 'artist-card-name';
+    nm.textContent = name;
+
+    const sb = document.createElement('div');
+    sb.className = 'artist-card-sub';
+    const total = g.all.length;
+    sb.textContent = total + ' ' + plural(total, 'трек', 'трека', 'треков');
+
+    card.append(wrap, nm, sb);
+    card.addEventListener('click', () => openArtist(name));
+    grid.appendChild(card);
+  });
+
+  panels.artists.appendChild(grid);
 }
 
 function groupByAlbum() {
@@ -4488,6 +5863,15 @@ function renderAlbums() {
 
     const card = document.createElement('div');
     card.className = 'album-card';
+    card.style.position = 'relative';
+
+    const isFav = favoriteAlbums.has(name);
+    if (isFav) {
+      const favBadge = document.createElement('div');
+      favBadge.className = 'album-card-fav-badge';
+      favBadge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+      card.appendChild(favBadge);
+    }
 
     const img = document.createElement('img');
     img.className = 'album-card-img';
@@ -4523,13 +5907,15 @@ function plural(n, one, few, many) {
 
 function renderAllPanels() {
   renderAll();
-  renderFav();
+  renderArtists();
   renderAlbums();
+  renderFav();
 }
 
 function renderActive() {
   if (activeTab === 'fav') renderFav();
   else if (activeTab === 'albums') renderAlbums();
+  else if (activeTab === 'artists') renderArtists();
   else renderAll();
 }
 
@@ -4554,6 +5940,7 @@ function renderAlbumPage(name) {
   cov.src = coverSrc;
   scrAlbum.style.setProperty('--album-cover', 'url("' + coverSrc.replace(/"/g, '%22') + '")');
 
+  syncFavAlbumButtons();
   const box = $('albumTracks');
   box.innerHTML = '';
   idxs.forEach((i, k) => box.appendChild(makeRow(i, k * 24)));
@@ -4571,6 +5958,10 @@ function renderAlbumPage(name) {
 }
 
 $('albumBack').addEventListener('click', closeAlbum);
+const albFavBtnEl = $('albumFavBtn');
+if (albFavBtnEl) albFavBtnEl.addEventListener('click', () => { if (albumOpenName) toggleFavoriteAlbum(albumOpenName, albFavBtnEl); });
+const albHeroFavBtnEl = $('albumHeroFavBtn');
+if (albHeroFavBtnEl) albHeroFavBtnEl.addEventListener('click', () => { if (albumOpenName) toggleFavoriteAlbum(albumOpenName, albHeroFavBtnEl); });
 
 /* обложка альбома — на весь экран */
 $('albumCover').addEventListener('click', () => {
@@ -4590,6 +5981,7 @@ tabBtns.forEach((btn) => {
   btn.addEventListener('click', () => {
     const name = btn.dataset.tab;
     if (albumOpenName !== null) closeAlbum();
+    if (artistOpenName !== null) closeArtist();
     if (name === activeTab) return;
     activeTab = name;
 
@@ -4609,6 +6001,7 @@ tabBtns.forEach((btn) => {
 
     if (name === 'fav') renderFav();
     if (name === 'albums') renderAlbums();
+    if (name === 'artists') renderArtists();
 
     if (tg && tg.HapticFeedback) {
       try { tg.HapticFeedback.selectionChanged(); } catch (e) {}
@@ -4831,11 +6224,36 @@ const aurora = (function () {
       console.warn('[aurora] failed to import @kawarp/core:', err);
     });
 
+  function loadBlob(blob) {
+    hasImage = true;
+    hasRealImage = true;
+    return new Promise((resolve, reject) => {
+      const execute = () => {
+        if (!instance || !blob) return resolve();
+        const p = (typeof instance.loadBlob === 'function')
+          ? instance.loadBlob(blob)
+          : (typeof instance.loadImage === 'function' ? instance.loadImage(URL.createObjectURL(blob)) : Promise.resolve());
+        p.then(() => {
+          checkPlayState();
+          if (reduce) instance.stop();
+          adaptBrightnessToCover();
+          resolve();
+        }).catch((err) => {
+          console.warn('[aurora] loadBlob error:', err);
+          reject(err);
+        });
+      };
+      if (instance) execute();
+      else pendingAction = execute;
+    });
+  }
+
   const api = {
     get frames() { return 1; },
     get hasImage() { return hasImage; },
     setImage(s) { return loadImage(s); },
-    loadImage(s) { return loadImage(s); },
+    loadImage(s) { return (s instanceof Blob) ? loadBlob(s) : loadImage(s); },
+    loadBlob(b) { return loadBlob(b); },
     loadGradient(p) { loadGradient(p); },
     setColors,
     surge() {},
@@ -5113,149 +6531,312 @@ function getFallbackPalette(src, track) {
 /* ── загрузка обложки через прокси (единый запрос для Kawarp и палитры) ──
    При CORS-ошибке обложка подгружается один раз через wsrv.nl (&w=256&q=80)
    и передаётся одновременно и в aurora.loadImage(proxyUrl), и в readCover(proxy) */
-function loadProxyCover(src, track, cb) {
-  let done = false;
-  const fallback = () => {
-    if (done) return;
-    done = true;
-    aurora.loadGradient(getFallbackPalette(src, track));
-    if (cb) cb(track ? fallbackPalette(track) : null, null, null);
-  };
+/* ══════════════════════════════════════════════════════════
+   Единый менеджер и кэш обложек (Blob + LRU Map)
+   ══════════════════════════════════════════════════════════ */
+const COVER_CACHE_MAX = 50;
+const coverBlobCache = new Map(); // src -> { blob, objectUrl, palette, alts, tiny }
+const inFlightCoverFetches = new Map(); // src -> Promise<{ blob, objectUrl, ... }>
 
-  const proxyUrl = 'https://wsrv.nl/?url=' + encodeURIComponent(String(src).replace(/^https?:\/\//, '')) + '&w=256&q=80';
+let coverGen = 0;
+let coverAbortCtrl = null;
+let heavyDebounceTimer = null;
+let pendingTrackIndex = -1;
+let shouldPlayAfterLoad = false;
 
-  // Передаём в Kawarp URL прокси
-  aurora.loadImage(proxyUrl).catch(() => fallback());
+function touchCoverCache(key, entry) {
+  coverBlobCache.delete(key);
+  coverBlobCache.set(key, entry);
+  if (coverBlobCache.size > COVER_CACHE_MAX) {
+    const oldestKey = coverBlobCache.keys().next().value;
+    const oldestEntry = coverBlobCache.get(oldestKey);
+    if (oldestEntry && oldestEntry.objectUrl) {
+      try { URL.revokeObjectURL(oldestEntry.objectUrl); } catch (e) {}
+    }
+    coverBlobCache.delete(oldestKey);
+  }
+}
 
-  const proxy = new Image();
-  proxy.crossOrigin = 'anonymous';
-  proxy.onload = () => {
-    if (done) return;
-    done = true;
-    let pal = null, tiny = null, alts = null;
+function getCoverBlob(src) {
+  if (!src) return null;
+  const entry = coverBlobCache.get(src);
+  if (entry) {
+    touchCoverCache(src, entry);
+    return entry;
+  }
+  return null;
+}
+
+function getProxyCoverUrl(src) {
+  if (!src || src === PLACEHOLDER || src.startsWith('data:') || src.startsWith('blob:')) return src;
+  if (!src.startsWith('http://') && !src.startsWith('https://')) return src;
+  if (src.includes('wsrv.nl')) return src;
+  // pomf2.lain.la и другие хосты lain.la блокируются wsrv.nl по политике домена (HTTP 400)
+  if (src.includes('lain.la')) return src;
+  const clean = String(src).replace(/^https?:\/\//, '');
+  return 'https://wsrv.nl/?url=' + encodeURIComponent(clean) + '&w=512&output=webp&q=85';
+}
+
+async function loadCoverBlob(src, signal) {
+  if (!src || src === PLACEHOLDER || src.startsWith('data:') || src.startsWith('blob:')) {
+    return null;
+  }
+
+  // 1. Проверяем кэш в памяти
+  const cached = getCoverBlob(src);
+  if (cached) return cached;
+
+  // 2. Если уже есть активный запрос для этого URL — переиспользуем его
+  if (inFlightCoverFetches.has(src)) {
     try {
-      const res = readCover(proxy);
-      pal = res.palette;
-      tiny = res.tiny;
-      alts = res.alts;
-    } catch (e) {}
-    if (cb) cb(pal, tiny, alts);
-  };
-  proxy.onerror = fallback;
-  proxy.src = proxyUrl;
-  setTimeout(fallback, 8000);
+      return await inFlightCoverFetches.get(src);
+    } catch (e) {
+      if (signal && signal.aborted) throw e;
+    }
+  }
+
+  const fetchPromise = (async () => {
+    let blob = null;
+    const isExternal = src.startsWith('http://') || src.startsWith('https://');
+    const isLain = src.includes('lain.la');
+
+    // pomf2.lain.la не поддерживает CORS origin 'null' и блокируется wsrv.nl (HTTP 400).
+    // Возвращаем чистый direct-entry для отображения в <img> без генерации ошибок CORS в консоли.
+    if (isLain) {
+      const entry = { blob: null, objectUrl: src, palette: null, alts: null, tiny: null };
+      touchCoverCache(src, entry);
+      return entry;
+    }
+
+    // 1-я попытка: через wsrv.nl proxy (сжатие до 512px WebP ~50KB + надёжный CORS)
+    if (isExternal && !src.includes('wsrv.nl')) {
+      const proxyUrl = getProxyCoverUrl(src);
+      if (proxyUrl !== src) {
+        try {
+          const res = await fetch(proxyUrl, { mode: 'cors', credentials: 'omit', signal });
+          if (res && res.ok) {
+            blob = await res.blob();
+          }
+        } catch (e) {
+          if (signal && signal.aborted) throw e;
+        }
+      }
+    }
+
+    // 2-я попытка: прямой fetch с CORS
+    if (!blob && isExternal) {
+      try {
+        const res = await fetch(src, { mode: 'cors', credentials: 'omit', signal });
+        if (res && res.ok) {
+          blob = await res.blob();
+        }
+      } catch (e) {
+        if (signal && signal.aborted) throw e;
+      }
+    }
+
+    if (!blob) {
+      const entry = { blob: null, objectUrl: src, palette: null, alts: null, tiny: null };
+      touchCoverCache(src, entry);
+      return entry;
+    }
+
+    const objectUrl = URL.createObjectURL(blob);
+    const entry = { blob, objectUrl, palette: null, alts: null, tiny: null };
+    touchCoverCache(src, entry);
+    return entry;
+  })();
+
+  inFlightCoverFetches.set(src, fetchPromise);
+  try {
+    return await fetchPromise;
+  } finally {
+    inFlightCoverFetches.delete(src);
+  }
 }
 
 function setCover(src, track) {
-  coverWrap.classList.add('dim');
+  coverGen++;
+  const gen = coverGen;
+
+  if (coverAbortCtrl) {
+    try { coverAbortCtrl.abort(); } catch (e) {}
+  }
+  coverAbortCtrl = new AbortController();
+  const signal = coverAbortCtrl.signal;
+
+  // ОГРАНИЧЕНИЕ 2: НЕ скрываем старую обложку в opacity: 0 (.dim)!
+  // Старая обложка остаётся видимой, пока новая не подготовлена через decode().
+  coverWrap.classList.remove('dim');
 
   if (src === PLACEHOLDER || !src) {
     resetPalette();
     setAmbient(src, null);
     document.body.style.setProperty('--cover-dim', '1');
     aurora.loadGradient(getFallbackPalette(src, track));
-    coverWrap.classList.remove('dim');
+    coverEl.src = PLACEHOLDER;
     return;
   }
 
-  // 1. Мгновенная синхронизация палитры UI
+  // 1. Мгновенная синхронизация палитры UI, если она известна заранее
   const pre = getKnownPalette(src, track);
   if (pre) {
     setPalette(pre[0], pre[1], pre[2], pre.slice(1));
     setAmbient(src, pre, pre.slice(1));
-
-    // Стартовый градиент только на самом первом запуске
     if (!aurora.hasImage) {
       aurora.loadGradient(pre);
     }
-
-    coverEl.onload = () => {
-      coverWrap.classList.remove('dim');
-      aurora.loadImage(src).catch(() => {
-        loadProxyCover(src, track);
-      });
-    };
-    coverEl.onerror = () => {
-      coverEl.removeAttribute('crossorigin');
-      coverEl.onerror = () => {
-        coverEl.onerror = null;
-        coverEl.src = PLACEHOLDER;
-        coverWrap.classList.remove('dim');
-        aurora.loadGradient(getFallbackPalette(src, track));
-      };
-      coverEl.onload = () => {
-        coverWrap.classList.remove('dim');
-      };
-      coverEl.src = src;
-      loadProxyCover(src, track);
-    };
-    coverEl.crossOrigin = 'anonymous';
-    coverEl.src = src;
-    return;
-  }
-
-  // Для неизвестных треков ставим градиент только если картинки ещё вообще не было
-  if (!aurora.hasImage) {
+  } else if (!aurora.hasImage) {
     aurora.loadGradient(getFallbackPalette(src, track));
   }
 
-  const finish = (palette, tiny, alts) => {
-    if (palette) setPalette(palette[0], palette[1], palette[2], alts);
-    else resetPalette();
-    setAmbient(tiny || src, palette, alts);
-    coverWrap.classList.remove('dim');
-  };
+  // 2. Если обложка уже есть в Blob-кэше памяти — применяем мгновенно!
+  const cached = getCoverBlob(src);
+  if (cached && cached.objectUrl) {
+    applyCoverEntry(cached, src, track, gen);
+    return;
+  }
 
-  coverEl.onload = () => {
-    let palette = null;
-    let tiny = null;
-    let alts = null;
-    let taint = false;
+  // 3. Загружаем через менеджер обложек с отменой при смене трека
+  loadCoverBlob(src, signal)
+    .then((entry) => {
+      if (gen !== coverGen) return; // Старый трек — отбрасываем!
+      if (entry) {
+        applyCoverEntry(entry, src, track, gen);
+      } else {
+        applyDirectFallback(src, track, gen);
+      }
+    })
+    .catch((err) => {
+      if (gen !== coverGen || (signal && signal.aborted)) return;
+      applyDirectFallback(src, track, gen);
+    });
+}
+
+async function applyCoverEntry(entry, src, track, gen) {
+  if (gen !== coverGen) return;
+
+  const objectUrl = entry.objectUrl || src;
+
+  // Предварительно дожидаемся img.decode(), чтобы смена была абсолютно бесшовной
+  const tempImg = new Image();
+  if (!src.includes('lain.la')) tempImg.crossOrigin = 'anonymous';
+  tempImg.src = objectUrl;
+  if (typeof tempImg.decode === 'function') {
     try {
-      const res = readCover(coverEl);
+      await tempImg.decode();
+    } catch (e) {}
+  }
+
+  if (gen !== coverGen) return;
+
+  coverEl.src = objectUrl;
+
+  // Извлечение / применение палитры
+  let palette = entry.palette;
+  let alts = entry.alts;
+  let tiny = entry.tiny;
+
+  if (!palette) {
+    const pre = getKnownPalette(src, track);
+    if (pre) {
+      palette = pre[0];
+      alts = pre.slice(1);
+    } else {
+      try {
+        const res = readCover(tempImg);
+        palette = res.palette;
+        tiny = res.tiny;
+        alts = res.alts;
+        entry.palette = palette;
+        entry.alts = alts;
+        entry.tiny = tiny;
+      } catch (e) {}
+    }
+  }
+
+  if (gen !== coverGen) return;
+
+  if (palette) {
+    setPalette(palette[0], palette[1], palette[2], alts);
+  } else {
+    resetPalette();
+  }
+  setAmbient(tiny || objectUrl, palette, alts);
+
+  // Обновление WebGL @kawarp/core фона через loadBlob
+  if (entry.blob && typeof aurora.loadBlob === 'function') {
+    aurora.loadBlob(entry.blob).catch(() => {
+      if (gen === coverGen) {
+        aurora.loadGradient(palette ? [palette].concat(alts || []) : getFallbackPalette(src, track));
+      }
+    });
+  } else {
+    aurora.loadImage(objectUrl).catch(() => {
+      if (gen === coverGen) {
+        aurora.loadGradient(palette ? [palette].concat(alts || []) : getFallbackPalette(src, track));
+      }
+    });
+  }
+}
+
+function applyDirectFallback(src, track, gen) {
+  if (gen !== coverGen) return;
+  const tempImg = new Image();
+  const isCORS = !src.includes('lain.la');
+  if (isCORS) tempImg.crossOrigin = 'anonymous';
+
+  tempImg.onload = () => {
+    if (gen !== coverGen) return;
+    coverEl.src = src;
+    let palette = null, tiny = null, alts = null;
+    try {
+      const res = readCover(tempImg);
       palette = res.palette;
       tiny = res.tiny;
       alts = res.alts;
-    } catch (e) {
-      taint = true;
+    } catch (e) {}
+    if (!palette) {
+      const pre = getKnownPalette(src, track);
+      if (pre) {
+        palette = pre[0];
+        alts = pre.slice(1);
+      }
     }
-    if (taint) {
-      loadProxyCover(src, track, (pal, tiny2, alts2) => finish(pal, tiny2 || tiny, alts2 || alts));
+    if (palette) setPalette(palette[0], palette[1], palette[2], alts);
+    else resetPalette();
+    setAmbient(tiny || src, palette, alts);
+    aurora.loadImage(src).catch(() => {
+      if (gen === coverGen) aurora.loadGradient(palette ? [palette].concat(alts || []) : getFallbackPalette(src, track));
+    });
+  };
+  tempImg.onerror = () => {
+    if (gen !== coverGen) return;
+    if (tempImg.crossOrigin) {
+      tempImg.removeAttribute('crossOrigin');
+      tempImg.src = src;
       return;
     }
-    aurora.loadImage(src).catch(() => {
-      loadProxyCover(src, track, (pal, tiny2, alts2) => finish(pal, tiny2 || tiny, alts2 || alts));
-    });
-    finish(palette, tiny, alts);
+    coverEl.src = src || PLACEHOLDER;
+    resetPalette();
+    setAmbient(PLACEHOLDER, null);
+    aurora.loadGradient(getFallbackPalette(src, track));
   };
-
-  coverEl.onerror = () => {
-    coverEl.removeAttribute('crossorigin');
-    coverEl.onerror = () => {
-      coverEl.onerror = null;
-      coverEl.src = PLACEHOLDER;
-      finish(null, null);
-      aurora.loadGradient(getFallbackPalette(src, track));
-    };
-    coverEl.onload = () => {
-      loadProxyCover(src, track, (pal, tiny, alts) => finish(pal, tiny, alts));
-    };
-    coverEl.src = src;
-    loadProxyCover(src, track, (pal, tiny, alts) => finish(pal, tiny, alts));
-  };
-
-  coverEl.crossOrigin = 'anonymous';
-  coverEl.src = src;
+  tempImg.src = src;
 }
 
 /* ══ бегущая строка: длинное название уезжает и возвращается ══ */
-function setMarquee(el, text) {
+function setMarquee(el, content) {
   el.classList.remove('marquee');
   el.style.removeProperty('--marq');
 
   const inner = document.createElement('span');
   inner.className = 't-inner';
-  inner.textContent = text;
+  if (typeof content === 'string') {
+    inner.textContent = content;
+  } else if (content instanceof Node) {
+    inner.appendChild(content);
+  }
   el.replaceChildren(inner);
 
   requestAnimationFrame(() => {
@@ -5352,22 +6933,36 @@ function resyncQueue() {
   saveQueue();
 }
 
-function loadTrack(index) {
+function loadTrack(index, immediate = false) {
   currentIndex = index;
   playCounted = false;
   lastAudioTime = 0;
   const t = tracks[index];
 
+  // 1. Мгновенное обновление UI (текст, мини-плеер, список, очередь)
   setMarquee(titleEl, t.title);
-  setMarquee(artistEl, artistLine(t));
+  setMarquee(artistEl, formatArtistSpans(t, 'player-artist-link'));
 
-  setCover(coverOf(t), t);
-
-  miniCover.src = coverOf(t);
   miniTitle.textContent = t.title;
-  miniSub.textContent = artistLine(t);
+  miniSub.replaceChildren(formatArtistSpans(t, 'mini-artist-link'));
 
-  // смена трека в мини-плеере — текст приезжает с той стороны, куда свайпнули
+  const cSrc = coverOf(t);
+  const cached = getCoverBlob(cSrc);
+  if (cached && cached.objectUrl) {
+    miniCover.src = cached.objectUrl;
+  } else {
+    miniCover.src = getProxyCoverUrl(cSrc);
+    loadCoverBlob(cSrc).then((entry) => {
+      if (entry && entry.objectUrl && currentIndex === index) {
+        miniCover.src = entry.objectUrl;
+      }
+    }).catch(() => {});
+  }
+
+  // Запуск обновления главной обложки через Cover Manager с защитой от гонки
+  setCover(cSrc, t);
+
+  // Смена трека в мини-плеере с направленной анимацией
   miniInfo.style.transition = '';
   miniInfo.style.transform = '';
   miniInfo.style.opacity = '';
@@ -5382,17 +6977,6 @@ function loadTrack(index) {
   tCur.textContent = '0:00';
   tDur.textContent = t.duration ? fmt(t.duration) : '0:00';
 
-  const isCorsHost = t.src && !t.src.includes('pomf2.lain.la');
-  if ((settings.eqEnabled || audioSrcNode) && isCorsHost) {
-    audio.crossOrigin = 'anonymous';
-  } else {
-    audio.removeAttribute('crossorigin');
-    audio.crossOrigin = null;
-  }
-
-  audio.src = t.src;
-  audio.load();
-
   dock.classList.add('has-track');
   syncFavButtons();
   syncPlayingRow();
@@ -5403,6 +6987,37 @@ function loadTrack(index) {
 
   setHashFor(t);
   saveQueue();
+
+  // 2. Debounce быстрых скипов (~150 мс) для audio.load(), audio.play() и cacheUpcoming()
+  clearTimeout(heavyDebounceTimer);
+  pendingTrackIndex = index;
+
+  const startHeavy = () => {
+    heavyDebounceTimer = null;
+    if (pendingTrackIndex !== index || currentIndex !== index) return;
+
+    const isCorsHost = t.src && !t.src.includes('pomf2.lain.la');
+    if ((settings.eqEnabled || audioSrcNode) && isCorsHost) {
+      audio.crossOrigin = 'anonymous';
+    } else {
+      audio.removeAttribute('crossorigin');
+      audio.crossOrigin = null;
+    }
+
+    audio.src = t.src;
+    audio.load();
+
+    if (shouldPlayAfterLoad) {
+      executePlay();
+    }
+    cacheUpcoming();
+  };
+
+  if (immediate) {
+    startHeavy();
+  } else {
+    heavyDebounceTimer = setTimeout(startHeavy, 150);
+  }
 }
 
 function playIndex(index, contextList) {
@@ -5411,8 +7026,6 @@ function playIndex(index, contextList) {
     return;
   }
 
-  // включили из поиска / избранного / альбома — очередь строим из этого списка,
-  // иначе «следующий» прыгает в случайный трек из всей базы
   if (contextList && contextList.length && contextList.indexOf(index) >= 0) {
     queue = contextList.slice();
     if (shuffle) shuffleQueue(index);
@@ -5420,12 +7033,13 @@ function playIndex(index, contextList) {
   }
 
   switchWithFade(() => {
-    if (index !== currentIndex) loadTrack(index);
-    play();
+    shouldPlayAfterLoad = true;
+    if (index !== currentIndex) loadTrack(index, true);
+    else play();
   });
 }
 
-function play() {
+function executePlay() {
   if (currentIndex < 0) return;
 
   // Автозапуск Web Audio при сохраненном включенном эквалайзере
@@ -5438,7 +7052,6 @@ function play() {
     }
   }
 
-  // отменяем незавершённое затухание и снимаем флаг
   cancelAnimationFrame(fadeRaf);
   switching = false;
   audio.volume = volume;
@@ -5446,6 +7059,7 @@ function play() {
   const p = audio.play();
   const ok = () => {
     pulseMesh();
+    setPlayingUI(true);
   };
   const fail = () => {
     audio.volume = volume;
@@ -5455,6 +7069,36 @@ function play() {
 
   if (p && p.then) p.then(ok).catch(fail);
   else ok();
+}
+
+function play() {
+  if (currentIndex < 0) return;
+  shouldPlayAfterLoad = true;
+  setPlayingUI(true);
+
+  if (heavyDebounceTimer) {
+    clearTimeout(heavyDebounceTimer);
+    heavyDebounceTimer = null;
+    const t = tracks[currentIndex];
+    if (t) {
+      const isCorsHost = t.src && !t.src.includes('pomf2.lain.la');
+      if ((settings.eqEnabled || audioSrcNode) && isCorsHost) {
+        audio.crossOrigin = 'anonymous';
+      } else {
+        audio.removeAttribute('crossorigin');
+        audio.crossOrigin = null;
+      }
+      if (audio.src !== t.src) {
+        audio.src = t.src;
+        audio.load();
+      }
+    }
+    executePlay();
+    cacheUpcoming();
+    return;
+  }
+
+  executePlay();
 }
 
 function togglePlay() {
@@ -5488,8 +7132,8 @@ function nextTrack(auto) {
     queuePos = nextPos;
   }
   switchWithFade(() => {
-    loadTrack(queue[queuePos]);
-    play();
+    shouldPlayAfterLoad = true;
+    loadTrack(queue[queuePos], false);
   });
 }
 
@@ -5499,8 +7143,8 @@ function goPrevTrack() {
   if (!queue.length) buildQueue(currentIndex);
   queuePos = (queuePos - 1 + queue.length) % queue.length;
   switchWithFade(() => {
-    loadTrack(queue[queuePos]);
-    play();
+    shouldPlayAfterLoad = true;
+    loadTrack(queue[queuePos], false);
   });
 }
 
@@ -5851,7 +7495,23 @@ function openInfo() {
 
     const vv = document.createElement('div');
     vv.className = 'info-v';
-    vv.textContent = v;
+    if (k === 'Исполнитель' || k === 'При участии') {
+      const parts = splitArtists(v);
+      parts.forEach((p, idx) => {
+        if (idx > 0) vv.appendChild(document.createTextNode(', '));
+        const span = document.createElement('span');
+        span.className = 'info-artist-link';
+        span.textContent = p;
+        span.addEventListener('click', () => {
+          closeInfo();
+          if (playerOpen) closePlayer();
+          setTimeout(() => openArtist(p), 220);
+        });
+        vv.appendChild(span);
+      });
+    } else {
+      vv.textContent = v;
+    }
 
     row.append(kk, vv);
     infoBody.appendChild(row);
@@ -6730,7 +8390,7 @@ const ENGINE_LIBS = {
   react: 'https://esm.sh/react@18.3.1',
   dom: 'https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1',
   motion: 'https://esm.sh/motion@11.15.0/react?deps=react@18.3.1',
-  lucide: 'https://esm.sh/lucide-react@0.469.0?exports=ListMusic,Heart,Disc3,Settings&deps=react@18.3.1'
+  lucide: 'https://esm.sh/lucide-react@0.469.0?exports=ListMusic,Heart,Disc3,Settings,Users&deps=react@18.3.1'
 };
 
 const REDUCE_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -6747,8 +8407,9 @@ function engineSay(text) {
 function buildIcons(React, motion, L) {
   const h = React.createElement;
 
-  const make = (Comp, from, to, extra) =>
-    function EngineIcon({ play }) {
+  const make = (Comp, from, to, extra) => {
+    if (!Comp) return function FallbackIcon() { return null; };
+    return function EngineIcon({ play }) {
       return h(
         motion.div,
         {
@@ -6761,14 +8422,18 @@ function buildIcons(React, motion, L) {
         h(Comp, Object.assign({ size: 21, strokeWidth: 1.9, 'aria-hidden': 'true' }, extra))
       );
     };
+  };
+
+  const UserComp = (L && (L.Users || L.User || L.UserRound)) || null;
 
   return {
-    all: make(L.ListMusic, { scale: 0.82, rotate: -16 }, { scale: 1, rotate: 0 }),
+    all: make(L && L.ListMusic, { scale: 0.82, rotate: -16 }, { scale: 1, rotate: 0 }),
+    artists: make(UserComp, { scale: 0.84 }, { scale: 1 }),
+    albums: make(L && L.Disc3, { rotate: -45, scale: 0.88 }, { rotate: 0, scale: 1 }),
     fav: function FavIcon({ play }) {
-      return make(L.Heart, { scale: 0.76 }, { scale: 1 }, { fill: play ? 'currentColor' : 'none' })({ play });
+      return make(L && L.Heart, { scale: 0.76 }, { scale: 1 }, { fill: play ? 'currentColor' : 'none' })({ play });
     },
-    albums: make(L.Disc3, { rotate: -45, scale: 0.88 }, { rotate: 0, scale: 1 }),
-    settings: make(L.Settings, { rotate: -60, scale: 0.88 }, { rotate: 0, scale: 1 })
+    settings: make(L && L.Settings, { rotate: -60, scale: 0.88 }, { rotate: 0, scale: 1 })
   };
 }
 
@@ -7836,7 +9501,29 @@ const AUDIO_MAX = 6;
 let caching = false;
 
 /* качаем текущий трек и пару следующих в Cache Storage — SW потом отдаст их офлайн */
+async function preloadNearbyCovers() {
+  if (!queue.length || queuePos < 0) return;
+  const positions = [queuePos + 1, queuePos + 2, queuePos - 1];
+  positions.forEach((pos) => {
+    if (pos < 0 || pos >= queue.length) return;
+    const idx = queue[pos];
+    if (idx != null && tracks[idx]) {
+      const c = coverOf(tracks[idx]);
+      if (c && !isPlaceholder(c) && !coverBlobCache.has(c)) {
+        if (typeof window.requestIdleCallback === 'function') {
+          window.requestIdleCallback(() => loadCoverBlob(c).catch(() => {}));
+        } else {
+          setTimeout(() => loadCoverBlob(c).catch(() => {}), 250);
+        }
+      }
+    }
+  });
+}
+
 async function cacheUpcoming() {
+  // Предзагрузка обложек для соседних треков очереди в Blob-кэш
+  preloadNearbyCovers();
+
   if (!settings.offline || caching) return;
   if (currentIndex < 0 || !('caches' in window)) return;
 
@@ -8595,10 +10282,22 @@ function openCtxMenu(index, x, y) {
   mk(fav ? 'Убрать из избранного' : 'В избранное', CTX_ICONS.heart, fav ? 'on' : '',
     () => toggleFavorite(index, null));
 
-  if ((t.album || '').trim()) {
+  const mainArtist = extractPrimaryArtist(t);
+  if (mainArtist) {
+    mk('К исполнителю', '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>', '', () => {
+      if (playerOpen) closePlayer();
+      setTimeout(() => openArtist(mainArtist), 220);
+    });
+  }
+
+  if ((t.album || '').trim() && t.album !== 'Сингл') {
     mk('Перейти к альбому', CTX_ICONS.album, '', () => {
       if (playerOpen) closePlayer();
       setTimeout(() => openAlbum(t.album), 220);
+    });
+    const isAlbFav = favoriteAlbums.has(t.album);
+    mk(isAlbFav ? 'Удалить альбом из избранного' : 'Альбом в избранное', '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>', isAlbFav ? 'on' : '', () => {
+      toggleFavoriteAlbum(t.album);
     });
   }
 
