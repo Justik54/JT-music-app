@@ -344,9 +344,11 @@
   .tabbar-pill::after {
     content: '';
     position: absolute;
-    inset: 0 11px;
-    border-radius: 22px;
+    inset: 2px 4px;
+    border-radius: 18px;
     background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
   }
   .tabbar-btn {
     flex: 1;
@@ -1272,14 +1274,17 @@
     padding: 8px 22px 22px;
     text-align: center;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .album-hero img {
-    width: min(46vw, 190px);
+    width: min(50vw, 200px);
     aspect-ratio: 1;
-    border-radius: 16px;
+    border-radius: 18px;
     object-fit: cover;
     background: var(--surface-hi);
-    box-shadow: 0 22px 50px -16px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.85);
     display: block;
     margin: 0 auto 16px;
   }
@@ -2517,12 +2522,6 @@
     .album-hero-actions {
       grid-area: btn;
       justify-content: flex-start;
-    }
-      align-content: center;
-      align-items: start;
-      column-gap: 26px;
-      text-align: left;
-      padding: 16px 4px 26px;
     }
     .album-hero img { grid-area: cover; width: 176px; margin: 0; align-self: center; }
     .album-hero-name { grid-area: name; align-self: end; font-size: 24px; }
@@ -5047,9 +5046,12 @@ function closePlayer() {
   showTgBack(albumOpenName !== null || artistOpenName !== null);
 }
 
+let screenZIndex = 5;
+
 function openAlbum(name) {
   albumOpenName = name;
   renderAlbumPage(name);
+  scrAlbum.style.zIndex = String(++screenZIndex);
   parkAlbum.open();
   scrAlbum.classList.add('open');
   showTgBack(true);
@@ -5073,10 +5075,20 @@ function showTgBack(show) {
 if (tg && tg.BackButton) {
   try {
     tg.BackButton.onClick(() => {
-      if (playerOpen) closePlayer();
-      else if (scrSettings.classList.contains('open')) closeSettings();
-      else if (artistOpenName !== null) closeArtist();
-      else if (albumOpenName !== null) closeAlbum();
+      if (playerOpen) {
+        closePlayer();
+      } else if (scrSettings.classList.contains('open')) {
+        closeSettings();
+      } else if (albumOpenName !== null && artistOpenName !== null) {
+        const albZ = parseInt(scrAlbum.style.zIndex || '2', 10);
+        const artZ = parseInt(scrArtist.style.zIndex || '2', 10);
+        if (albZ >= artZ) closeAlbum();
+        else closeArtist();
+      } else if (albumOpenName !== null) {
+        closeAlbum();
+      } else if (artistOpenName !== null) {
+        closeArtist();
+      }
     });
   } catch (e) {}
 }
@@ -5565,6 +5577,7 @@ function openArtist(name) {
   if (!name) return;
   artistOpenName = name;
   renderArtistPage(name);
+  scrArtist.style.zIndex = String(++screenZIndex);
   parkArtist.open();
   scrArtist.classList.add('open');
   showTgBack(true);
@@ -5951,9 +5964,12 @@ function renderAlbumPage(name) {
 
   $('albumName').textContent = name;
   const yrs = [...new Set(idxs.map((i) => tracks[i].year).filter(Boolean))].sort();
+  const albYear = (idxs.length && tracks[idxs[0]].release)
+    ? tracks[idxs[0]].release.slice(0, 4)
+    : (yrs.length ? yrs[yrs.length - 1] : '');
   $('albumSub').textContent =
     idxs.length + ' ' + plural(idxs.length, 'трек', 'трека', 'треков') +
-    (yrs.length ? ' · ' + yrs.join(', ') : '');
+    (albYear ? ' · ' + albYear : '');
 
   const cov = $('albumCover');
   cov.onerror = () => { cov.src = PLACEHOLDER; };
