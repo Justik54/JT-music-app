@@ -1926,5 +1926,31 @@
     "cover": "https://images.genius.com/5f2402ef4adad222420f13038b236a51.1000x1000x1.png",
     "duration": 125,
     "id": "p15sfn"
+  },
+  {
+    "title": "2 ПАКА",
+    "artist": "MAYOT & SEEMEE",
+    "artist_image": "https://images.genius.com/3caaf4cc1e269e806bc0cc9b0283623e.1000x800x1.jpg",
+    "artist_url": "https://genius.com/artists/Mayot",
+    "album": "SCUM OFF THE POT 2",
+    "year": "2022",
+    "release": "2022-06-24",
+    "featuring": [],
+    "producer": [
+      "mikecarti",
+      "dumboshawty"
+    ],
+    "writers": [
+      "mikecarti",
+      "dumboshawty",
+      "SEEMEE",
+      "MAYOT"
+    ],
+    "label": "CPLUS",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/mohwwxo5.mp3",
+    "cover": "https://images.genius.com/6baf7ba3c9643051a2fb8ae9ef8dea80.1000x1000x1.png",
+    "duration": 107,
+    "id": "iej5ik"
   }
 ]
