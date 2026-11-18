@@ -1975,5 +1975,32 @@
     "cover": "https://images.genius.com/c95f983f29be22444454520f5bbc52ca.1000x1000x1.png",
     "duration": 103,
     "id": "lyhyk0"
+  },
+  {
+    "title": "ТРИМ",
+    "artist": "MAYOT & SEEMEE (Ft. OG Buda)",
+    "artist_image": "https://images.genius.com/3caaf4cc1e269e806bc0cc9b0283623e.1000x800x1.jpg",
+    "artist_url": "https://genius.com/artists/Mayot",
+    "album": "SCUM OFF THE POT 2",
+    "year": "2022",
+    "release": "2022-06-24",
+    "featuring": [
+      "OG Buda"
+    ],
+    "producer": [
+      "mikecarti"
+    ],
+    "writers": [
+      "mikecarti",
+      "OG Buda",
+      "SEEMEE",
+      "MAYOT"
+    ],
+    "label": "CPLUS",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/a0hfmuop.mp3",
+    "cover": "https://images.genius.com/6baf7ba3c9643051a2fb8ae9ef8dea80.1000x1000x1.png",
+    "duration": 133,
+    "id": "1gz4x62"
   }
 ]
