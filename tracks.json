@@ -2027,5 +2027,29 @@
     "cover": "https://pomf2.lain.la/f/gxxnbjex.jpg",
     "duration": 136,
     "id": "1i9xaj8"
+  },
+  {
+    "title": "Бигасс",
+    "artist": "SODA LUV & WHY, BERRY",
+    "artist_image": "https://images.genius.com/51c5b25e7c2451d9e82b92a30eb2d317.1000x1000x1.jpg",
+    "artist_url": "https://genius.com/artists/Soda-luv",
+    "album": "Ничего личного",
+    "year": "2019",
+    "release": "2019-06-25",
+    "featuring": [],
+    "producer": [
+      "klimonglue"
+    ],
+    "writers": [
+      "klimonglue",
+      "WHY, BERRY",
+      "SODA LUV"
+    ],
+    "label": "Rhymes Music",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/7lcat024.mp3",
+    "cover": "https://images.genius.com/5327fad05f60d4192af895947c54b54e.1000x1000x1.png",
+    "duration": 144,
+    "id": "1q8opr9"
   }
 ]
