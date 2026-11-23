@@ -2125,5 +2125,27 @@
     "cover": "https://pomf2.lain.la/f/jbztkrey.jpg",
     "duration": 105,
     "id": "s4qmv1"
+  },
+  {
+    "title": "АНИМЭ ТРИП",
+    "artist": "CMH",
+    "artist_image": "https://images.genius.com/cbd55064bc16da55c2f459dc4ea46f65.630x630x1.jpg",
+    "artist_url": "https://genius.com/artists/Cmh",
+    "album": "PAYDAY",
+    "year": "2021",
+    "release": "2021-01-15",
+    "featuring": [],
+    "producer": [
+      "Jetpunk"
+    ],
+    "writers": [
+      "CMH"
+    ],
+    "label": "KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/gddg8p7k.mp3",
+    "cover": "https://images.genius.com/7531446c8fc275a286d5819e36f4d1d5.1000x1000x1.png",
+    "duration": 176,
+    "id": "1b3z1c"
   }
 ]
