@@ -2194,5 +2194,29 @@
     "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg",
     "duration": 92,
     "id": "11lk3lb"
+  },
+  {
+    "title": "Самосексуальна",
+    "artist": "Vasya Plaksa",
+    "artist_image": "https://images.genius.com/c6ac7bfdfca8cd6b2b251ecb8539186e.1000x1000x1.jpg",
+    "artist_url": "https://genius.com/artists/Vasya-plaksa",
+    "album": "Сингл",
+    "year": "2026",
+    "release": "2026-09-04",
+    "featuring": [],
+    "producer": [
+      "wellow"
+    ],
+    "writers": [
+      "Vasya Plaksa",
+      "Маша Мирова (Masha Mirova)",
+      "Фейгин (Feigin)"
+    ],
+    "label": "GAZ",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/hhaaym7c.mp3",
+    "cover": "https://images.genius.com/73594aaac5f1017f8771f63047d5ecb0.1000x1000x1.jpg",
+    "duration": 142,
+    "id": "1k79910"
   }
 ]
