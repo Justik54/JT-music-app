@@ -2167,5 +2167,30 @@
     "cover": "https://images.genius.com/00f9f6b22e4744431ce8ce5dbe1d339e.1000x1000x1.png",
     "duration": 157,
     "id": "1jk1hrv"
+  },
+  {
+    "title": "Двойники",
+    "artist": "MAYOT",
+    "artist_image": "https://images.genius.com/3caaf4cc1e269e806bc0cc9b0283623e.1000x800x1.jpg",
+    "artist_url": "https://genius.com/artists/Mayot",
+    "album": "ЗАПРАВКА КИД 2",
+    "year": "2021",
+    "release": "2021-03-26",
+    "featuring": [],
+    "producer": [
+      "malenkiyyarche",
+      "kayyo"
+    ],
+    "writers": [
+      "MAYOT",
+      "kayyo",
+      "malenkiyyarche"
+    ],
+    "label": "CPLUS, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/dlsdi0mt.mp3",
+    "cover": "https://pomf2.lain.la/f/gxxnbjex.jpg",
+    "duration": 61,
+    "id": "cm5t23"
   }
 ]
