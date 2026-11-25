@@ -2240,5 +2240,30 @@
     "cover": "https://images.genius.com/2dad4bb403223f235d7966b38b524292.1000x1000x1.png",
     "duration": 78,
     "id": "15p39bt"
+  },
+  {
+    "title": "милый ублюдок",
+    "artist": "Егор Крид (Egor Kreed)",
+    "artist_image": "https://images.genius.com/20ca7e30cbeee62546bcdee319368f4d.800x800x1.jpg",
+    "artist_url": "https://genius.com/artists/Egor-kreed",
+    "album": "Сингл",
+    "year": "2026",
+    "release": "2026-10-16",
+    "featuring": [],
+    "producer": [
+      "Alex Davia",
+      "Егор Крид (Egor Kreed)",
+      "ZEYN (AZE)"
+    ],
+    "writers": [
+      "Егор Крид (Egor Kreed)",
+      "Alex Davia"
+    ],
+    "label": "@58 Records",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/k394vhqt.mp3",
+    "cover": "https://images.genius.com/c20ba45d1752cb1fcff9943a6ae2200c.1000x1000x1.png",
+    "duration": 178,
+    "id": "1wesd70"
   }
 ]
