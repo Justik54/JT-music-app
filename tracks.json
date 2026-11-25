@@ -2218,5 +2218,27 @@
     "cover": "https://images.genius.com/73594aaac5f1017f8771f63047d5ecb0.1000x1000x1.jpg",
     "duration": 142,
     "id": "1k79910"
+  },
+  {
+    "title": "Плесень",
+    "artist": "MAYOT",
+    "artist_image": "https://images.genius.com/3caaf4cc1e269e806bc0cc9b0283623e.1000x800x1.jpg",
+    "artist_url": "https://genius.com/artists/Mayot",
+    "album": "mAyOtOvIrUs",
+    "year": "2026",
+    "release": "2026-11-23",
+    "featuring": [],
+    "producer": [
+      "mikecarti"
+    ],
+    "writers": [
+      "MAYOT"
+    ],
+    "label": "MELON MUSIC, RNDM CREW",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/ge6zl07v.mp3",
+    "cover": "https://images.genius.com/2dad4bb403223f235d7966b38b524292.1000x1000x1.png",
+    "duration": 78,
+    "id": "15p39bt"
   }
 ]
