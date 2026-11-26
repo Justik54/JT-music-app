@@ -2290,5 +2290,28 @@
     "cover": "https://images.genius.com/33551452e41f2bb368bd9abde38ecd86.1000x563x1.jpg",
     "duration": 275,
     "id": "hbsw2b"
+  },
+  {
+    "title": "Воскресенье",
+    "artist": "MAYOT",
+    "artist_image": "https://images.genius.com/3caaf4cc1e269e806bc0cc9b0283623e.1000x800x1.jpg",
+    "artist_url": "https://genius.com/artists/Mayot",
+    "album": "ЗАПРАВКА КИД 3",
+    "year": "2022",
+    "release": "2022-12-23",
+    "featuring": [],
+    "producer": [
+      "chronic"
+    ],
+    "writers": [
+      "MAYOT",
+      "chronic"
+    ],
+    "label": "CPLUS",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/yo64b4nk.mp3",
+    "cover": "https://pomf2.lain.la/f/jbztkrey.jpg",
+    "duration": 114,
+    "id": "120uspj"
   }
 ]
