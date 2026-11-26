@@ -2265,5 +2265,30 @@
     "cover": "https://pomf2.lain.la/f/vzkrmk2f.jpg",
     "duration": 178,
     "id": "1wesd70"
+  },
+  {
+    "title": "Частушки 3",
+    "artist": "CMH, mzlff & bratishkin",
+    "artist_image": "https://images.genius.com/cbd55064bc16da55c2f459dc4ea46f65.630x630x1.jpg",
+    "artist_url": "https://genius.com/artists/Cmh",
+    "album": "Сингл",
+    "year": "2024",
+    "release": "2024-04-14",
+    "featuring": [],
+    "producer": [
+      "spbwaves"
+    ],
+    "writers": [
+      "CMH",
+      "bratishkin",
+      "mzlff",
+      "spbwaves"
+    ],
+    "label": "",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/57wuroik.mp3",
+    "cover": "https://images.genius.com/33551452e41f2bb368bd9abde38ecd86.1000x563x1.jpg",
+    "duration": 275,
+    "id": "hbsw2b"
   }
 ]
