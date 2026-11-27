@@ -2313,5 +2313,33 @@
     "cover": "https://pomf2.lain.la/f/jbztkrey.jpg",
     "duration": 114,
     "id": "120uspj"
+  },
+  {
+    "title": "ATM",
+    "artist": "OSA, MAYOT & OG Buda",
+    "artist_image": "https://images.genius.com/bf7e4c247a426dbff7c3a97ddbc44e1e.376x376x1.jpg",
+    "artist_url": "https://genius.com/artists/Osa",
+    "album": "OMBRA",
+    "year": "2026",
+    "release": "2026-11-27",
+    "featuring": [],
+    "producer": [
+      "OSA",
+      "Jefe Junior",
+      "svdominik"
+    ],
+    "writers": [
+      "OSA",
+      "MAYOT",
+      "OG Buda",
+      "Jefe Junior",
+      "svdominik"
+    ],
+    "label": "KOALA MUSIC",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/w3s7osde.mp3",
+    "cover": "https://images.genius.com/17b52084710d5aa2fe2354cbd88be227.1000x1000x1.png",
+    "duration": 111,
+    "id": "1hack7t"
   }
 ]
