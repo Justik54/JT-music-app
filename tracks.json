@@ -2365,5 +2365,30 @@
     "cover": "https://images.genius.com/7cb68026fa87bf12459ba05396bf09d5.800x450x1.jpg",
     "duration": 263,
     "id": "10vj80k"
+  },
+  {
+    "title": "Ёлки",
+    "artist": "MAYOT",
+    "artist_image": "https://images.genius.com/3caaf4cc1e269e806bc0cc9b0283623e.1000x800x1.jpg",
+    "artist_url": "https://genius.com/artists/Mayot",
+    "album": "ЗАПРАВКА КИД",
+    "year": "2020",
+    "release": "2020-12-25",
+    "featuring": [],
+    "producer": [
+      "yourbabymind",
+      "Sqweezey"
+    ],
+    "writers": [
+      "MAYOT",
+      "yourbabymind",
+      "Sqweezey"
+    ],
+    "label": "CPLUS, MELON MUSIC",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/rivysw5i.mp3",
+    "cover": "https://huggingface.co/datasets/Justik4/JT-music-audio/resolve/main/audio/be8ea6d661434d299fab8e7dd61355fa.jpg",
+    "duration": 101,
+    "id": "ghxjxi"
   }
 ]
