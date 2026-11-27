@@ -2341,5 +2341,29 @@
     "cover": "https://images.genius.com/17b52084710d5aa2fe2354cbd88be227.1000x1000x1.png",
     "duration": 111,
     "id": "1hack7t"
+  },
+  {
+    "title": "Частушки",
+    "artist": "CMH, Слава КПСС (Slava KPSS) & нексюша (neksusha)",
+    "artist_image": "https://images.genius.com/cbd55064bc16da55c2f459dc4ea46f65.630x630x1.jpg",
+    "artist_url": "https://genius.com/artists/Cmh",
+    "album": "Сингл",
+    "year": "2022",
+    "release": "2022-02-13",
+    "featuring": [],
+    "producer": [
+      "spbwaves"
+    ],
+    "writers": [
+      "нексюша (neksusha)",
+      "Слава КПСС (Slava KPSS)",
+      "CMH"
+    ],
+    "label": "Антихайп (Antihype)",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/195odqd5.mp3",
+    "cover": "https://images.genius.com/7cb68026fa87bf12459ba05396bf09d5.800x450x1.jpg",
+    "duration": 263,
+    "id": "10vj80k"
   }
 ]
