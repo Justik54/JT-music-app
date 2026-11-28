@@ -2464,5 +2464,31 @@
     "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
     "duration": 182,
     "id": "122kb40"
+  },
+  {
+    "title": "Голодный пёс",
+    "artist": "SEEMEE (Ft. SODA LUV)",
+    "artist_image": "https://images.genius.com/46c37e9ffecb69c307fbfcea05d3a993.1000x1000x1.jpg",
+    "artist_url": "https://genius.com/artists/Seemee",
+    "album": "TXC",
+    "year": "2020",
+    "release": "2020-09-04",
+    "featuring": [
+      "SODA LUV"
+    ],
+    "producer": [
+      "Pretty Scream"
+    ],
+    "writers": [
+      "SEEMEE",
+      "SODA LUV",
+      "Pretty Scream"
+    ],
+    "label": "MELON MUSIC, CPLUS",
+    "lyrics": "",
+    "src": "https://pomf2.lain.la/f/hfg98e7n.mp3",
+    "cover": "https://images.genius.com/a6f54645126b627426e66b7ceeeb0c42.1000x1000x1.png",
+    "duration": 171,
+    "id": "bdvch4"
   }
 ]
